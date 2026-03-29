@@ -4,14 +4,16 @@
  */
 
 import { templates, getTemplateById } from './templates.js';
+import { loadTemplateConfig, saveTemplateConfig } from './core/templates/config-store.js';
 import { resolveTemplateConfig } from './core/templates/registry.js';
-import { loadRuntimeFonts } from './fonts.js';
-import { renderFrame, calculatePreviewScale } from './renderer.js';
+import { loadRuntimeFonts } from './core/fonts/index.js';
+import { renderFrame, calculatePreviewScale, createPhotoSource } from './renderer.js';
 
 // ============================================
 // 状态管理
 // ============================================
 let currentImage = null;           // HTMLImageElement | null
+let currentPhoto = null;           // Normalized photo source | null
 let selectedTemplateId = 'white';  // 默认选白底模板
 let fieldValues = {};              // Record<string, string>
 const THUMBNAIL_MAX_WIDTH = 180;
@@ -29,66 +31,24 @@ const btnExport = document.getElementById('btn-export');
 const selectorList = document.getElementById('selector-list');
 const textEditor = document.getElementById('text-editor');
 
-// ============================================
-// 模板选择器渲染
-// ============================================
-function getTemplateFieldValues(template) {
-    return resolveTemplateConfig(template, fieldValues);
-}
-
 function createThumbnailElement(template) {
-    if (!currentImage) {
-        const thumbnailImg = document.createElement('img');
-        thumbnailImg.className = 'template-thumbnail';
-        thumbnailImg.alt = template.label;
-        thumbnailImg.src = `thumbnails/${template.id}_thumbnail.png`;
-        thumbnailImg.width = THUMBNAIL_MAX_WIDTH;
-        thumbnailImg.height = THUMBNAIL_MAX_HEIGHT;
-        thumbnailImg.addEventListener('error', () => {
-            thumbnailImg.removeAttribute('src');
-            thumbnailImg.style.background = template.backgroundColor;
-            thumbnailImg.style.width = `${THUMBNAIL_MAX_WIDTH}px`;
-            thumbnailImg.style.height = `${THUMBNAIL_MAX_HEIGHT}px`;
-        }, { once: true });
-        return thumbnailImg;
-    }
+    const thumbnailImg = document.createElement('img');
+    thumbnailImg.className = 'template-thumbnail';
+    thumbnailImg.alt = template.label;
+    thumbnailImg.src = `thumbnails/${template.id}_thumbnail.png`;
+    thumbnailImg.width = THUMBNAIL_MAX_WIDTH;
+    thumbnailImg.height = THUMBNAIL_MAX_HEIGHT;
+    thumbnailImg.addEventListener('error', () => {
+        thumbnailImg.removeAttribute('src');
+        thumbnailImg.style.background = template.backgroundColor;
+        thumbnailImg.style.width = `${THUMBNAIL_MAX_WIDTH}px`;
+        thumbnailImg.style.height = `${THUMBNAIL_MAX_HEIGHT}px`;
+    }, { once: true });
 
-    const fullSizeCanvas = document.createElement('canvas');
-    renderFrame(
-        fullSizeCanvas,
-        currentImage,
-        template,
-        getTemplateFieldValues(template),
-        1
-    );
-
-    const scale = Math.min(
-        THUMBNAIL_MAX_WIDTH / fullSizeCanvas.width,
-        THUMBNAIL_MAX_HEIGHT / fullSizeCanvas.height,
-        1
-    );
-    const displayWidth = Math.round(fullSizeCanvas.width * scale);
-    const displayHeight = Math.round(fullSizeCanvas.height * scale);
-
-    const thumbnailCanvas = document.createElement('canvas');
-    thumbnailCanvas.className = 'template-thumbnail';
-    thumbnailCanvas.setAttribute('aria-label', template.label);
-    thumbnailCanvas.width = displayWidth;
-    thumbnailCanvas.height = displayHeight;
-    thumbnailCanvas.style.width = `${displayWidth}px`;
-    thumbnailCanvas.style.height = `${displayHeight}px`;
-
-    const ctx = thumbnailCanvas.getContext('2d');
-    if (ctx) {
-        ctx.imageSmoothingEnabled = true;
-        ctx.imageSmoothingQuality = 'high';
-        ctx.drawImage(fullSizeCanvas, 0, 0, displayWidth, displayHeight);
-    }
-
-    return thumbnailCanvas;
+    return thumbnailImg;
 }
 
-function renderSelectorList() {
+async function renderSelectorList() {
     selectorList.innerHTML = '';
 
     for (const template of templates) {
@@ -105,7 +65,7 @@ function renderSelectorList() {
 /**
  * 处理模板选择
  */
-function handleTemplateSelect(templateId) {
+async function handleTemplateSelect(templateId) {
     if (templateId === selectedTemplateId) return;
 
     selectedTemplateId = templateId;
@@ -113,15 +73,15 @@ function handleTemplateSelect(templateId) {
     // 重置 fieldValues 为新模板的默认值
     const template = getTemplateById(templateId);
     if (template) {
-        fieldValues = { ...template.defaultConfig };
+        fieldValues = loadTemplateConfig(template);
     }
 
     // 重新渲染选择器和编辑区
-    renderSelectorList();
+    await renderSelectorList();
     renderTextEditor();
 
     // 更新预览
-    updatePreview();
+    await updatePreview();
 }
 
 // ============================================
@@ -139,23 +99,102 @@ function renderTextEditor() {
 
         const label = document.createElement('label');
         label.textContent = field.label;
+        label.htmlFor = `field-${field.key}`;
 
-        const input = document.createElement('input');
-        input.type = 'text';
-        input.value = fieldValues[field.key] ?? field.defaultValue;
-        input.dataset.fieldKey = field.key;
-
-        // 监听输入变化
-        input.addEventListener('input', (e) => {
-            fieldValues[field.key] = e.target.value;
-            updatePreview();
-            renderSelectorList();
-        });
+        const input = createFieldInput(field);
 
         fieldGroup.appendChild(label);
         fieldGroup.appendChild(input);
         textEditor.appendChild(fieldGroup);
     });
+}
+
+function commitFieldValue(field, nextValue) {
+    const template = getTemplateById(selectedTemplateId);
+    if (!template) return;
+
+    fieldValues[field.key] = nextValue;
+    fieldValues = resolveTemplateConfig(template, fieldValues);
+    saveTemplateConfig(template, fieldValues);
+    updatePreview();
+}
+
+function createFieldInput(field) {
+    let input;
+
+    switch (field.type) {
+        case 'textarea': {
+            input = document.createElement('textarea');
+            input.rows = field.rows ?? 3;
+            input.value = fieldValues[field.key] ?? field.defaultValue ?? '';
+            input.addEventListener('input', (e) => {
+                commitFieldValue(field, e.target.value);
+            });
+            break;
+        }
+        case 'number': {
+            input = document.createElement('input');
+            input.type = 'number';
+            if (field.min !== undefined) input.min = String(field.min);
+            if (field.max !== undefined) input.max = String(field.max);
+            if (field.step !== undefined) input.step = String(field.step);
+            input.value = fieldValues[field.key] ?? field.defaultValue ?? 0;
+            input.addEventListener('input', (e) => {
+                commitFieldValue(field, e.target.value);
+            });
+            break;
+        }
+        case 'color': {
+            input = document.createElement('input');
+            input.type = 'color';
+            input.value = fieldValues[field.key] ?? field.defaultValue ?? '#000000';
+            input.addEventListener('input', (e) => {
+                commitFieldValue(field, e.target.value);
+            });
+            break;
+        }
+        case 'select': {
+            input = document.createElement('select');
+            (field.options ?? []).forEach((option) => {
+                const optionElement = document.createElement('option');
+                optionElement.value = option.value;
+                optionElement.textContent = option.label;
+                input.appendChild(optionElement);
+            });
+            input.value = fieldValues[field.key] ?? field.defaultValue ?? '';
+            input.addEventListener('change', (e) => {
+                commitFieldValue(field, e.target.value);
+            });
+            break;
+        }
+        case 'toggle': {
+            input = document.createElement('input');
+            input.type = 'checkbox';
+            input.checked = Boolean(fieldValues[field.key] ?? field.defaultValue);
+            input.addEventListener('change', (e) => {
+                commitFieldValue(field, e.target.checked);
+            });
+            break;
+        }
+        case 'text':
+        default: {
+            input = document.createElement('input');
+            input.type = 'text';
+            input.value = fieldValues[field.key] ?? field.defaultValue ?? '';
+            input.addEventListener('input', (e) => {
+                commitFieldValue(field, e.target.value);
+            });
+            break;
+        }
+    }
+
+    input.id = `field-${field.key}`;
+    input.dataset.fieldKey = field.key;
+    if (field.placeholder && 'placeholder' in input) {
+        input.placeholder = field.placeholder;
+    }
+
+    return input;
 }
 
 // ============================================
@@ -175,13 +214,14 @@ function handleFileSelect(file) {
     const image = new Image();
     image.src = URL.createObjectURL(file);
 
-    image.onload = () => {
+    image.onload = async () => {
         currentImage = image;
+        currentPhoto = createPhotoSource({ file, image });
 
         // 初始化 fieldValues（如果还没有值）
         const template = getTemplateById(selectedTemplateId);
         if (template && Object.keys(fieldValues).length === 0) {
-            fieldValues = { ...template.defaultConfig };
+            fieldValues = loadTemplateConfig(template);
             renderTextEditor();
         }
 
@@ -190,11 +230,8 @@ function handleFileSelect(file) {
         uploadGuide.style.display = 'none';
         previewArea.classList.add('has-image');
 
-        // 更新模板缩略图为当前照片的实时渲染
-        renderSelectorList();
-
         // 更新预览
-        updatePreview();
+        await updatePreview();
     };
 
     image.onerror = () => {
@@ -230,7 +267,7 @@ function setupDragDrop() {
 // ============================================
 // 实时预览
 // ============================================
-function updatePreview() {
+async function updatePreview() {
     if (!currentImage) return;
 
     const template = getTemplateById(selectedTemplateId);
@@ -249,13 +286,17 @@ function updatePreview() {
     );
 
     // 渲染预览
-    renderFrame(canvas, currentImage, template, fieldValues, scale);
+    await renderFrame(canvas, currentImage, template, fieldValues, {
+        scale,
+        mode: 'preview',
+        photo: currentPhoto,
+    });
 }
 
 // ============================================
 // 导出下载
 // ============================================
-function handleExport() {
+async function handleExport() {
     if (!currentImage) {
         alert('请先上传照片');
         return;
@@ -268,10 +309,16 @@ function handleExport() {
     const tempCanvas = document.createElement('canvas');
 
     // 以原始分辨率渲染（scale = 1）
-    renderFrame(tempCanvas, currentImage, template, fieldValues, 1);
+    const renderResult = await renderFrame(tempCanvas, currentImage, template, fieldValues, {
+        scale: 1,
+        mode: 'export',
+        photo: currentPhoto,
+    });
 
-    // 导出为 PNG
-    tempCanvas.toBlob((blob) => {
+    const exportCanvas = renderResult?.processedCanvas ?? tempCanvas;
+    const compression = renderResult?.global?.compression ?? { mimeType: 'image/png', quality: 0.92 };
+
+    exportCanvas.toBlob((blob) => {
         if (!blob) {
             alert('导出失败，请重试');
             return;
@@ -290,7 +337,7 @@ function handleExport() {
 
         // 释放 URL
         URL.revokeObjectURL(url);
-    }, 'image/png');
+    }, compression.mimeType, compression.quality);
 }
 
 // ============================================
@@ -303,7 +350,9 @@ function bindEvents() {
     });
 
     // 导出按钮点击
-    btnExport.addEventListener('click', handleExport);
+    btnExport.addEventListener('click', () => {
+        handleExport();
+    });
 
     // 文件选择变化
     fileInput.addEventListener('change', (e) => {
@@ -341,11 +390,11 @@ async function init() {
     // 初始化 fieldValues 为默认模板的默认值
     const template = getTemplateById(selectedTemplateId);
     if (template) {
-        fieldValues = { ...template.defaultConfig };
+        fieldValues = loadTemplateConfig(template);
     }
 
     // 渲染模板选择器
-    renderSelectorList();
+    await renderSelectorList();
 
     // 渲染文字编辑区
     renderTextEditor();
