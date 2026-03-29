@@ -7,7 +7,7 @@ import { templates, getTemplateById } from './templates.js';
 import { loadTemplateConfig, saveTemplateConfig } from './core/templates/config-store.js';
 import { resolveTemplateConfig } from './core/templates/registry.js';
 import { loadRuntimeFonts } from './core/fonts/index.js';
-import { renderFrame, calculatePreviewScale, createPhotoSource } from './renderer.js';
+import { renderFrame, calculateFrameMetrics, calculatePreviewScale, createPhotoSource } from './renderer.js';
 
 // ============================================
 // 状态管理
@@ -18,6 +18,16 @@ let selectedTemplateId = 'white';  // 默认选白底模板
 let fieldValues = {};              // Record<string, string>
 const THUMBNAIL_MAX_WIDTH = 180;
 const THUMBNAIL_MAX_HEIGHT = 135;
+const DEFAULT_EXPORT_SETTINGS = {
+    format: 'image/jpeg',
+    sizePreset: 'original',
+    customWidth: '',
+    customHeight: '',
+    jpegQuality: 0.92,
+};
+const MIN_JPEG_QUALITY = 0.1;
+const MAX_JPEG_QUALITY = 1;
+let exportSettings = { ...DEFAULT_EXPORT_SETTINGS };
 
 // ============================================
 // DOM 引用
@@ -28,8 +38,145 @@ const uploadGuide = document.getElementById('upload-guide');
 const fileInput = document.getElementById('file-input');
 const btnUpload = document.getElementById('btn-upload');
 const btnExport = document.getElementById('btn-export');
+const exportSizePreset = document.getElementById('export-size-preset');
+const exportCustomSize = document.getElementById('export-custom-size');
+const exportWidthInput = document.getElementById('export-width');
+const exportHeightInput = document.getElementById('export-height');
+const exportQualityInput = document.getElementById('export-quality');
+const exportQualityValue = document.getElementById('export-quality-value');
 const selectorList = document.getElementById('selector-list');
 const textEditor = document.getElementById('text-editor');
+
+function clampJpegQuality(value) {
+    const quality = Number(value);
+    if (!Number.isFinite(quality)) {
+        return DEFAULT_EXPORT_SETTINGS.jpegQuality;
+    }
+
+    return Math.min(Math.max(quality, MIN_JPEG_QUALITY), MAX_JPEG_QUALITY);
+}
+
+function parsePositiveInteger(value) {
+    if (value === '' || value === null || value === undefined) {
+        return null;
+    }
+
+    const normalized = Number(value);
+    if (!Number.isInteger(normalized) || normalized <= 0) {
+        return null;
+    }
+
+    return normalized;
+}
+
+function formatJpegQualityLabel(quality) {
+    return `${Math.round(clampJpegQuality(quality) * 100)}%`;
+}
+
+function syncExportControls() {
+    exportSizePreset.value = exportSettings.sizePreset;
+    exportWidthInput.value = exportSettings.customWidth;
+    exportHeightInput.value = exportSettings.customHeight;
+    exportQualityInput.value = String(exportSettings.jpegQuality);
+    exportQualityValue.textContent = formatJpegQualityLabel(exportSettings.jpegQuality);
+    exportCustomSize.classList.toggle('hidden', exportSettings.sizePreset !== 'custom');
+}
+
+function setExportSizePreset(sizePreset) {
+    exportSettings = {
+        ...exportSettings,
+        sizePreset,
+    };
+    syncExportControls();
+}
+
+function setCustomExportDimension(key, rawValue) {
+    exportSettings = {
+        ...exportSettings,
+        [key]: rawValue === '' ? '' : rawValue,
+    };
+    syncExportControls();
+}
+
+function setJpegQuality(rawValue) {
+    exportSettings = {
+        ...exportSettings,
+        jpegQuality: clampJpegQuality(rawValue),
+    };
+    syncExportControls();
+}
+
+function getBaseExportDimensions(template) {
+    const metrics = calculateFrameMetrics(currentImage, template, 1);
+    return {
+        width: metrics.fullWidth,
+        height: metrics.fullHeight,
+    };
+}
+
+function getPresetResizeDimensions(targetLongEdge, baseDimensions) {
+    const { width, height } = baseDimensions;
+    if (!targetLongEdge || !width || !height) {
+        return null;
+    }
+
+    if (width >= height) {
+        return {
+            width: targetLongEdge,
+            height: Math.max(Math.round((height / width) * targetLongEdge), 1),
+        };
+    }
+
+    return {
+        width: Math.max(Math.round((width / height) * targetLongEdge), 1),
+        height: targetLongEdge,
+    };
+}
+
+function resolveExportResize(template) {
+    const baseDimensions = getBaseExportDimensions(template);
+
+    if (exportSettings.sizePreset === 'original') {
+        return null;
+    }
+
+    if (exportSettings.sizePreset === 'custom') {
+        const customWidth = parsePositiveInteger(exportSettings.customWidth);
+        const customHeight = parsePositiveInteger(exportSettings.customHeight);
+        const widthProvided = exportSettings.customWidth !== '';
+        const heightProvided = exportSettings.customHeight !== '';
+
+        if (widthProvided && customWidth === null) {
+            throw new Error('自定义宽度必须是正整数');
+        }
+
+        if (heightProvided && customHeight === null) {
+            throw new Error('自定义高度必须是正整数');
+        }
+
+        if (!customWidth && !customHeight) {
+            return null;
+        }
+
+        if (customWidth && customHeight) {
+            return { width: customWidth, height: customHeight };
+        }
+
+        if (customWidth) {
+            return {
+                width: customWidth,
+                height: Math.max(Math.round((baseDimensions.height / baseDimensions.width) * customWidth), 1),
+            };
+        }
+
+        return {
+            width: Math.max(Math.round((baseDimensions.width / baseDimensions.height) * customHeight), 1),
+            height: customHeight,
+        };
+    }
+
+    return getPresetResizeDimensions(Number(exportSettings.sizePreset), baseDimensions);
+}
 
 function createThumbnailElement(template) {
     const thumbnailImg = document.createElement('img');
@@ -309,14 +456,33 @@ async function handleExport() {
     const tempCanvas = document.createElement('canvas');
 
     // 以原始分辨率渲染（scale = 1）
+    let resize;
+
+    try {
+        resize = resolveExportResize(template);
+    } catch (error) {
+        alert(error.message || '导出尺寸无效，请检查后重试');
+        return;
+    }
+
     const renderResult = await renderFrame(tempCanvas, currentImage, template, fieldValues, {
         scale: 1,
         mode: 'export',
         photo: currentPhoto,
+        global: {
+            resize,
+            compression: {
+                mimeType: exportSettings.format,
+                quality: clampJpegQuality(exportSettings.jpegQuality),
+            },
+        },
     });
 
     const exportCanvas = renderResult?.processedCanvas ?? tempCanvas;
-    const compression = renderResult?.global?.compression ?? { mimeType: 'image/png', quality: 0.92 };
+    const compression = renderResult?.global?.compression ?? {
+        mimeType: DEFAULT_EXPORT_SETTINGS.format,
+        quality: DEFAULT_EXPORT_SETTINGS.jpegQuality,
+    };
 
     exportCanvas.toBlob((blob) => {
         if (!blob) {
@@ -328,7 +494,7 @@ async function handleExport() {
         const url = URL.createObjectURL(blob);
         const link = document.createElement('a');
         link.href = url;
-        link.download = 'frame_maker_export.png';
+        link.download = 'frame_maker_export.jpg';
 
         // 触发下载
         document.body.appendChild(link);
@@ -352,6 +518,22 @@ function bindEvents() {
     // 导出按钮点击
     btnExport.addEventListener('click', () => {
         handleExport();
+    });
+
+    exportSizePreset.addEventListener('change', (e) => {
+        setExportSizePreset(e.target.value);
+    });
+
+    exportWidthInput.addEventListener('input', (e) => {
+        setCustomExportDimension('customWidth', e.target.value.trim());
+    });
+
+    exportHeightInput.addEventListener('input', (e) => {
+        setCustomExportDimension('customHeight', e.target.value.trim());
+    });
+
+    exportQualityInput.addEventListener('input', (e) => {
+        setJpegQuality(e.target.value);
     });
 
     // 文件选择变化
@@ -398,6 +580,8 @@ async function init() {
 
     // 渲染文字编辑区
     renderTextEditor();
+
+    syncExportControls();
 
     // 绑定所有事件
     bindEvents();
