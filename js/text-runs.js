@@ -1,7 +1,9 @@
-import { buildCanvasFont, FONT_FAMILIES, resolveScaledFontSize } from './fonts.js';
+import { buildCanvasFont, DEFAULT_FONT_IDS, FONT_FAMILIES, resolveScaledFontSize } from './core/fonts/index.js';
 
 function normalizeTextRun(run, defaults, metrics) {
     const {
+        fontIdEn = defaults.fontIdEn ?? DEFAULT_FONT_IDS.en,
+        fontIdZh = defaults.fontIdZh ?? DEFAULT_FONT_IDS.zh,
         fontFamilyEn = defaults.fontFamilyEn ?? FONT_FAMILIES.enDefault,
         fontFamilyZh = defaults.fontFamilyZh ?? FONT_FAMILIES.zhDefault,
         fontSizeRatio = defaults.fontSizeRatio ?? 1,
@@ -21,6 +23,8 @@ function normalizeTextRun(run, defaults, metrics) {
         fontWeight,
         fontStyle,
         fontSizeRatio,
+        fontIdEn,
+        fontIdZh,
         fontFamilyEn,
         fontFamilyZh,
         fontSize,
@@ -28,6 +32,8 @@ function normalizeTextRun(run, defaults, metrics) {
             fontSize,
             fontWeight,
             fontStyle,
+            fontIdEn,
+            fontIdZh,
             fontFamilyEn,
             fontFamilyZh,
         }),

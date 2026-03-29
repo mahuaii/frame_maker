@@ -1,0 +1,138 @@
+const SYSTEM_SANS_STACK = '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif';
+
+const FONT_REGISTRY = {
+    angieSansStd: {
+        id: 'angieSansStd',
+        label: 'Angie Sans Std',
+        family: 'Angie Sans Std',
+        source: 'url("./assets/fonts/Angie_Sans_Std.otf") format("opentype")',
+    },
+    systemSans: {
+        id: 'systemSans',
+        label: 'System Sans',
+        family: SYSTEM_SANS_STACK,
+        system: true,
+    },
+};
+
+export const DEFAULT_FONT_IDS = {
+    en: 'angieSansStd',
+    zh: 'systemSans',
+    ui: 'systemSans',
+};
+
+export const FONT_FAMILIES = {
+    enDefault: `"${FONT_REGISTRY[DEFAULT_FONT_IDS.en].family}"`,
+    zhDefault: FONT_REGISTRY[DEFAULT_FONT_IDS.zh].family,
+    uiDefault: FONT_REGISTRY[DEFAULT_FONT_IDS.ui].family,
+};
+
+let runtimeFontsReadyPromise = null;
+const loadedFontIds = new Set();
+
+export function getFontById(fontId) {
+    return FONT_REGISTRY[fontId] ?? null;
+}
+
+export function listRuntimeFonts() {
+    return Object.values(FONT_REGISTRY);
+}
+
+export function getFontFieldOptions() {
+    return listRuntimeFonts().map((font) => ({
+        value: font.id,
+        label: font.label,
+    }));
+}
+
+export function resolveFontFamily(fontId, fallbackFamily = SYSTEM_SANS_STACK) {
+    const font = getFontById(fontId);
+    if (!font) {
+        return fallbackFamily;
+    }
+
+    if (font.system) {
+        return font.family;
+    }
+
+    return `"${font.family}"`;
+}
+
+export function getFontFamilyStack({
+    fontIdEn = DEFAULT_FONT_IDS.en,
+    fontIdZh = DEFAULT_FONT_IDS.zh,
+    fontFamilyEn = FONT_FAMILIES.enDefault,
+    fontFamilyZh = FONT_FAMILIES.zhDefault,
+} = {}) {
+    return [
+        resolveFontFamily(fontIdEn, fontFamilyEn),
+        resolveFontFamily(fontIdZh, fontFamilyZh),
+        SYSTEM_SANS_STACK,
+    ]
+        .filter(Boolean)
+        .join(', ');
+}
+
+export function buildCanvasFont({
+    fontSize,
+    fontWeight = 400,
+    fontStyle = 'normal',
+    fontIdEn,
+    fontIdZh,
+    fontFamilyEn,
+    fontFamilyZh,
+}) {
+    return `${fontStyle} ${fontWeight} ${Math.max(fontSize, 1)}px ${getFontFamilyStack({
+        fontIdEn,
+        fontIdZh,
+        fontFamilyEn,
+        fontFamilyZh,
+    })}`;
+}
+
+export function resolveScaledFontSize(baseFontSize, fontSizeRatio = 1) {
+    return Math.max(baseFontSize * fontSizeRatio, 1);
+}
+
+export async function loadRuntimeFonts() {
+    if (runtimeFontsReadyPromise) {
+        return runtimeFontsReadyPromise;
+    }
+
+    runtimeFontsReadyPromise = (async () => {
+        if (typeof window === 'undefined' || typeof FontFace === 'undefined' || !document?.fonts) {
+            return;
+        }
+
+        await Promise.all(
+            Object.values(FONT_REGISTRY).map((fontConfig) => ensureRuntimeFont(fontConfig.id))
+        );
+
+        await document.fonts.ready;
+    })().catch((error) => {
+        console.warn('Runtime fonts failed to load, falling back to system fonts.', error);
+    });
+
+    return runtimeFontsReadyPromise;
+}
+
+export async function ensureRuntimeFont(fontId) {
+    const fontConfig = FONT_REGISTRY[fontId];
+
+    if (!fontConfig || fontConfig.system) {
+        return;
+    }
+
+    if (loadedFontIds.has(fontId)) {
+        return;
+    }
+
+    if (typeof window === 'undefined' || typeof FontFace === 'undefined' || !document?.fonts) {
+        return;
+    }
+
+    const fontFace = new FontFace(fontConfig.family, fontConfig.source);
+    const loadedFace = await fontFace.load();
+    document.fonts.add(loadedFace);
+    loadedFontIds.add(fontId);
+}
