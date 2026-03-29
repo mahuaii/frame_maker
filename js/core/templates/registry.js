@@ -1,3 +1,5 @@
+import { normalizeTemplateConfig } from './fields.js';
+
 export function defineTemplate(template) {
     if (!template?.id) {
         throw new Error('Template module requires a stable id.');
@@ -48,8 +50,8 @@ export function createTemplateRegistry(templateModules) {
 }
 
 export function resolveTemplateConfig(template, rawConfig = {}) {
-    return {
+    return normalizeTemplateConfig(template.fields, {
         ...template.defaultConfig,
         ...rawConfig,
-    };
+    });
 }
