@@ -1,30 +1,39 @@
-import { defaultSizing, buildInfoText } from './shared.js';
+import { defineTemplate } from '../core/templates/registry.js';
+import { renderCenteredTextRuns } from '../text-runs.js';
+import { buildDefaultConfig, pickTextFieldValues } from './helpers.js';
+import { defaultSizing, defaultTextStyleDefaults, buildInfoTextRuns, infoFieldDefinitions } from './shared.js';
 
-const blackTemplate = {
+const fields = infoFieldDefinitions;
+
+const blackTemplate = defineTemplate({
     id: 'black',
-    name: '黑底相框',
+    label: '黑底相框',
     backgroundColor: '#000000',
     ...defaultSizing,
-    fields: [
-        { key: 'focal_length', label: '焦距', defaultValue: '23mm' },
-        { key: 'aperture', label: '光圈', defaultValue: 'f/1.8' },
-        { key: 'shutter', label: '快门', defaultValue: '1/1000' },
-        { key: 'iso', label: 'ISO', defaultValue: '100' },
-    ],
-    render(ctx, area, values, metrics) {
+    defaultConfig: buildDefaultConfig(fields),
+    fields,
+    textStyleDefaults: {
+        ...defaultTextStyleDefaults,
+    },
+    resolveData(input) {
+        return pickTextFieldValues(input.customText, fields.map((field) => field.key));
+    },
+    render(ctx, args) {
+        const { area, data, metrics } = args;
+
         ctx.save();
-        ctx.fillStyle = '#FFFFFF';
-        ctx.font = `${Math.max(metrics.scaledFontSize, 1)}px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif`;
-        ctx.textAlign = 'center';
-        ctx.textBaseline = 'middle';
-
-        const text = buildInfoText(values);
-        const centerX = area.x + area.width / 2;
-        const centerY = area.y + area.height / 2;
-
-        ctx.fillText(text, centerX, centerY);
+        renderCenteredTextRuns(
+            ctx,
+            area,
+            buildInfoTextRuns(data, this.textStyleDefaults),
+            metrics,
+            {
+                defaults: this.textStyleDefaults,
+                color: '#FFFFFF',
+            }
+        );
         ctx.restore();
     }
-};
+});
 
 export default blackTemplate;

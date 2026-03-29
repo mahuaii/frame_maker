@@ -1,10 +1,9 @@
+import { createTemplateRegistry } from './core/templates/registry.js';
 import whiteTemplate from './templates/white.js';
 import blackTemplate from './templates/black.js';
 
-export const templates = [whiteTemplate, blackTemplate];
+const templateRegistry = createTemplateRegistry([whiteTemplate, blackTemplate]);
 
-export function getTemplateById(id) {
-    return templates.find((template) => template.id === id);
-}
+export const { templates, getTemplateById } = templateRegistry;
 
 export const defaultTemplate = whiteTemplate;

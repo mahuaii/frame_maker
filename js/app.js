@@ -4,6 +4,8 @@
  */
 
 import { templates, getTemplateById } from './templates.js';
+import { resolveTemplateConfig } from './core/templates/registry.js';
+import { loadRuntimeFonts } from './fonts.js';
 import { renderFrame, calculatePreviewScale } from './renderer.js';
 
 // ============================================
@@ -31,20 +33,14 @@ const textEditor = document.getElementById('text-editor');
 // 模板选择器渲染
 // ============================================
 function getTemplateFieldValues(template) {
-    const values = {};
-
-    template.fields.forEach(field => {
-        values[field.key] = fieldValues[field.key] ?? field.defaultValue;
-    });
-
-    return values;
+    return resolveTemplateConfig(template, fieldValues);
 }
 
 function createThumbnailElement(template) {
     if (!currentImage) {
         const thumbnailImg = document.createElement('img');
         thumbnailImg.className = 'template-thumbnail';
-        thumbnailImg.alt = template.name;
+        thumbnailImg.alt = template.label;
         thumbnailImg.src = `thumbnails/${template.id}_thumbnail.png`;
         thumbnailImg.width = THUMBNAIL_MAX_WIDTH;
         thumbnailImg.height = THUMBNAIL_MAX_HEIGHT;
@@ -76,7 +72,7 @@ function createThumbnailElement(template) {
 
     const thumbnailCanvas = document.createElement('canvas');
     thumbnailCanvas.className = 'template-thumbnail';
-    thumbnailCanvas.setAttribute('aria-label', template.name);
+    thumbnailCanvas.setAttribute('aria-label', template.label);
     thumbnailCanvas.width = displayWidth;
     thumbnailCanvas.height = displayHeight;
     thumbnailCanvas.style.width = `${displayWidth}px`;
@@ -117,10 +113,7 @@ function handleTemplateSelect(templateId) {
     // 重置 fieldValues 为新模板的默认值
     const template = getTemplateById(templateId);
     if (template) {
-        fieldValues = {};
-        template.fields.forEach(field => {
-            fieldValues[field.key] = field.defaultValue;
-        });
+        fieldValues = { ...template.defaultConfig };
     }
 
     // 重新渲染选择器和编辑区
@@ -188,9 +181,7 @@ function handleFileSelect(file) {
         // 初始化 fieldValues（如果还没有值）
         const template = getTemplateById(selectedTemplateId);
         if (template && Object.keys(fieldValues).length === 0) {
-            template.fields.forEach(field => {
-                fieldValues[field.key] = field.defaultValue;
-            });
+            fieldValues = { ...template.defaultConfig };
             renderTextEditor();
         }
 
@@ -344,13 +335,13 @@ function bindEvents() {
 // ============================================
 // 初始化
 // ============================================
-function init() {
+async function init() {
+    await loadRuntimeFonts();
+
     // 初始化 fieldValues 为默认模板的默认值
     const template = getTemplateById(selectedTemplateId);
     if (template) {
-        template.fields.forEach(field => {
-            fieldValues[field.key] = field.defaultValue;
-        });
+        fieldValues = { ...template.defaultConfig };
     }
 
     // 渲染模板选择器

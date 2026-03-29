@@ -1,3 +1,5 @@
+import { resolveTemplateConfig } from './core/templates/registry.js';
+
 /**
  * 核心渲染函数：将照片 + 相框模板渲染到 Canvas
  *
@@ -11,6 +13,7 @@ export function renderFrame(canvas, image, template, fieldValues, scale = 1) {
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
 
+    const config = resolveTemplateConfig(template, fieldValues);
     const layoutMetrics = calculateFrameMetrics(image, template, scale);
     const {
         imageWidth,
@@ -49,7 +52,26 @@ export function renderFrame(canvas, image, template, fieldValues, scale = 1) {
         width: scaledImageWidth,
         height: scaledBarHeight,
     };
-    template.render(ctx, area, fieldValues, layoutMetrics);
+    const data = template.resolveData({
+        photo: image,
+        exif: null,
+        customText: config,
+        global: {
+            scale,
+        },
+    });
+
+    template.render(ctx, {
+        photo: image,
+        area,
+        config,
+        data,
+        metrics: layoutMetrics,
+        canvasSize: {
+            width: displayWidth,
+            height: displayHeight,
+        },
+    });
 }
 
 /**
@@ -103,10 +125,12 @@ export function calculateFrameMetrics(image, template, scale = 1) {
         fontBasisSize,
         barHeight,
         fontSize,
+        textRunBaseFontSize: fontSize,
         scaledImageWidth: imageWidth * scale,
         scaledImageHeight: imageHeight * scale,
         scaledBarHeight: barHeight * scale,
         scaledFontSize: fontSize * scale,
+        scaledTextRunBaseFontSize: fontSize * scale,
     };
 }
 

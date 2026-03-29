@@ -1,3 +1,11 @@
+@font-face {
+    font-family: 'Angie Sans Std';
+    src: url('../assets/fonts/Angie_Sans_Std.otf') format('opentype');
+    font-style: normal;
+    font-weight: 400;
+    font-display: swap;
+}
+
 /* === Reset & Base === */
 *,
 *::before,
@@ -43,7 +51,7 @@
 html,
 body {
     height: 100%;
-    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+    font-family: 'Angie Sans Std', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
     color: var(--color-text-primary);
     background: var(--color-bg-secondary);
     -webkit-font-smoothing: antialiased;
