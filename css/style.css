@@ -1,4 +1,24 @@
 /* === Reset & Base === */
+@font-face {
+    font-family: 'MiSans';
+    src: local('MiSans Regular'),
+        local('MiSans-Regular'),
+        url('../assets/fonts/MiSans-Regular.otf') format('opentype');
+    font-weight: 400;
+    font-style: normal;
+    font-display: swap;
+}
+
+@font-face {
+    font-family: 'MiSans';
+    src: local('MiSans Light'),
+        local('MiSans-Light'),
+        url('../assets/fonts/MiSans-Light.otf') format('opentype');
+    font-weight: 300;
+    font-style: normal;
+    font-display: swap;
+}
+
 *,
 *::before,
 *::after {
@@ -9,17 +29,23 @@
 
 :root {
     /* 背景色 */
-    --color-bg-primary: #fcfcfb;
-    --color-bg-secondary: #fcfcfb;
-    --color-bg-preview: #fcfcfb;
+    /* --color-bg-primary: #f2f2f2;
+    --color-bg-secondary: #f2f2f2;
+    --color-bg-preview: #f2f2f2; */
+    --color-bg-primary: #edeae7;
+    --color-bg-secondary: #edeae7;
+    --color-bg-preview: #edeae7;
 
     /* 文字色 */
     --color-text-primary: #1f2937;
     --color-text-secondary: #6b7280;
     --color-text-placeholder: #9ca3af;
 
-    /* 边框色 */
-    --color-border: #e5e7eb;
+    /* 线框色 */
+    --color-divider: #000000;
+    --color-control-border: #000000;
+    --color-template-border: transparent;
+    --color-template-border-hover: #9ca3af;
     --color-border-focus: #3b82f6;
 
     /* 强调色 */
@@ -40,7 +66,7 @@
     --spacing-12: 48px;
 
     /* 字体 */
-    --font-ui: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+    --font-ui: 'MiSans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
 }
 
 html,
@@ -74,7 +100,7 @@ body {
     min-height: 56px;
     padding: 0 var(--spacing-6);
     background: var(--color-bg-primary);
-    border-bottom: 1px solid var(--color-border);
+    border-bottom: 1px solid var(--color-divider);
     flex-shrink: 0;
     gap: var(--spacing-4);
 }
@@ -117,7 +143,7 @@ body {
 .export-custom-size input {
     min-height: 34px;
     padding: var(--spacing-1) var(--spacing-2);
-    border: 1px solid var(--color-border);
+    border: 1px solid var(--color-control-border);
     border-radius: var(--radius-sm);
     font-size: 13px;
     color: var(--color-text-primary);
@@ -185,7 +211,7 @@ body {
     align-items: center;
     gap: var(--spacing-2);
     padding: var(--spacing-2) var(--spacing-4);
-    border: 1px solid var(--color-border);
+    border: 1px solid var(--color-control-border);
     border-radius: var(--radius-sm);
     font-size: 14px;
     font-weight: 500;
@@ -298,7 +324,7 @@ body {
     width: 240px;
     flex-shrink: 0;
     background: var(--color-bg-primary);
-    border-left: 1px solid var(--color-border);
+    border-left: 1px solid var(--color-divider);
     padding: var(--spacing-4);
     overflow-y: auto;
     display: flex;
@@ -307,18 +333,22 @@ body {
 }
 
 .selector-title {
-    font-size: 14px;
-    font-weight: 600;
-    color: var(--color-text-secondary);
+    font-family: var(--font-ui);
+    font-size: 13px;
+    font-weight: 300;
+    color: var(--color-text-primary);
     text-transform: uppercase;
     letter-spacing: 0.5px;
+    width: 100%;
+    text-align: left;
 }
 
 .selector-list {
     display: flex;
     flex-direction: column;
-    align-items: center;
+    align-items: flex-start;
     gap: var(--spacing-2);
+    width: 100%;
 }
 
 /* 模板卡片 */
@@ -329,21 +359,21 @@ body {
     width: fit-content;
     max-width: 100%;
     padding: 0;
-    border: none;
+    border: 2px solid var(--color-template-border);
     border-radius: var(--radius-sm);
+    box-sizing: border-box;
     cursor: pointer;
     transition: all 0.15s ease;
     background: transparent;
     overflow: hidden;
-    box-shadow: 0 0 0 2px var(--color-border);
 }
 
 .template-card:hover {
-    box-shadow: 0 0 0 2px var(--color-text-placeholder);
+    border-color: var(--color-template-border-hover);
 }
 
 .template-card.selected {
-    box-shadow: 0 0 0 2px var(--color-accent);
+    border-color: var(--color-accent);
 }
 
 .template-thumbnail {
@@ -359,7 +389,7 @@ body {
     gap: var(--spacing-6);
     padding: var(--spacing-4) var(--spacing-6);
     background: var(--color-bg-primary);
-    border-top: 1px solid var(--color-border);
+    border-top: 1px solid var(--color-divider);
     flex-shrink: 0;
     flex-wrap: wrap;
 }
@@ -386,7 +416,7 @@ body {
 .field-group select {
     width: 100px;
     padding: var(--spacing-1) var(--spacing-2);
-    border: 1px solid var(--color-border);
+    border: 1px solid var(--color-control-border);
     border-radius: var(--radius-sm);
     font-size: 14px;
     color: var(--color-text-primary);

@@ -18,6 +18,7 @@ let selectedTemplateId = 'white';  // 默认选白底模板
 let fieldValues = {};              // Record<string, string>
 const THUMBNAIL_MAX_WIDTH = 180;
 const THUMBNAIL_MAX_HEIGHT = 135;
+const ASSET_VERSION = '20260329-220553';
 const DEFAULT_EXPORT_SETTINGS = {
     format: 'image/jpeg',
     sizePreset: 'original',
@@ -182,7 +183,7 @@ function createThumbnailElement(template) {
     const thumbnailImg = document.createElement('img');
     thumbnailImg.className = 'template-thumbnail';
     thumbnailImg.alt = template.label;
-    thumbnailImg.src = `thumbnails/${template.id}_thumbnail.png`;
+    thumbnailImg.src = `thumbnails/${template.id}_thumbnail.png?v=${ASSET_VERSION}`;
     thumbnailImg.width = THUMBNAIL_MAX_WIDTH;
     thumbnailImg.height = THUMBNAIL_MAX_HEIGHT;
     thumbnailImg.addEventListener('error', () => {
