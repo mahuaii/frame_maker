@@ -2,7 +2,7 @@
 
 set -euo pipefail
 
-PORT="${1:-8000}"
+PORT="${1:-8001}"
 
 cd "$(dirname "$0")"
 
