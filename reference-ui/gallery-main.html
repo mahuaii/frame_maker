@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Frame Maker Reference UI · Main Gallery</title>
+    <link rel="stylesheet" href="./style.css">
+</head>
+<body data-type-mode="sans">
+    <div class="page-shell">
+        <header class="masthead">
+            <div class="masthead-copy">
+                <p class="eyebrow">Sample 01</p>
+                <h1>主界面参考</h1>
+                <p class="lede">这是基础版画廊方向，重点验证大面积留白、主预览优先级和轻量编辑控件之间的平衡。</p>
+            </div>
+            <div class="masthead-actions">
+                <a class="button ghost" href="./gallery.html">返回目录</a>
+                <label class="button ghost" for="reference-upload">上传照片</label>
+                <button class="button primary" type="button">导出预览</button>
+                <button class="button subtle" type="button" id="toggle-advanced" aria-expanded="false">高级设置</button>
+            </div>
+        </header>
+        <input type="file" id="reference-upload" accept="image/*" hidden>
+        <main class="single-page-flow">
+            <section class="hero-block">
+                <div class="hero-grid">
+                    <div class="hero-stage">
+                        <div class="art-frame">
+                            <img id="preview-image" src="../assets/samples/thumbnail-source-z30.jpg" alt="预览照片">
+                            <div class="frame-copy">
+                                <p class="frame-kicker">SHENYANG / 35MM MEMORY</p>
+                                <h2 id="preview-title">晚风经过街角的白墙</h2>
+                                <p id="preview-caption">Nikon Z30 · 26mm · f/2.8 · 1/250s · ISO 200</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="hero-controls">
+                        <div class="section-title">
+                            <p class="section-kicker">Primary Interface</p>
+                            <h3>基础编辑面板</h3>
+                        </div>
+                        <div class="control-cluster">
+                            <label class="field minimal">
+                                <span>标题</span>
+                                <input id="field-title" type="text" value="晚风经过街角的白墙">
+                            </label>
+                            <label class="field minimal">
+                                <span>副标题</span>
+                                <input id="field-caption" type="text" value="Nikon Z30 · 26mm · f/2.8 · 1/250s · ISO 200">
+                            </label>
+                            <label class="field minimal">
+                                <span>导出尺寸</span>
+                                <select>
+                                    <option>原始尺寸</option>
+                                    <option>长边 1080px</option>
+                                    <option>长边 2048px</option>
+                                </select>
+                            </label>
+                            <label class="field slider">
+                                <span>信息倍率</span>
+                                <input type="range" min="0" max="100" value="62">
+                            </label>
+                            <div class="field">
+                                <span>字体氛围</span>
+                                <div class="segmented-control" role="tablist" aria-label="字体切换">
+                                    <button class="segment is-active" type="button" data-type-target="sans">Sans</button>
+                                    <button class="segment" type="button" data-type-target="serif">Serif</button>
+                                </div>
+                            </div>
+                            <label class="field minimal">
+                                <span>背景色</span>
+                                <input id="bg-color" type="color" value="#f7f3ee">
+                            </label>
+                        </div>
+                        <div class="advanced-strip" id="advanced-panel" hidden>
+                            <div class="advanced-line">
+                                <span>无 EXIF 文案</span>
+                                <label class="switch">
+                                    <input type="checkbox">
+                                    <span></span>
+                                </label>
+                            </div>
+                            <div class="advanced-line">
+                                <span>边框强度</span>
+                                <input type="range" min="0" max="100" value="44">
+                            </div>
+                            <div class="advanced-line note">高级设置仍然收起来，避免破坏主画面的呼吸感。</div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+        </main>
+    </div>
+    <script type="module" src="./app.js"></script>
+</body>
+</html>
