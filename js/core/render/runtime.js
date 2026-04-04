@@ -1,6 +1,6 @@
 import { loadRuntimeFonts, ensureRuntimeFont } from '../fonts/index.js';
 import { buildTemplateResolveInput, createGlobalRenderSettings } from './input.js';
-import { resolveTemplateConfig } from '../templates/registry.js';
+import { resolveTemplateAppearance, resolveTemplateConfig } from '../templates/registry.js';
 
 function getBasisSize(imageWidth, imageHeight, basis) {
     switch (basis) {
@@ -19,6 +19,21 @@ function getBasisSize(imageWidth, imageHeight, basis) {
     }
 }
 
+function normalizePositiveRatio(value, fallbackValue) {
+    const numericValue = Number(value);
+    return Number.isFinite(numericValue) && numericValue > 0 ? numericValue : fallbackValue;
+}
+
+function normalizeNonNegativeRatio(value, fallbackValue) {
+    const numericValue = Number(value);
+    return Number.isFinite(numericValue) && numericValue >= 0 ? numericValue : fallbackValue;
+}
+
+function hasCustomPhotoArea(template) {
+    return ['photoAreaXRatio', 'photoAreaYRatio', 'photoAreaWidthRatio', 'photoAreaHeightRatio']
+        .some((key) => Number.isFinite(Number(template?.[key])));
+}
+
 export function calculateFrameMetrics(image, template, scale = 1) {
     const imageWidth = image.naturalWidth;
     const imageHeight = image.naturalHeight;
@@ -27,19 +42,46 @@ export function calculateFrameMetrics(image, template, scale = 1) {
     const barHeight = Math.round(barBasisSize * template.barHeightRatio);
     const rawFontSize = Math.round(fontBasisSize * template.fontSizeRatio);
     const fontSize = Math.max(template.minFontSize ?? 12, rawFontSize);
+    const canvasWidthRatio = normalizePositiveRatio(template.canvasWidthRatio, 1);
+    const canvasHeightRatio = normalizePositiveRatio(
+        template.canvasHeightRatio,
+        (imageHeight + barHeight) / imageHeight
+    );
+    const fullWidth = Math.round(imageWidth * canvasWidthRatio);
+    const fullHeight = Math.round(imageHeight * canvasHeightRatio);
+    const photoArea = hasCustomPhotoArea(template)
+        ? {
+            x: Math.round(fullWidth * normalizeNonNegativeRatio(template.photoAreaXRatio, 0)),
+            y: Math.round(fullHeight * normalizeNonNegativeRatio(template.photoAreaYRatio, 0)),
+            width: Math.round(fullWidth * normalizePositiveRatio(template.photoAreaWidthRatio, imageWidth / fullWidth)),
+            height: Math.round(fullHeight * normalizePositiveRatio(template.photoAreaHeightRatio, imageHeight / fullHeight)),
+        }
+        : {
+            x: 0,
+            y: 0,
+            width: imageWidth,
+            height: imageHeight,
+        };
 
     return {
         imageWidth,
         imageHeight,
-        fullWidth: imageWidth,
-        fullHeight: imageHeight + barHeight,
+        fullWidth,
+        fullHeight,
         barBasisSize,
         fontBasisSize,
         barHeight,
         fontSize,
+        photoArea,
         textRunBaseFontSize: fontSize,
-        scaledImageWidth: imageWidth * scale,
-        scaledImageHeight: imageHeight * scale,
+        scaledImageWidth: photoArea.width * scale,
+        scaledImageHeight: photoArea.height * scale,
+        scaledPhotoArea: {
+            x: photoArea.x * scale,
+            y: photoArea.y * scale,
+            width: photoArea.width * scale,
+            height: photoArea.height * scale,
+        },
         scaledBarHeight: barHeight * scale,
         scaledFontSize: fontSize * scale,
         scaledTextRunBaseFontSize: fontSize * scale,
@@ -80,7 +122,65 @@ export function setupCanvas(canvas, displayWidth, displayHeight, scale = 1) {
 export function drawBasePhoto(ctx, image, { displayWidth, displayHeight, layoutMetrics, backgroundColor }) {
     ctx.fillStyle = backgroundColor;
     ctx.fillRect(0, 0, displayWidth, displayHeight);
-    ctx.drawImage(image, 0, 0, layoutMetrics.scaledImageWidth, layoutMetrics.scaledImageHeight);
+    ctx.drawImage(
+        image,
+        layoutMetrics.scaledPhotoArea.x,
+        layoutMetrics.scaledPhotoArea.y,
+        layoutMetrics.scaledPhotoArea.width,
+        layoutMetrics.scaledPhotoArea.height
+    );
+}
+
+function drawCoverImage(ctx, image, area) {
+    const imageWidth = image?.naturalWidth ?? image?.width ?? 0;
+    const imageHeight = image?.naturalHeight ?? image?.height ?? 0;
+    if (!imageWidth || !imageHeight || !area.width || !area.height) {
+        return;
+    }
+
+    const scale = Math.max(area.width / imageWidth, area.height / imageHeight);
+    const drawWidth = imageWidth * scale;
+    const drawHeight = imageHeight * scale;
+    const drawX = area.x + (area.width - drawWidth) / 2;
+    const drawY = area.y + (area.height - drawHeight) / 2;
+
+    ctx.drawImage(image, drawX, drawY, drawWidth, drawHeight);
+}
+
+export function drawSurfaceBackground(ctx, image, area, surface = {}) {
+    if (!area || area.width <= 0 || area.height <= 0) {
+        return;
+    }
+
+    const type = surface.type ?? 'solid';
+
+    ctx.save();
+    ctx.beginPath();
+    ctx.rect(area.x, area.y, area.width, area.height);
+    ctx.clip();
+
+    if (type === 'photoBlur') {
+        const blur = Number.isFinite(Number(surface.blur)) ? Number(surface.blur) : 24;
+        const saturate = Number.isFinite(Number(surface.saturate)) ? Number(surface.saturate) : 1.2;
+        const brightness = Number.isFinite(Number(surface.brightness)) ? Number(surface.brightness) : 1;
+        ctx.filter = `blur(${blur}px) saturate(${saturate}) brightness(${brightness})`;
+        drawCoverImage(ctx, image, area);
+        ctx.filter = 'none';
+
+        if (surface.overlayColor) {
+            ctx.globalAlpha = Number.isFinite(Number(surface.overlayOpacity))
+                ? Number(surface.overlayOpacity)
+                : 0.5;
+            ctx.fillStyle = surface.overlayColor;
+            ctx.fillRect(area.x, area.y, area.width, area.height);
+            ctx.globalAlpha = 1;
+        }
+    } else {
+        ctx.fillStyle = surface.color ?? '#ffffff';
+        ctx.fillRect(area.x, area.y, area.width, area.height);
+    }
+
+    ctx.restore();
 }
 
 export function scaleByShortEdge(canvasSize, ratio) {
@@ -204,6 +304,9 @@ export function createRuntimeHelpers({ canvas, ctx, canvasSize }) {
         },
         safeArea(inset) {
             return safeArea(canvasSize, inset);
+        },
+        drawSurface(area, surface, image) {
+            return drawSurfaceBackground(ctx, image, area, surface);
         },
     };
 }
@@ -549,31 +652,6 @@ export async function renderTemplateFrame(canvas, image, template, rawConfig, op
 
     const { ctx } = canvasSetup;
 
-    drawBasePhoto(ctx, image, {
-        displayWidth,
-        displayHeight,
-        layoutMetrics,
-        backgroundColor: template.backgroundColor,
-    });
-
-    const area = {
-        x: 0,
-        y: layoutMetrics.scaledImageHeight,
-        width: layoutMetrics.scaledImageWidth,
-        height: layoutMetrics.scaledBarHeight,
-    };
-
-    const canvasSize = {
-        width: displayWidth,
-        height: displayHeight,
-    };
-
-    const runtime = createRuntimeHelpers({
-        canvas,
-        ctx,
-        canvasSize,
-    });
-
     const resolveInput = await buildTemplateResolveInput({
         photo: options.photo ?? {
             file: null,
@@ -588,12 +666,54 @@ export async function renderTemplateFrame(canvas, image, template, rawConfig, op
         global: globalSettings,
     });
     const data = template.resolveData(resolveInput);
+    const appearance = resolveTemplateAppearance(template, config);
+    const canvasBackground = appearance.canvasBackground ?? {
+        type: 'solid',
+        color: appearance.backgroundColor ?? data?.backgroundColor ?? template.backgroundColor,
+    };
+
+    drawSurfaceBackground(ctx, image, {
+        x: 0,
+        y: 0,
+        width: displayWidth,
+        height: displayHeight,
+    }, canvasBackground);
+    ctx.drawImage(
+        image,
+        layoutMetrics.scaledPhotoArea.x,
+        layoutMetrics.scaledPhotoArea.y,
+        layoutMetrics.scaledPhotoArea.width,
+        layoutMetrics.scaledPhotoArea.height
+    );
+
+    const area = {
+        x: 0,
+        y: layoutMetrics.scaledPhotoArea.y + layoutMetrics.scaledPhotoArea.height,
+        width: displayWidth,
+        height: Math.max(displayHeight - (layoutMetrics.scaledPhotoArea.y + layoutMetrics.scaledPhotoArea.height), 0),
+    };
+
+    const canvasSize = {
+        width: displayWidth,
+        height: displayHeight,
+    };
+
+    const runtime = createRuntimeHelpers({
+        canvas,
+        ctx,
+        canvasSize,
+    });
+
+    if (appearance.barBackground) {
+        drawSurfaceBackground(ctx, image, area, appearance.barBackground);
+    }
 
     template.render(ctx, {
         photo: resolveInput.photo,
         area,
         config,
         data,
+        appearance,
         resolveInput,
         metrics: layoutMetrics,
         canvasSize,
@@ -610,6 +730,7 @@ export async function renderTemplateFrame(canvas, image, template, rawConfig, op
         processedCanvas: processedCanvas === canvas ? canvas : processedCanvas,
         config,
         data,
+        appearance,
         global: globalSettings,
         resolveInput,
         metrics: layoutMetrics,

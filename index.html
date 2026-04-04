@@ -43,8 +43,8 @@
                 <div class="export-field export-quality-field">
                     <label for="export-quality">JPEG 质量</label>
                     <div class="export-quality-control">
-                        <input type="range" id="export-quality" min="0.1" max="1" step="0.01" value="0.92">
-                        <span class="export-quality-value" id="export-quality-value">92%</span>
+                        <input type="range" id="export-quality" min="0.1" max="1" step="0.01" value="1">
+                        <span class="export-quality-value" id="export-quality-value">100%</span>
                     </div>
                 </div>
                 <button class="btn btn-primary" id="btn-export">
@@ -62,34 +62,36 @@
 
     <!-- 主体区域 -->
     <main class="main-content">
-        <!-- 左侧预览区 -->
-        <section class="preview-area" id="preview-area">
-            <div class="upload-guide" id="upload-guide">
-                <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none"
-                    stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
-                    <rect x="3" y="3" width="18" height="18" rx="2" ry="2" />
-                    <circle cx="8.5" cy="8.5" r="1.5" />
-                    <polyline points="21 15 16 10 5 21" />
-                </svg>
-                <p>拖拽或点击上传照片</p>
-                <p class="upload-hint">支持 JPG / PNG / WebP 格式</p>
-            </div>
-            <canvas id="preview-canvas"></canvas>
-        </section>
+        <div class="workspace-column">
+            <!-- 左侧预览区 -->
+            <section class="preview-area" id="preview-area">
+                <div class="upload-guide" id="upload-guide">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none"
+                        stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                        <rect x="3" y="3" width="18" height="18" rx="2" ry="2" />
+                        <circle cx="8.5" cy="8.5" r="1.5" />
+                        <polyline points="21 15 16 10 5 21" />
+                    </svg>
+                    <p>拖拽或点击上传照片</p>
+                    <p class="upload-hint">支持 JPG / PNG / WebP 格式</p>
+                </div>
+                <canvas id="preview-canvas"></canvas>
+            </section>
 
-        <!-- 右侧相框选择器 -->
-        <aside class="frame-selector" id="frame-selector">
-            <h2 class="selector-title">相框选择器</h2>
-            <div class="selector-list" id="selector-list">
-                <!-- 由 JS 动态生成模板卡片 -->
-            </div>
+            <!-- 底部相框选择器 -->
+            <section class="frame-selector" id="frame-selector">
+                <h2 class="selector-title">相框选择器</h2>
+                <div class="selector-list" id="selector-list">
+                    <!-- 由 JS 动态生成模板卡片 -->
+                </div>
+            </section>
+        </div>
+
+        <!-- 右侧设置区 -->
+        <aside class="text-editor" id="text-editor">
+            <!-- 由 JS 动态生成输入字段 -->
         </aside>
     </main>
-
-    <!-- 底部文字编辑区 -->
-    <footer class="text-editor" id="text-editor">
-        <!-- 由 JS 动态生成输入字段 -->
-    </footer>
 
     <!-- 隐藏的文件输入 -->
     <input type="file" id="file-input" accept="image/*" hidden>

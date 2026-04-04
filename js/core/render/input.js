@@ -311,11 +311,11 @@ export function createGlobalRenderSettings({
             mimeType: compression.mimeType ?? 'image/png',
             quality: Number.isFinite(Number(compression.quality))
                 ? Number(compression.quality)
-                : 0.92,
+                : 1,
         }
         : {
             mimeType: 'image/png',
-            quality: 0.92,
+            quality: 1,
         };
 
     return {

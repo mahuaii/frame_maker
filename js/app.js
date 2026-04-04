@@ -4,17 +4,18 @@
  */
 
 import { templates, getTemplateById } from './templates.js';
+import { resolveTemplateAppearance } from './core/templates/registry.js';
 import { loadTemplateConfig, saveTemplateConfig } from './core/templates/config-store.js';
 import { resolveTemplateConfig } from './core/templates/registry.js';
 import { loadRuntimeFonts } from './core/fonts/index.js';
-import { renderFrame, calculateFrameMetrics, calculatePreviewScale, createPhotoSource } from './renderer.js';
+import { renderFrame, calculateFrameMetrics, createPhotoSource } from './renderer.js';
 
 // ============================================
 // 状态管理
 // ============================================
 let currentImage = null;           // HTMLImageElement | null
 let currentPhoto = null;           // Normalized photo source | null
-let selectedTemplateId = 'white';  // 默认选白底模板
+let selectedTemplateId = 'classic-frame';  // 默认选经典相框模板
 let fieldValues = {};              // Record<string, string>
 const THUMBNAIL_MAX_WIDTH = 180;
 const THUMBNAIL_MAX_HEIGHT = 135;
@@ -24,7 +25,7 @@ const DEFAULT_EXPORT_SETTINGS = {
     sizePreset: 'original',
     customWidth: '',
     customHeight: '',
-    jpegQuality: 0.92,
+    jpegQuality: 1,
 };
 const MIN_JPEG_QUALITY = 0.1;
 const MAX_JPEG_QUALITY = 1;
@@ -179,19 +180,50 @@ function resolveExportResize(template) {
     return getPresetResizeDimensions(Number(exportSettings.sizePreset), baseDimensions);
 }
 
+function calculateContainedSize(sourceWidth, sourceHeight, containerWidth, containerHeight, padding = 0.9) {
+    if (!sourceWidth || !sourceHeight || !containerWidth || !containerHeight) {
+        return null;
+    }
+
+    const maxWidth = containerWidth * padding;
+    const maxHeight = containerHeight * padding;
+    const scale = Math.min(maxWidth / sourceWidth, maxHeight / sourceHeight, 1);
+
+    return {
+        width: Math.max(Math.round(sourceWidth * scale), 1),
+        height: Math.max(Math.round(sourceHeight * scale), 1),
+    };
+}
+
 function createThumbnailElement(template) {
     const thumbnailImg = document.createElement('img');
     thumbnailImg.className = 'template-thumbnail';
     thumbnailImg.alt = template.label;
-    thumbnailImg.src = `thumbnails/${template.id}_thumbnail.png?v=${ASSET_VERSION}`;
     thumbnailImg.width = THUMBNAIL_MAX_WIDTH;
     thumbnailImg.height = THUMBNAIL_MAX_HEIGHT;
+    const thumbnailSources = [
+        `thumbnails/${template.id}_thumbnail.png?v=${ASSET_VERSION}`,
+        `thumbnails/${template.id}_thumbnail.jpg?v=${ASSET_VERSION}`,
+    ];
+    let sourceIndex = 0;
+
     thumbnailImg.addEventListener('error', () => {
+        sourceIndex += 1;
+        if (sourceIndex < thumbnailSources.length) {
+            thumbnailImg.src = thumbnailSources[sourceIndex];
+            return;
+        }
+
+        const appearance = resolveTemplateAppearance(template, template.defaultConfig);
+        const fallbackBackground = appearance.canvasBackground?.color
+            ?? appearance.backgroundColor
+            ?? template.backgroundColor;
         thumbnailImg.removeAttribute('src');
-        thumbnailImg.style.background = template.backgroundColor;
+        thumbnailImg.style.background = fallbackBackground;
         thumbnailImg.style.width = `${THUMBNAIL_MAX_WIDTH}px`;
         thumbnailImg.style.height = `${THUMBNAIL_MAX_HEIGHT}px`;
-    }, { once: true });
+    });
+    thumbnailImg.src = thumbnailSources[sourceIndex];
 
     return thumbnailImg;
 }
@@ -302,6 +334,38 @@ function createFieldInput(field) {
             break;
         }
         case 'select': {
+            if (field.control === 'color-buttons') {
+                input = document.createElement('div');
+                input.className = 'option-button-group';
+                input.setAttribute('role', 'radiogroup');
+
+                const selectedValue = fieldValues[field.key] ?? field.defaultValue ?? '';
+
+                (field.options ?? []).forEach((option) => {
+                    const button = document.createElement('button');
+                    button.type = 'button';
+                    button.className = 'option-button' + (option.value === selectedValue ? ' selected' : '');
+                    button.dataset.value = option.value;
+                    button.setAttribute('role', 'radio');
+                    button.setAttribute('aria-checked', option.value === selectedValue ? 'true' : 'false');
+                    button.setAttribute('aria-label', option.label);
+                    button.style.setProperty('--option-swatch', option.swatch ?? '#111111');
+
+                    button.addEventListener('click', () => {
+                        const group = button.parentElement;
+                        group?.querySelectorAll('.option-button').forEach((item) => {
+                            const isSelected = item === button;
+                            item.classList.toggle('selected', isSelected);
+                            item.setAttribute('aria-checked', isSelected ? 'true' : 'false');
+                        });
+                        commitFieldValue(field, option.value);
+                    });
+
+                    input.appendChild(button);
+                });
+                break;
+            }
+
             input = document.createElement('select');
             (field.options ?? []).forEach((option) => {
                 const optionElement = document.createElement('option');
@@ -425,20 +489,25 @@ async function updatePreview() {
     const containerWidth = previewArea.clientWidth;
     const containerHeight = previewArea.clientHeight;
 
-    // 计算缩放比例
-    const scale = calculatePreviewScale(
-        currentImage,
-        template,
+    await renderFrame(canvas, currentImage, template, fieldValues, {
+        scale: 1,
+        mode: 'preview',
+        photo: currentPhoto,
+    });
+
+    const previewSize = calculateContainedSize(
+        canvas.width,
+        canvas.height,
         containerWidth,
         containerHeight
     );
 
-    // 渲染预览
-    await renderFrame(canvas, currentImage, template, fieldValues, {
-        scale,
-        mode: 'preview',
-        photo: currentPhoto,
-    });
+    if (!previewSize) {
+        return;
+    }
+
+    canvas.style.width = `${previewSize.width}px`;
+    canvas.style.height = `${previewSize.height}px`;
 }
 
 // ============================================

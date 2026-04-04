@@ -253,9 +253,17 @@ body {
     overflow: hidden;
 }
 
+.workspace-column {
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+}
+
 /* === 预览区 === */
 .preview-area {
-    flex: 3;
+    flex: 1;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -321,15 +329,15 @@ body {
 
 /* === 相框选择器 === */
 .frame-selector {
-    width: 240px;
     flex-shrink: 0;
+    min-height: 72px;
     background: var(--color-bg-primary);
-    border-left: 1px solid var(--color-divider);
-    padding: var(--spacing-4);
-    overflow-y: auto;
+    border-top: 1px solid transparent;
+    padding: var(--spacing-3) var(--spacing-4);
+    overflow: hidden;
     display: flex;
     flex-direction: column;
-    gap: var(--spacing-3);
+    gap: var(--spacing-2);
 }
 
 .selector-title {
@@ -345,10 +353,14 @@ body {
 
 .selector-list {
     display: flex;
-    flex-direction: column;
+    flex-direction: row;
     align-items: flex-start;
     gap: var(--spacing-2);
     width: 100%;
+    overflow-x: auto;
+    overflow-y: hidden;
+    padding-bottom: var(--spacing-1);
+    scrollbar-width: thin;
 }
 
 /* 模板卡片 */
@@ -357,7 +369,8 @@ body {
     align-items: center;
     justify-content: center;
     width: fit-content;
-    max-width: 100%;
+    max-width: none;
+    flex: 0 0 auto;
     padding: 0;
     border: 2px solid var(--color-template-border);
     border-radius: var(--radius-sm);
@@ -377,26 +390,30 @@ body {
 }
 
 .template-thumbnail {
-    max-width: 100%;
+    max-width: none;
     height: auto;
     display: block;
 }
 
-/* === 底部文字编辑区 === */
+/* === 右侧设置区 === */
 .text-editor {
     display: flex;
-    align-items: center;
-    gap: var(--spacing-6);
+    flex-direction: column;
+    align-items: stretch;
+    gap: var(--spacing-4);
     padding: var(--spacing-4) var(--spacing-6);
     background: var(--color-bg-primary);
-    border-top: 1px solid var(--color-divider);
+    border-left: 1px solid var(--color-divider);
     flex-shrink: 0;
-    flex-wrap: wrap;
+    flex-wrap: nowrap;
+    width: 272px;
+    overflow-y: auto;
 }
 
 .field-group {
     display: flex;
-    align-items: center;
+    flex-direction: column;
+    align-items: stretch;
     gap: var(--spacing-2);
 }
 
@@ -414,7 +431,7 @@ body {
 .field-group input,
 .field-group textarea,
 .field-group select {
-    width: 100px;
+    width: 100%;
     padding: var(--spacing-1) var(--spacing-2);
     border: 1px solid var(--color-control-border);
     border-radius: var(--radius-sm);
@@ -426,15 +443,46 @@ body {
 }
 
 .field-group textarea {
-    width: 200px;
     min-height: 72px;
     resize: vertical;
 }
 
+.option-button-group {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+}
+
+.option-button {
+    width: 28px;
+    height: 28px;
+    padding: 0;
+    border: 1px solid rgba(15, 23, 42, 0.16);
+    border-radius: 999px;
+    background: var(--option-swatch);
+    cursor: pointer;
+    transition: border-color 0.15s ease, transform 0.15s ease, box-shadow 0.15s ease;
+}
+
+.option-button:hover {
+    transform: translateY(-1px);
+}
+
+.option-button.selected {
+    border-color: rgba(15, 23, 42, 0.45);
+    box-shadow: 0 0 12px 4px color-mix(in srgb, var(--color-accent) 34%, transparent);
+}
+
+.option-button:focus-visible {
+    border-color: var(--color-border-focus);
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+}
+
 .field-group input[type="color"] {
-    width: 48px;
+    width: 56px;
     padding: 2px;
     cursor: pointer;
+    align-self: flex-start;
 }
 
 .field-group input[type="checkbox"] {
@@ -442,6 +490,7 @@ body {
     min-width: 18px;
     min-height: 18px;
     padding: 0;
+    align-self: flex-start;
 }
 
 .field-group input:focus,
@@ -465,5 +514,15 @@ body {
 
     .toolbar-actions {
         justify-content: flex-start;
+    }
+
+    .main-content {
+        flex-direction: column;
+    }
+
+    .text-editor {
+        width: 100%;
+        border-left: none;
+        border-top: 1px solid var(--color-divider);
     }
 }
