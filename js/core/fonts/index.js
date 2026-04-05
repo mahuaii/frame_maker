@@ -5,7 +5,13 @@ const FONT_REGISTRY = {
         id: 'angieSansStd',
         label: 'Angie Sans Std',
         family: 'Angie Sans Std',
-        source: 'url("./assets/fonts/Angie_Sans_Std.otf") format("opentype")',
+        source: 'local("Angie Sans Std"), local("AngieSansStd")',
+    },
+    miSans: {
+        id: 'miSans',
+        label: 'MiSans',
+        family: 'MiSans',
+        source: 'local("MiSans"), local("MiSans Regular"), local("MiSans-Regular"), local("MiSans Normal"), local("MiSans-Normal")',
     },
     systemSans: {
         id: 'systemSans',

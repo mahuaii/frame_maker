@@ -2,8 +2,7 @@
 @font-face {
     font-family: 'MiSans';
     src: local('MiSans Regular'),
-        local('MiSans-Regular'),
-        url('../assets/fonts/MiSans-Regular.otf') format('opentype');
+        local('MiSans-Regular');
     font-weight: 400;
     font-style: normal;
     font-display: swap;
@@ -12,8 +11,7 @@
 @font-face {
     font-family: 'MiSans';
     src: local('MiSans Light'),
-        local('MiSans-Light'),
-        url('../assets/fonts/MiSans-Light.otf') format('opentype');
+        local('MiSans-Light');
     font-weight: 300;
     font-style: normal;
     font-display: swap;
