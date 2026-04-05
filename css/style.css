@@ -517,14 +517,14 @@ body {
     border-radius: var(--radius-sm);
     box-sizing: border-box;
     cursor: pointer;
-    transition: all 0.15s ease;
+    transition: border-color 0.15s ease, transform 0.15s ease, box-shadow 0.15s ease;
     background: transparent;
     overflow: hidden;
-    opacity: 1;
 }
 
 .template-card:hover {
     border-color: var(--color-template-border-hover);
+    transform: translateY(-1px);
 }
 
 .template-card.selected {
@@ -657,12 +657,11 @@ body {
     border-radius: var(--radius-sm);
     background: var(--option-swatch);
     cursor: pointer;
-    transition: border-color 0.15s ease, transform 0.15s ease, box-shadow 0.15s ease, opacity 0.15s ease;
+    transition: border-color 0.15s ease, transform 0.15s ease, box-shadow 0.15s ease;
 }
 
 .option-button:hover {
     transform: translateY(-1px);
-    opacity: 0.92;
 }
 
 .option-button.selected {
