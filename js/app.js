@@ -75,12 +75,19 @@ function formatJpegQualityLabel(quality) {
     return `${Math.round(clampJpegQuality(quality) * 100)}%`;
 }
 
+function syncJpegQualityTrack(quality) {
+    const normalizedQuality = clampJpegQuality(quality);
+    const progress = ((normalizedQuality - MIN_JPEG_QUALITY) / (MAX_JPEG_QUALITY - MIN_JPEG_QUALITY)) * 100;
+    exportQualityInput.style.setProperty('--range-progress', `${progress}%`);
+}
+
 function syncExportControls() {
     exportSizePreset.value = exportSettings.sizePreset;
     exportWidthInput.value = exportSettings.customWidth;
     exportHeightInput.value = exportSettings.customHeight;
     exportQualityInput.value = String(exportSettings.jpegQuality);
     exportQualityValue.textContent = formatJpegQualityLabel(exportSettings.jpegQuality);
+    syncJpegQualityTrack(exportSettings.jpegQuality);
     exportCustomSize.classList.toggle('hidden', exportSettings.sizePreset !== 'custom');
 }
 
@@ -272,18 +279,23 @@ function renderTextEditor() {
     if (!template) return;
 
     textEditor.innerHTML = '';
+    const orderedFields = [
+        ...template.fields.filter((field) => field.type !== 'toggle'),
+        ...template.fields.filter((field) => field.type === 'toggle'),
+    ];
 
-    template.fields.forEach(field => {
+    orderedFields.forEach(field => {
         const fieldGroup = document.createElement('div');
         fieldGroup.className = 'field-group';
 
-        const label = document.createElement('label');
-        label.textContent = field.label;
-        label.htmlFor = `field-${field.key}`;
-
         const input = createFieldInput(field);
 
-        fieldGroup.appendChild(label);
+        if (field.type !== 'toggle') {
+            const label = document.createElement('label');
+            label.textContent = field.label;
+            label.htmlFor = `field-${field.key}`;
+            fieldGroup.appendChild(label);
+        }
         fieldGroup.appendChild(input);
         textEditor.appendChild(fieldGroup);
     });
@@ -299,17 +311,37 @@ function commitFieldValue(field, nextValue) {
     updatePreview();
 }
 
+function syncTextareaHeight(textarea) {
+    if (!(textarea instanceof HTMLTextAreaElement)) return;
+
+    textarea.style.height = 'auto';
+    textarea.style.height = `${textarea.scrollHeight}px`;
+}
+
+function createAutoSizingTextarea(field, defaultRows = 1) {
+    const input = document.createElement('textarea');
+    input.rows = field.rows ?? defaultRows;
+    input.value = fieldValues[field.key] ?? field.defaultValue ?? '';
+    input.dataset.autoResize = 'true';
+
+    input.addEventListener('input', (e) => {
+        syncTextareaHeight(input);
+        commitFieldValue(field, e.target.value);
+    });
+
+    requestAnimationFrame(() => {
+        syncTextareaHeight(input);
+    });
+
+    return input;
+}
+
 function createFieldInput(field) {
     let input;
 
     switch (field.type) {
         case 'textarea': {
-            input = document.createElement('textarea');
-            input.rows = field.rows ?? 3;
-            input.value = fieldValues[field.key] ?? field.defaultValue ?? '';
-            input.addEventListener('input', (e) => {
-                commitFieldValue(field, e.target.value);
-            });
+            input = createAutoSizingTextarea(field, 3);
             break;
         }
         case 'number': {
@@ -380,22 +412,27 @@ function createFieldInput(field) {
             break;
         }
         case 'toggle': {
-            input = document.createElement('input');
-            input.type = 'checkbox';
-            input.checked = Boolean(fieldValues[field.key] ?? field.defaultValue);
-            input.addEventListener('change', (e) => {
-                commitFieldValue(field, e.target.checked);
+            const currentValue = Boolean(fieldValues[field.key] ?? field.defaultValue);
+            input = document.createElement('button');
+            input.type = 'button';
+            input.className = 'toggle-pill' + (currentValue ? ' is-active' : '');
+            input.setAttribute('role', 'switch');
+            input.setAttribute('aria-checked', currentValue ? 'true' : 'false');
+            const text = document.createElement('span');
+            text.className = 'toggle-pill-text';
+            text.textContent = field.label;
+            input.appendChild(text);
+            input.addEventListener('click', () => {
+                const nextValue = input.getAttribute('aria-checked') !== 'true';
+                input.classList.toggle('is-active', nextValue);
+                input.setAttribute('aria-checked', nextValue ? 'true' : 'false');
+                commitFieldValue(field, nextValue);
             });
             break;
         }
         case 'text':
         default: {
-            input = document.createElement('input');
-            input.type = 'text';
-            input.value = fieldValues[field.key] ?? field.defaultValue ?? '';
-            input.addEventListener('input', (e) => {
-                commitFieldValue(field, e.target.value);
-            });
+            input = createAutoSizingTextarea(field, 1);
             break;
         }
     }
@@ -631,14 +668,6 @@ function bindEvents() {
         }
         // 重置 input，允许重复选择同一文件
         fileInput.value = '';
-    });
-
-    // 预览区点击（无图片时触发上传）
-    previewArea.addEventListener('click', (e) => {
-        // 避免点击 canvas 时重复触发
-        if (!currentImage && e.target !== canvas) {
-            fileInput.click();
-        }
     });
 
     // 设置拖拽上传

@@ -30,7 +30,7 @@ export const storyExifTemplateFields = [
     },
     {
         key: 'showLens',
-        label: '显示镜头',
+        label: '镜头',
         type: 'toggle',
         defaultValue: true,
     },

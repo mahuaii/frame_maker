@@ -8,7 +8,7 @@
     <meta http-equiv="Pragma" content="no-cache">
     <meta http-equiv="Expires" content="0">
     <title>Frame Maker</title>
-    <link rel="stylesheet" href="css/style.css?v=20260405-184200">
+    <link rel="stylesheet" href="css/style.css?v=20260405-185600">
 </head>
 
 <body>
@@ -26,8 +26,7 @@
                 上传照片
             </button>
             <div class="export-controls">
-                <div class="export-field">
-                    <label for="export-size-preset">导出尺寸</label>
+                <div class="export-field export-size-field">
                     <select id="export-size-preset">
                         <option value="original">原始尺寸</option>
                         <option value="1080">长边 1080px</option>
@@ -72,7 +71,7 @@
                         <circle cx="8.5" cy="8.5" r="1.5" />
                         <polyline points="21 15 16 10 5 21" />
                     </svg>
-                    <p>拖拽或点击上传照片</p>
+                    <p>拖拽上传照片</p>
                     <p class="upload-hint">支持 JPG / PNG / WebP 格式</p>
                 </div>
                 <canvas id="preview-canvas"></canvas>
@@ -96,7 +95,7 @@
     <!-- 隐藏的文件输入 -->
     <input type="file" id="file-input" accept="image/*" hidden>
 
-    <script type="module" src="js/app.js?v=20260405-184200"></script>
+    <script type="module" src="js/app.js?v=20260405-185600"></script>
 </body>
 
 </html>
