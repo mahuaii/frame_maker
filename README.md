@@ -70,14 +70,18 @@ http://localhost:8001
 
 ## 字体说明
 
-项目当前依赖本机可用字体，不强制打包字体文件。
+项目优先使用本机已安装字体；如果你在 `assets/fonts/` 放入对应字体文件，也会自动作为回退来源加载。
 
 - UI 样式优先使用本地 `MiSans`
 - 英文展示字体优先使用本地 `Angie Sans Std`
 - 模板字体下拉现已提供 `MiSans` 选项，可用于导出文字渲染
 - 当本机没有对应字体时，会回退到系统 sans-serif 字体栈
 
-仓库中的 `.gitignore` 已忽略 `assets/fonts/`，因此如果你本地有私有字体资源，不会被一并提交。
+仓库当前会提交 MiSans 字体文件，用于跨机器保持一致；`Angie Sans Std` 仍按本地私有字体处理，不会随仓库提交。当前支持的本地回退文件名为：
+
+- `assets/fonts/MiSans-Regular.otf`
+- `assets/fonts/MiSans-Light.otf`
+- `assets/fonts/Angie_Sans_Std.otf`
 
 ### MiSans 使用说明
 

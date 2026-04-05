@@ -1,17 +1,36 @@
 const SYSTEM_SANS_STACK = '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif';
 
+function resolveFontAssetUrl(relativePath) {
+    return new URL(relativePath, import.meta.url).href;
+}
+
+function buildFontSource(localNames = [], assetRelativePath = '') {
+    const localSources = localNames.map((name) => `local("${name}")`);
+    const fileSource = assetRelativePath
+        ? `url("${resolveFontAssetUrl(assetRelativePath)}") format("opentype")`
+        : '';
+
+    return [...localSources, fileSource].filter(Boolean).join(', ');
+}
+
 const FONT_REGISTRY = {
     angieSansStd: {
         id: 'angieSansStd',
         label: 'Angie Sans Std',
         family: 'Angie Sans Std',
-        source: 'local("Angie Sans Std"), local("AngieSansStd")',
+        source: buildFontSource(
+            ['Angie Sans Std', 'AngieSansStd'],
+            '../../../assets/fonts/Angie_Sans_Std.otf'
+        ),
     },
     miSans: {
         id: 'miSans',
         label: 'MiSans',
         family: 'MiSans',
-        source: 'local("MiSans"), local("MiSans Regular"), local("MiSans-Regular"), local("MiSans Normal"), local("MiSans-Normal")',
+        source: buildFontSource(
+            ['MiSans', 'MiSans Regular', 'MiSans-Regular', 'MiSans Normal', 'MiSans-Normal'],
+            '../../../assets/fonts/MiSans-Regular.otf'
+        ),
     },
     systemSans: {
         id: 'systemSans',

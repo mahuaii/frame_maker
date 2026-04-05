@@ -1,3 +1,5 @@
 .DS_Store
 .playwright-cli/
-assets/fonts/
+assets/fonts/*
+!assets/fonts/MiSans-Light.otf
+!assets/fonts/MiSans-Regular.otf
