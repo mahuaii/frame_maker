@@ -476,6 +476,23 @@ function setupDragDrop() {
     });
 }
 
+function setupSelectorScroll() {
+    selectorList.addEventListener('wheel', (e) => {
+        const canScrollHorizontally = selectorList.scrollWidth > selectorList.clientWidth;
+        if (!canScrollHorizontally) {
+            return;
+        }
+
+        const delta = Math.abs(e.deltaY) >= Math.abs(e.deltaX) ? e.deltaY : e.deltaX;
+        if (!delta) {
+            return;
+        }
+
+        selectorList.scrollLeft += delta;
+        e.preventDefault();
+    }, { passive: false });
+}
+
 // ============================================
 // 实时预览
 // ============================================
@@ -626,6 +643,7 @@ function bindEvents() {
 
     // 设置拖拽上传
     setupDragDrop();
+    setupSelectorScroll();
 
     // 窗口 resize
     window.addEventListener('resize', () => {
