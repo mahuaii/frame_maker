@@ -6,9 +6,7 @@ import { storyExifTemplateSchema } from './schema.js';
 const storyExifTemplate = defineTemplate({
     ...storyExifTemplateSchema,
     resolveData: resolveStoryExifTemplateData,
-    render(ctx, args) {
-        renderStoryExifTemplate(ctx, args);
-    },
+    render: renderStoryExifTemplate,
 });
 
 export default storyExifTemplate;

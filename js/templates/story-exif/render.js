@@ -1,29 +1,17 @@
 import { buildCanvasFont } from '../../core/fonts/index.js';
-
-function joinMeta(parts) {
-    return parts.filter(Boolean).join('   ');
-}
-
-function insetArea(area, horizontalInset, verticalInset) {
-    return {
-        x: area.x + horizontalInset,
-        y: area.y + verticalInset,
-        width: Math.max(area.width - horizontalInset * 2, 0),
-        height: Math.max(area.height - verticalInset * 2, 0),
-    };
-}
+import { insetRect, joinMetaParts } from '../shared.js';
 
 export function renderStoryExifTemplate(ctx, args) {
     const { area, data, metrics, runtime } = args;
-    const contentArea = insetArea(
+    const contentArea = insetRect(
         area,
         Math.max(runtime.scaleByShortEdge(0.018), 20),
         Math.max(area.height * 0.16, 12)
     );
     const titleText = data.title || 'Untitled';
     const subtitleText = data.subtitle || '';
-    const primaryMeta = data.hasExif ? joinMeta(data.metaPrimary) : data.fallbackNote;
-    const secondaryMeta = data.hasExif ? joinMeta(data.metaSecondary) : '';
+    const primaryMeta = data.hasExif ? joinMetaParts(data.metaPrimary, '   ') : data.fallbackNote;
+    const secondaryMeta = data.hasExif ? joinMetaParts(data.metaSecondary, '   ') : '';
 
     const titleFit = runtime.fitText({
         text: titleText,

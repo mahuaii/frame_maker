@@ -1,4 +1,4 @@
-import { normalizeTemplateConfig } from './fields.js';
+import { resolveTemplateConfig } from './registry.js';
 
 function getStorageKey(templateId) {
     return `template:${templateId}:config`;
@@ -10,23 +10,20 @@ function canUseLocalStorage() {
 
 export function loadTemplateConfig(template) {
     if (!canUseLocalStorage()) {
-        return { ...template.defaultConfig };
+        return resolveTemplateConfig(template);
     }
 
     try {
         const rawValue = window.localStorage.getItem(getStorageKey(template.id));
         if (!rawValue) {
-            return { ...template.defaultConfig };
+            return resolveTemplateConfig(template);
         }
 
         const parsedValue = JSON.parse(rawValue);
-        return normalizeTemplateConfig(template.fields, {
-            ...template.defaultConfig,
-            ...parsedValue,
-        });
+        return resolveTemplateConfig(template, parsedValue);
     } catch (error) {
         console.warn(`Failed to load config for template "${template.id}".`, error);
-        return { ...template.defaultConfig };
+        return resolveTemplateConfig(template);
     }
 }
 
@@ -36,10 +33,7 @@ export function saveTemplateConfig(template, rawConfig) {
     }
 
     try {
-        const normalizedConfig = normalizeTemplateConfig(template.fields, {
-            ...template.defaultConfig,
-            ...rawConfig,
-        });
+        const normalizedConfig = resolveTemplateConfig(template, rawConfig);
 
         window.localStorage.setItem(
             getStorageKey(template.id),

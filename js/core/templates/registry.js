@@ -1,6 +1,14 @@
 import { normalizeTemplateConfig } from './fields.js';
 import { createAppearanceThemes, getAppearanceColor, resolveTemplateAppearance } from './appearance.js';
 
+function defaultResolveTemplateData() {
+    return {};
+}
+
+function defaultRenderTemplate() {
+    // Templates without custom overlays rely on runtime background/photo placement only.
+}
+
 export function defineTemplate(template) {
     if (!template?.id) {
         throw new Error('Template module requires a stable id.');
@@ -18,13 +26,12 @@ export function defineTemplate(template) {
         throw new Error(`Template "${template.id}" requires a fields array.`);
     }
 
-    if (typeof template.resolveData !== 'function') {
-        throw new Error(`Template "${template.id}" requires a resolveData(input) function.`);
-    }
-
-    if (typeof template.render !== 'function') {
-        throw new Error(`Template "${template.id}" requires a render(ctx, args) function.`);
-    }
+    const resolveData = typeof template.resolveData === 'function'
+        ? template.resolveData
+        : defaultResolveTemplateData;
+    const render = typeof template.render === 'function'
+        ? template.render
+        : defaultRenderTemplate;
 
     if (template.appearanceThemes !== undefined) {
         const themes = template.appearanceThemes;
@@ -39,7 +46,11 @@ export function defineTemplate(template) {
         }
     }
 
-    return Object.freeze(template);
+    return Object.freeze({
+        ...template,
+        resolveData,
+        render,
+    });
 }
 
 export function createTemplateRegistry(templateModules) {

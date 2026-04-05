@@ -1,7 +1,3 @@
-function joinMeta(parts) {
-    return parts.filter(Boolean).join('  ');
-}
-
 function formatShutterText(shutter) {
     if (!shutter) {
         return null;
@@ -21,7 +17,6 @@ export function resolveBottomInfoBarTemplateData(input) {
 
     return {
         cameraText: exif?.model || exif?.formatted?.camera || 'Unknown Camera',
-        metaText: joinMeta(metaItems),
         metaItems,
     };
 }

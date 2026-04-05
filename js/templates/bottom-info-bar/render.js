@@ -1,18 +1,10 @@
 import { buildCanvasFont } from '../../core/fonts/index.js';
 import { getAppearanceColor } from '../../core/templates/registry.js';
-
-function insetArea(area, horizontalInset, verticalInset) {
-    return {
-        x: area.x + horizontalInset,
-        y: area.y + verticalInset,
-        width: Math.max(area.width - horizontalInset * 2, 0),
-        height: Math.max(area.height - verticalInset * 2, 0),
-    };
-}
+import { insetRect } from '../shared.js';
 
 export function renderBottomInfoBarTemplate(ctx, args) {
     const { area, data, appearance, metrics, runtime } = args;
-    const contentArea = insetArea(
+    const contentArea = insetRect(
         area,
         Math.max(runtime.scaleByShortEdge(0.028), 20),
         Math.max(area.height * 0.3, 10)

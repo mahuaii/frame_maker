@@ -6,9 +6,7 @@ import { bottomInfoBarTemplateSchema } from './schema.js';
 const bottomInfoBarTemplate = defineTemplate({
     ...bottomInfoBarTemplateSchema,
     resolveData: resolveBottomInfoBarTemplateData,
-    render(ctx, args) {
-        renderBottomInfoBarTemplate(ctx, args);
-    },
+    render: renderBottomInfoBarTemplate,
 });
 
 export default bottomInfoBarTemplate;

@@ -235,7 +235,13 @@ function createThumbnailElement(template) {
     return thumbnailImg;
 }
 
-async function renderSelectorList() {
+function updateSelectorSelection() {
+    selectorList.querySelectorAll('.template-card').forEach((card) => {
+        card.classList.toggle('selected', card.dataset.templateId === selectedTemplateId);
+    });
+}
+
+function renderSelectorList() {
     selectorList.innerHTML = '';
 
     for (const template of templates) {
@@ -243,8 +249,6 @@ async function renderSelectorList() {
         card.className = 'template-card' + (template.id === selectedTemplateId ? ' selected' : '');
         card.dataset.templateId = template.id;
         card.appendChild(createThumbnailElement(template));
-
-        card.addEventListener('click', () => handleTemplateSelect(template.id));
         selectorList.appendChild(card);
     }
 }
@@ -264,7 +268,7 @@ async function handleTemplateSelect(templateId) {
     }
 
     // 重新渲染选择器和编辑区
-    await renderSelectorList();
+    updateSelectorSelection();
     renderTextEditor();
 
     // 更新预览
@@ -530,6 +534,17 @@ function setupSelectorScroll() {
     }, { passive: false });
 }
 
+function bindSelectorEvents() {
+    selectorList.addEventListener('click', (e) => {
+        const card = e.target.closest('.template-card');
+        if (!card || !selectorList.contains(card)) {
+            return;
+        }
+
+        handleTemplateSelect(card.dataset.templateId);
+    });
+}
+
 // ============================================
 // 实时预览
 // ============================================
@@ -673,6 +688,7 @@ function bindEvents() {
     // 设置拖拽上传
     setupDragDrop();
     setupSelectorScroll();
+    bindSelectorEvents();
 
     // 窗口 resize
     window.addEventListener('resize', () => {
@@ -693,7 +709,7 @@ async function init() {
     }
 
     // 渲染模板选择器
-    await renderSelectorList();
+    renderSelectorList();
 
     // 渲染文字编辑区
     renderTextEditor();

@@ -6,12 +6,7 @@ import { classicFrameTemplateSchema } from './schema.js';
 const classicFrameTemplate = defineTemplate({
     ...classicFrameTemplateSchema,
     resolveData: resolveClassicFrameTemplateData,
-    render(ctx, args) {
-        renderClassicFrameTemplate(ctx, {
-            ...args,
-            template: this,
-        });
-    },
+    render: renderClassicFrameTemplate,
 });
 
 export default classicFrameTemplate;

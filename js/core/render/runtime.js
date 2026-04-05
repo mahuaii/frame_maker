@@ -709,6 +709,7 @@ export async function renderTemplateFrame(canvas, image, template, rawConfig, op
     }
 
     template.render(ctx, {
+        template,
         photo: resolveInput.photo,
         area,
         config,

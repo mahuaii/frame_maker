@@ -63,6 +63,19 @@ export function pickTextFieldValues(customText = {}, keys = []) {
     }, {});
 }
 
+export function joinMetaParts(parts = [], separator = '  ') {
+    return parts.filter(Boolean).join(separator);
+}
+
+export function insetRect(area, horizontalInset = 0, verticalInset = 0) {
+    return {
+        x: area.x + horizontalInset,
+        y: area.y + verticalInset,
+        width: Math.max(area.width - horizontalInset * 2, 0),
+        height: Math.max(area.height - verticalInset * 2, 0),
+    };
+}
+
 export const infoFieldDefinitions = [
     { key: 'focal_length', label: '焦距', type: 'text', defaultValue: '23mm' },
     { key: 'aperture', label: '光圈', type: 'text', defaultValue: 'f/1.8' },
