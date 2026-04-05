@@ -1,8 +1,9 @@
 @font-face {
     font-family: "MiSans";
-    src: local("MiSans Regular"),
+    src: url("../assets/fonts/MiSans-Regular.otf") format("opentype"),
+        local("MiSans Regular"),
         local("MiSans-Regular"),
-        url("../assets/fonts/MiSans-Regular.otf") format("opentype");
+        local("MiSans");
     font-weight: 400;
     font-style: normal;
     font-display: swap;
@@ -10,9 +11,10 @@
 
 @font-face {
     font-family: "MiSans";
-    src: local("MiSans Light"),
+    src: url("../assets/fonts/MiSans-Light.otf") format("opentype"),
+        local("MiSans Light"),
         local("MiSans-Light"),
-        url("../assets/fonts/MiSans-Light.otf") format("opentype");
+        local("MiSans");
     font-weight: 300;
     font-style: normal;
     font-display: swap;
@@ -20,10 +22,10 @@
 
 @font-face {
     font-family: "Angie Sans";
-    src: local("Angie Sans"),
+    src: url("../assets/fonts/Angie_Sans_Std.otf") format("opentype"),
+        local("Angie Sans"),
         local("Angie Sans Std"),
-        local("AngieSansStd"),
-        url("../assets/fonts/Angie_Sans_Std.otf") format("opentype");
+        local("AngieSansStd");
     font-weight: 400;
     font-style: normal;
     font-display: swap;

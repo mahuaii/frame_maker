@@ -22,6 +22,7 @@ export function renderStoryExifTemplate(ctx, args) {
             fontSize,
             fontWeight: 600,
             fontIdEn: data.titleFontId,
+            fontIdZh: data.titleFontId,
         }),
     });
 
@@ -45,7 +46,8 @@ export function renderStoryExifTemplate(ctx, args) {
         ctx.font = buildCanvasFont({
             fontSize: Math.max(metrics.scaledFontSize * 0.82, 11),
             fontWeight: 400,
-            fontIdZh: 'systemSans',
+            fontIdEn: data.titleFontId,
+            fontIdZh: data.titleFontId,
         });
         ctx.fillStyle = '#cbd5e1';
         ctx.fillText(

@@ -2,7 +2,7 @@ import { buildDefaultConfig } from '../../core/templates/fields.js';
 import { buildAppearanceField } from '../../core/templates/appearance.js';
 import { createAppearanceThemes } from '../../core/templates/registry.js';
 import { sharedAppearanceThemes } from '../appearance-presets.js';
-import { defaultSizing, defaultTextStyleDefaults, infoFieldDefinitions } from '../shared.js';
+import { defaultSizing, defaultTextStyleDefaults, fontFieldOptions, infoFieldDefinitions } from '../shared.js';
 
 export const classicFrameAppearanceThemes = createAppearanceThemes(sharedAppearanceThemes, {
     blur: {
@@ -49,6 +49,13 @@ export const classicFrameAppearanceThemes = createAppearanceThemes(sharedAppeara
 
 export const classicFrameTemplateFields = [
     buildAppearanceField(classicFrameAppearanceThemes),
+    {
+        key: 'infoFontId',
+        label: '信息字体',
+        type: 'select',
+        defaultValue: 'miSans',
+        options: fontFieldOptions,
+    },
     ...infoFieldDefinitions,
 ];
 

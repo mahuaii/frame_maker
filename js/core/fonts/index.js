@@ -5,12 +5,12 @@ function resolveFontAssetUrl(relativePath) {
 }
 
 function buildFontSource(localNames = [], assetRelativePath = '') {
-    const localSources = localNames.map((name) => `local("${name}")`);
     const fileSource = assetRelativePath
         ? `url("${resolveFontAssetUrl(assetRelativePath)}") format("opentype")`
         : '';
+    const localSources = localNames.map((name) => `local("${name}")`);
 
-    return [...localSources, fileSource].filter(Boolean).join(', ');
+    return [fileSource, ...localSources].filter(Boolean).join(', ');
 }
 
 const FONT_REGISTRY = {
@@ -89,9 +89,14 @@ export function getFontFamilyStack({
     fontFamilyEn = FONT_FAMILIES.enDefault,
     fontFamilyZh = FONT_FAMILIES.zhDefault,
 } = {}) {
+    const resolvedFontIdEn = fontIdEn ?? fontIdZh ?? DEFAULT_FONT_IDS.en;
+    const resolvedFontIdZh = fontIdZh ?? fontIdEn ?? DEFAULT_FONT_IDS.zh;
+    const resolvedFontFamilyEn = fontFamilyEn ?? fontFamilyZh ?? FONT_FAMILIES.enDefault;
+    const resolvedFontFamilyZh = fontFamilyZh ?? fontFamilyEn ?? FONT_FAMILIES.zhDefault;
+
     return [
-        resolveFontFamily(fontIdEn, fontFamilyEn),
-        resolveFontFamily(fontIdZh, fontFamilyZh),
+        resolveFontFamily(resolvedFontIdEn, resolvedFontFamilyEn),
+        resolveFontFamily(resolvedFontIdZh, resolvedFontFamilyZh),
         SYSTEM_SANS_STACK,
     ]
         .filter(Boolean)
