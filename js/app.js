@@ -19,7 +19,7 @@ let selectedTemplateId = 'classic-frame';  // 默认选经典相框模板
 let fieldValues = {};              // Record<string, string>
 const THUMBNAIL_MAX_WIDTH = 180;
 const THUMBNAIL_MAX_HEIGHT = 135;
-const ASSET_VERSION = '20260329-220553';
+const ASSET_VERSION = '20260405-181900';
 const DEFAULT_EXPORT_SETTINGS = {
     format: 'image/jpeg',
     sizePreset: 'original',
