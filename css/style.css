@@ -36,6 +36,7 @@
     --color-bg-field-hover: rgba(255, 255, 255, 0.94);
     --color-toolbar-control: rgba(236, 236, 236, 0.88);
     --color-toolbar-control-hover: rgba(242, 242, 242, 0.96);
+    --select-arrow-icon: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6'%3E%3Cpath fill='%231f1f1f' fill-opacity='0.52' d='M5 6 0 0h10z'/%3E%3C/svg%3E");
 
     --color-text-primary: #1f1f1f;
     --color-text-secondary: #666666;
@@ -162,16 +163,25 @@ body {
     -webkit-backdrop-filter: blur(10px);
     outline: none;
     transition: background-color 0.18s ease, border-color 0.18s ease, box-shadow 0.18s ease, transform 0.18s ease;
+}
+
+.export-field select,
+.field-group select {
     appearance: none;
+    background-image: var(--select-arrow-icon);
+    background-position: calc(100% - 10px) 50%;
+    background-size: 10px 6px;
+    background-repeat: no-repeat;
+    background-color: var(--color-toolbar-control);
+    border-color: var(--color-divider);
+    color: var(--color-text-primary);
+    outline: none;
+    transition: background-color 0.18s ease, border-color 0.18s ease, box-shadow 0.18s ease, transform 0.18s ease;
 }
 
 .export-field select {
     min-width: 132px;
-    padding-right: 24px;
-    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6'%3E%3Cpath fill='%231f1f1f' fill-opacity='0.52' d='M5 6 0 0h10z'/%3E%3C/svg%3E");
-    background-position: calc(100% - 10px) 50%;
-    background-size: 10px 6px;
-    background-repeat: no-repeat;
+    padding-right: 28px;
 }
 
 .export-size-field select {
@@ -180,13 +190,8 @@ body {
 
 .export-field select:hover,
 .export-custom-size input:hover {
-    background: var(--color-toolbar-control-hover);
-    border-color: var(--color-divider-strong);
-}
-
-.export-size-field select:hover {
-    border-color: var(--color-divider-strong);
     background-color: var(--color-toolbar-control-hover);
+    border-color: var(--color-divider-strong);
 }
 
 .export-custom-size input:focus,
@@ -593,7 +598,6 @@ body {
         linear-gradient(180deg, rgba(255, 255, 255, 0), rgba(255, 255, 255, 0.28));
     outline: none;
     transition: border-color 0.18s ease, box-shadow 0.18s ease, background-color 0.18s ease, color 0.18s ease;
-    appearance: none;
 }
 
 .field-group input:hover,
@@ -623,19 +627,16 @@ body {
     min-height: 28px;
     margin-top: 4px;
     padding-left: 10px;
-    padding-right: 24px;
+    padding-right: 28px;
     padding-bottom: 0;
-    border: 2px solid transparent;
+    border: 1px solid var(--color-divider);
     border-radius: var(--radius-sm);
-    background-color: rgba(31, 31, 31, 0.08);
-    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6'%3E%3Cpath fill='%231f1f1f' fill-opacity='0.52' d='M5 6 0 0h10z'/%3E%3C/svg%3E");
-    background-position: calc(100% - 10px) 50%;
-    background-size: 10px 6px;
-    background-repeat: no-repeat;
+    background: var(--color-toolbar-control);
 }
 
 .field-group select:hover {
-    border-color: transparent;
+    background-color: var(--color-toolbar-control-hover);
+    border-color: var(--color-divider-strong);
 }
 
 .option-button-group {
@@ -743,13 +744,9 @@ body {
 }
 
 .field-group select:focus {
-    border-color: transparent;
+    border-color: var(--color-divider);
     box-shadow: none;
-    background-color: rgba(31, 31, 31, 0.08);
-    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6'%3E%3Cpath fill='%231f1f1f' fill-opacity='0.52' d='M5 6 0 0h10z'/%3E%3C/svg%3E");
-    background-position: calc(100% - 10px) 50%;
-    background-size: 10px 6px;
-    background-repeat: no-repeat;
+    background: var(--color-toolbar-control);
 }
 
 .field-group input::placeholder,
