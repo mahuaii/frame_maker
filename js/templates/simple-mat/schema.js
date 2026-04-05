@@ -16,6 +16,23 @@ export const simpleMatAppearanceThemes = {
             color: '#030303',
         },
     },
+    edgeBlur: {
+        label: '边缘氛围',
+        canvasBackground: {
+            type: 'edgeExtendBlur',
+            color: '#2B2F37',
+            blur: 200,
+            ambientBlur: 250,
+            ambientOpacity: 0.62,
+            extendedOpacity: 0.64,
+            saturate: 1.02,
+            brightness: 0.9,
+            contrast: 1.4,
+            overlayColor: '#191919',
+            overlayOpacity: 0.54,
+            sourceBandRatio: 0.1,
+        },
+    },
 };
 
 export const simpleMatTemplateFields = [
