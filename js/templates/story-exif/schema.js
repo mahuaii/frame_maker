@@ -1,6 +1,6 @@
 import { buildDefaultConfig } from '../../core/templates/fields.js';
 import { buildAppearanceField } from '../../core/templates/appearance.js';
-import { defaultSizing, fontFieldOptions } from '../shared.js';
+import { buildFontSelectField, defaultSizing } from '../shared.js';
 
 export const storyExifAppearanceThemes = {
     white: {
@@ -45,7 +45,7 @@ export const storyExifTemplateFields = [
         key: 'subtitle',
         label: '副标题',
         type: 'text',
-        defaultValue: 'Title and EXIF can coexist without placeholders.',
+        defaultValue: 'Description goes here',
     },
     {
         key: 'showSubtitle',
@@ -53,25 +53,21 @@ export const storyExifTemplateFields = [
         type: 'toggle',
         defaultValue: true,
     },
-    {
+    buildFontSelectField({
         key: 'titleFontId',
         label: '标题字体',
-        type: 'select',
         defaultValue: 'angieSansStd',
-        options: fontFieldOptions,
-    },
-    {
+    }),
+    buildFontSelectField({
         key: 'metaFontId',
         label: '信息字体',
-        type: 'select',
         defaultValue: 'systemSans',
-        options: fontFieldOptions,
-    },
+    }),
     {
         key: 'showLens',
         label: '镜头',
         type: 'toggle',
-        defaultValue: true,
+        defaultValue: false,
     },
     {
         key: 'metaScale',

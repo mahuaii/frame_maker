@@ -1,7 +1,7 @@
 import { buildDefaultConfig } from '../../core/templates/fields.js';
 import { buildAppearanceField } from '../../core/templates/appearance.js';
 import { buildTemplateLayoutMetrics } from '../layout-metrics.js';
-import { fontFieldOptions } from '../shared.js';
+import { buildFontSelectField, buildWhiteAppearanceToggleField } from '../shared.js';
 
 export const galleryCaptionMatAppearanceThemes = {
     white: {
@@ -32,15 +32,11 @@ export const galleryCaptionMatAppearanceThemes = {
 
 export const galleryCaptionMatTemplateFields = [
     buildAppearanceField(galleryCaptionMatAppearanceThemes),
-    {
+    buildWhiteAppearanceToggleField({
         key: 'showThinBorder',
         label: '显示细框',
-        type: 'toggle',
         defaultValue: true,
-        appearanceVisibility: {
-            showOn: ['white'],
-        },
-    },
+    }),
     {
         key: 'title',
         label: '主标题',
@@ -59,13 +55,11 @@ export const galleryCaptionMatTemplateFields = [
         type: 'toggle',
         defaultValue: true,
     },
-    {
+    buildFontSelectField({
         key: 'titleFontId',
         label: '主标题字体',
-        type: 'select',
         defaultValue: 'miSans',
-        options: fontFieldOptions,
-    },
+    }),
     {
         key: 'titleFontWeight',
         label: '主标题字重',
@@ -73,13 +67,11 @@ export const galleryCaptionMatTemplateFields = [
         defaultValue: 300,
         hidden: true,
     },
-    {
+    buildFontSelectField({
         key: 'subtitleFontId',
         label: '副标题字体',
-        type: 'select',
         defaultValue: 'angieSansStd',
-        options: fontFieldOptions,
-    },
+    }),
 ];
 
 export function calculateGalleryCaptionMatMetrics({ image, template, scale = 1 }) {

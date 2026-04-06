@@ -1,14 +1,13 @@
 import { buildCanvasFont } from '../../core/fonts/index.js';
 import { getAppearanceColor } from '../../core/templates/registry.js';
-import { drawBeveledPhotoBorder } from '../photo-border.js';
+import { drawOptionalThinPhotoBorder } from '../photo-border.js';
+import { normalizeTemplateText } from '../shared.js';
 
 const TITLE_FONT_RATIO = 1.05;
 const SUBTITLE_FONT_RATIO = 0.6;
 const TITLE_MAX_WIDTH_RATIO = 0.56;
 const SUBTITLE_MAX_WIDTH_RATIO = 0.34;
 const TEXT_GAP_RATIO = 0.014;
-const BORDER_WIDTH_RATIO = 0.0022;
-
 function baselineForVisualCenter(centerY, metrics) {
     return centerY + ((metrics.actualBoundingBoxAscent ?? 0) - (metrics.actualBoundingBoxDescent ?? 0)) / 2;
 }
@@ -32,10 +31,10 @@ function buildTextMetrics(ctx, runtime, text, fontSize, fontId, fontWeight = 400
 }
 
 export function renderGalleryCaptionMatTemplate(ctx, args) {
-    const { area, data, appearance, metrics, runtime, canvasSize } = args;
-    const titleText = data.title || 'Untitled';
-    const subtitleText = data.showSubtitle ? (data.subtitle || '') : '';
-    const titleFontWeight = Number.isFinite(Number(data.titleFontWeight)) ? Number(data.titleFontWeight) : 400;
+    const { area, config, appearance, metrics, runtime, canvasSize } = args;
+    const titleText = normalizeTemplateText(config.title) || 'Untitled';
+    const subtitleText = config.showSubtitle ? normalizeTemplateText(config.subtitle) : '';
+    const titleFontWeight = Number.isFinite(Number(config.titleFontWeight)) ? Number(config.titleFontWeight) : 400;
     const squareSide = canvasSize.width;
     const titleMaxFontSize = Math.max(metrics.scaledFontSize * TITLE_FONT_RATIO, 16);
     const titleMinFontSize = Math.max(titleMaxFontSize * 0.72, 12);
@@ -49,8 +48,8 @@ export function renderGalleryCaptionMatTemplate(ctx, args) {
         buildFont: (fontSize) => buildCanvasFont({
             fontSize,
             fontWeight: titleFontWeight,
-            fontIdEn: data.titleFontId,
-            fontIdZh: data.titleFontId,
+            fontIdEn: config.titleFontId,
+            fontIdZh: config.titleFontId,
         }),
     });
     const titleMetrics = buildTextMetrics(
@@ -58,19 +57,21 @@ export function renderGalleryCaptionMatTemplate(ctx, args) {
         runtime,
         titleText,
         titleFit.fontSize,
-        data.titleFontId,
+        config.titleFontId,
         titleFontWeight
     );
     const textPrimary = getAppearanceColor(appearance, 'title', '#1A1A1A');
     const textSecondary = getAppearanceColor(appearance, 'subtitle', textPrimary);
     const borderColor = getAppearanceColor(appearance, 'photoBorder', '#000000');
-    const borderWidth = Math.max(squareSide * BORDER_WIDTH_RATIO, 1);
-    const shouldDrawBorder = appearance.key === 'white' && data.showThinBorder;
 
     ctx.save();
-    if (shouldDrawBorder) {
-        drawBeveledPhotoBorder(ctx, metrics.scaledPhotoArea, borderWidth, borderColor);
-    }
+    drawOptionalThinPhotoBorder(ctx, {
+        appearanceKey: appearance.key,
+        enabled: config.showThinBorder,
+        rect: metrics.scaledPhotoArea,
+        canvasWidth: squareSide,
+        color: borderColor,
+    });
 
     ctx.textAlign = 'center';
     ctx.fillStyle = textPrimary;
@@ -95,8 +96,8 @@ export function renderGalleryCaptionMatTemplate(ctx, args) {
         buildFont: (fontSize) => buildCanvasFont({
             fontSize,
             fontWeight: 400,
-            fontIdEn: data.subtitleFontId,
-            fontIdZh: data.subtitleFontId,
+            fontIdEn: config.subtitleFontId,
+            fontIdZh: config.subtitleFontId,
         }),
     });
     const subtitleMetrics = buildTextMetrics(
@@ -104,7 +105,7 @@ export function renderGalleryCaptionMatTemplate(ctx, args) {
         runtime,
         subtitleText,
         subtitleFit.fontSize,
-        data.subtitleFontId,
+        config.subtitleFontId,
         400
     );
     const titleHeight = (titleMetrics.actualBoundingBoxAscent ?? titleMetrics.fontSize) + (titleMetrics.actualBoundingBoxDescent ?? 0);

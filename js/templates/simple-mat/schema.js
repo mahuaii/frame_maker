@@ -1,6 +1,7 @@
 import { buildDefaultConfig } from '../../core/templates/fields.js';
 import { buildAppearanceField } from '../../core/templates/appearance.js';
 import { buildTemplateLayoutMetrics } from '../layout-metrics.js';
+import { buildWhiteAppearanceToggleField } from '../shared.js';
 
 export const simpleMatAppearanceThemes = {
     white: {
@@ -38,15 +39,11 @@ export const simpleMatAppearanceThemes = {
 
 export const simpleMatTemplateFields = [
     buildAppearanceField(simpleMatAppearanceThemes),
-    {
+    buildWhiteAppearanceToggleField({
         key: 'showThinBorder',
         label: '显示细框',
-        type: 'toggle',
         defaultValue: false,
-        appearanceVisibility: {
-            showOn: ['white'],
-        },
-    },
+    }),
 ];
 
 export const simpleMatTemplateSchema = {

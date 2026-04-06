@@ -31,3 +31,19 @@ export function drawBeveledPhotoBorder(ctx, rect, borderWidth, color) {
     ctx.fill('evenodd');
     ctx.restore();
 }
+
+export function drawOptionalThinPhotoBorder(ctx, {
+    appearanceKey,
+    enabled,
+    rect,
+    canvasWidth,
+    color = '#000000',
+    widthRatio = 0.0022,
+}) {
+    if (appearanceKey !== 'white' || !enabled || !rect) {
+        return;
+    }
+
+    const borderWidth = Math.max(canvasWidth * widthRatio, 1);
+    drawBeveledPhotoBorder(ctx, rect, borderWidth, color);
+}

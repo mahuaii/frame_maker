@@ -1,24 +1,13 @@
-function formatShutterText(shutter) {
-    if (!shutter) {
-        return null;
-    }
-
-    return shutter.endsWith('s') ? shutter : `${shutter}s`;
-}
+import { buildExifMetaPrimary } from '../shared.js';
 
 export function resolveBottomInfoBarTemplateData(input) {
     const exif = input.exif;
-    const metaItems = [
-        exif?.formatted?.focalLength,
-        exif?.formatted?.aperture,
-        formatShutterText(exif?.formatted?.shutter),
-        exif?.formatted?.iso ? `ISO${exif.formatted.iso}` : null,
-    ].filter(Boolean);
 
     return {
         cameraText: exif?.model || exif?.formatted?.camera || 'Unknown Camera',
-        metaItems,
-        leftFontId: input.customText.leftFontId ?? input.customText.fontId ?? 'systemSans',
-        rightFontId: input.customText.rightFontId ?? input.customText.fontId ?? 'systemSans',
+        metaItems: buildExifMetaPrimary(exif?.formatted, {
+            shutterSuffix: true,
+            isoSeparator: '',
+        }),
     };
 }

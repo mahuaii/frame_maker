@@ -1,17 +1,17 @@
 import { buildCanvasFont } from '../../core/fonts/index.js';
 import { getAppearanceColor } from '../../core/templates/registry.js';
-import { insetRect, joinMetaParts } from '../shared.js';
+import { insetRect, joinMetaParts, normalizeTemplateText } from '../shared.js';
 
 export function renderStoryExifTemplate(ctx, args) {
-    const { area, data, appearance, metrics, runtime } = args;
+    const { area, config, data, appearance, metrics, runtime } = args;
     const contentArea = insetRect(
         area,
         Math.max(runtime.scaleByShortEdge(0.018), 20),
         Math.max(area.height * 0.16, 12)
     );
-    const titleText = data.title || 'Untitled';
-    const subtitleText = data.showSubtitle ? (data.subtitle || '') : '';
-    const primaryMeta = data.hasExif ? joinMetaParts(data.metaPrimary, '   ') : data.fallbackNote;
+    const titleText = normalizeTemplateText(config.title) || 'Untitled';
+    const subtitleText = config.showSubtitle ? normalizeTemplateText(config.subtitle) : '';
+    const primaryMeta = data.hasExif ? joinMetaParts(data.metaPrimary, '   ') : normalizeTemplateText(config.fallbackNote, 'EXIF unavailable');
     const secondaryMeta = data.hasExif ? joinMetaParts(data.metaSecondary, '   ') : '';
 
     const titleFit = runtime.fitText({
@@ -22,24 +22,24 @@ export function renderStoryExifTemplate(ctx, args) {
         buildFont: (fontSize) => buildCanvasFont({
             fontSize,
             fontWeight: 600,
-            fontIdEn: data.titleFontId,
-            fontIdZh: data.titleFontId,
+            fontIdEn: config.titleFontId,
+            fontIdZh: config.titleFontId,
         }),
     });
 
-    const metaFontSize = Math.max(metrics.scaledFontSize * 0.88 * data.metaScale, 11);
+    const metaFontSize = Math.max(metrics.scaledFontSize * 0.88 * config.metaScale, 11);
     const metaFont = buildCanvasFont({
         fontSize: metaFontSize,
         fontWeight: 400,
-        fontIdZh: data.metaFontId,
-        fontIdEn: data.metaFontId,
+        fontIdZh: config.metaFontId,
+        fontIdEn: config.metaFontId,
     });
     const subtitleFontSize = Math.max(metrics.scaledFontSize * 0.82, 11);
     const subtitleFont = buildCanvasFont({
         fontSize: subtitleFontSize,
         fontWeight: 400,
-        fontIdEn: data.titleFontId,
-        fontIdZh: data.titleFontId,
+        fontIdEn: config.titleFontId,
+        fontIdZh: config.titleFontId,
     });
     const titleColor = getAppearanceColor(appearance, 'title', '#F8FAFC');
     const subtitleColor = getAppearanceColor(appearance, 'subtitle', '#CBD5E1');

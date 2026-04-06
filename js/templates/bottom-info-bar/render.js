@@ -3,7 +3,7 @@ import { getAppearanceColor } from '../../core/templates/registry.js';
 import { insetRect } from '../shared.js';
 
 export function renderBottomInfoBarTemplate(ctx, args) {
-    const { area, data, appearance, metrics, runtime } = args;
+    const { area, config, data, appearance, metrics, runtime } = args;
     const contentArea = insetRect(
         area,
         Math.max(runtime.scaleByShortEdge(0.028), 20),
@@ -12,14 +12,14 @@ export function renderBottomInfoBarTemplate(ctx, args) {
     const cameraFont = buildCanvasFont({
         fontSize: Math.max(metrics.scaledFontSize * 0.92, 12),
         fontWeight: 700,
-        fontIdEn: data.leftFontId,
-        fontIdZh: data.leftFontId,
+        fontIdEn: config.leftFontId,
+        fontIdZh: config.leftFontId,
     });
     const metaFont = buildCanvasFont({
         fontSize: Math.max(metrics.scaledFontSize * 0.8, 11),
         fontWeight: 600,
-        fontIdEn: data.rightFontId,
-        fontIdZh: data.rightFontId,
+        fontIdEn: config.rightFontId,
+        fontIdZh: config.rightFontId,
     });
     const separatorHeight = Math.max(contentArea.height * 0.42, 10);
     const separatorGap = Math.max(runtime.scaleByShortEdge(0.014), 10);

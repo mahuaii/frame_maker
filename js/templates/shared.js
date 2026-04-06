@@ -67,6 +67,50 @@ export function joinMetaParts(parts = [], separator = '  ') {
     return parts.filter(Boolean).join(separator);
 }
 
+export function normalizeTemplateText(value, fallbackValue = '') {
+    return String(value ?? fallbackValue).trim();
+}
+
+export function formatShutterText(shutter, { appendSecondsSuffix = false } = {}) {
+    if (!shutter) {
+        return null;
+    }
+
+    if (!appendSecondsSuffix || shutter.endsWith('s')) {
+        return shutter;
+    }
+
+    return `${shutter}s`;
+}
+
+export function formatIsoText(iso, separator = ' ') {
+    return iso ? `ISO${separator}${iso}` : null;
+}
+
+export function buildExifMetaPrimary(formattedExif = {}, {
+    shutterSuffix = false,
+    isoSeparator = ' ',
+} = {}) {
+    return [
+        formattedExif?.focalLength,
+        formattedExif?.aperture,
+        formatShutterText(formattedExif?.shutter, {
+            appendSecondsSuffix: shutterSuffix,
+        }),
+        formatIsoText(formattedExif?.iso, isoSeparator),
+    ].filter(Boolean);
+}
+
+export function buildExifMetaSecondary(formattedExif = {}, {
+    includeCamera = true,
+    includeLens = false,
+} = {}) {
+    return [
+        includeCamera ? formattedExif?.camera : null,
+        includeLens ? formattedExif?.lens : null,
+    ].filter(Boolean);
+}
+
 export function insetRect(area, horizontalInset = 0, verticalInset = 0) {
     return {
         x: area.x + horizontalInset,
@@ -84,3 +128,33 @@ export const infoFieldDefinitions = [
 ];
 
 export const fontFieldOptions = getFontFieldOptions();
+
+export function buildFontSelectField({
+    key,
+    label,
+    defaultValue = 'systemSans',
+}) {
+    return {
+        key,
+        label,
+        type: 'select',
+        defaultValue,
+        options: fontFieldOptions,
+    };
+}
+
+export function buildWhiteAppearanceToggleField({
+    key,
+    label,
+    defaultValue = false,
+}) {
+    return {
+        key,
+        label,
+        type: 'toggle',
+        defaultValue,
+        appearanceVisibility: {
+            showOn: ['white'],
+        },
+    };
+}
