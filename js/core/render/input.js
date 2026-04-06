@@ -14,7 +14,6 @@ const TIFF_TYPE_SIZES = {
 const EXIF_TAGS = {
     0x010f: 'make',
     0x0110: 'model',
-    0x0132: 'modifiedAt',
     0x8769: 'exifIFDPointer',
     0x9003: 'dateTimeOriginal',
     0x829d: 'fNumber',
@@ -24,6 +23,18 @@ const EXIF_TAGS = {
     0xa405: 'focalLengthIn35mm',
     0xa434: 'lensModel',
 };
+
+export const EDITABLE_EXIF_FIELDS = Object.freeze([
+    { key: 'make', label: '相机品牌' },
+    { key: 'model', label: '相机型号' },
+    { key: 'dateTimeOriginal', label: '拍摄时间' },
+    { key: 'fNumber', label: '光圈' },
+    { key: 'exposureTime', label: '快门时间' },
+    { key: 'iso', label: 'ISO' },
+    { key: 'focalLength', label: '焦距' },
+    { key: 'focalLengthIn35mm', label: '等效焦距' },
+    { key: 'lensModel', label: '镜头型号' },
+]);
 
 export function createPhotoSource({ file = null, image }) {
     return {
@@ -254,7 +265,6 @@ function normalizeExifData(rawExif) {
         model: rawExif.model ?? null,
         lensModel: rawExif.lensModel ?? null,
         dateTimeOriginal: rawExif.dateTimeOriginal ?? null,
-        modifiedAt: rawExif.modifiedAt ?? null,
         fNumber: typeof rawExif.fNumber === 'number' ? rawExif.fNumber : null,
         exposureTime: typeof rawExif.exposureTime === 'number' ? rawExif.exposureTime : null,
         iso: typeof rawExif.iso === 'number' ? rawExif.iso : null,
@@ -268,6 +278,70 @@ function normalizeExifData(rawExif) {
             iso: rawExif.iso ? String(rawExif.iso) : null,
             focalLength: formatFocalLength(rawExif.focalLength),
             focalLengthIn35mm: formatFocalLength(rawExif.focalLengthIn35mm),
+        },
+    };
+}
+
+function normalizeEditableExifText(value) {
+    const normalizedValue = String(value ?? '').trim();
+    return normalizedValue || null;
+}
+
+export function createEditableExifOverrideValues(exif) {
+    if (!exif) {
+        return {};
+    }
+
+    return {
+        make: exif.make ?? '',
+        model: exif.model ?? '',
+        lensModel: exif.lensModel ?? '',
+        dateTimeOriginal: exif.dateTimeOriginal ?? '',
+        fNumber: exif.formatted?.aperture ?? '',
+        exposureTime: exif.formatted?.shutter ?? '',
+        iso: exif.formatted?.iso ?? '',
+        focalLength: exif.formatted?.focalLength ?? '',
+        focalLengthIn35mm: exif.formatted?.focalLengthIn35mm ?? '',
+    };
+}
+
+export function resolveEditableExif(overrides = {}) {
+    const hasExplicitOverrides = EDITABLE_EXIF_FIELDS.some((field) => (
+        normalizeEditableExifText(overrides[field.key]) !== null
+    ));
+
+    if (!hasExplicitOverrides) {
+        return null;
+    }
+
+    const make = normalizeEditableExifText(overrides.make);
+    const model = normalizeEditableExifText(overrides.model);
+    const lensModel = normalizeEditableExifText(overrides.lensModel);
+    const dateTimeOriginal = normalizeEditableExifText(overrides.dateTimeOriginal);
+    const aperture = normalizeEditableExifText(overrides.fNumber);
+    const shutter = normalizeEditableExifText(overrides.exposureTime);
+    const iso = normalizeEditableExifText(overrides.iso);
+    const focalLength = normalizeEditableExifText(overrides.focalLength);
+    const focalLengthIn35mm = normalizeEditableExifText(overrides.focalLengthIn35mm);
+
+    return {
+        make,
+        model,
+        lensModel,
+        dateTimeOriginal,
+        fNumber: null,
+        exposureTime: null,
+        iso: null,
+        focalLength: null,
+        focalLengthIn35mm: null,
+        formatted: {
+            camera: [make, model].filter(Boolean).join(' ').trim() || null,
+            lens: lensModel,
+            aperture,
+            shutter,
+            iso,
+            focalLength,
+            focalLengthIn35mm,
         },
     };
 }
@@ -327,14 +401,15 @@ export function createGlobalRenderSettings({
     };
 }
 
-export async function buildTemplateResolveInput({
+export function buildTemplateResolveInput({
     photo,
     customText = {},
+    exifOverrides = {},
     global = {},
 }) {
     return {
         photo,
-        exif: await extractExifData(photo),
+        exif: resolveEditableExif(exifOverrides),
         customText,
         global,
     };

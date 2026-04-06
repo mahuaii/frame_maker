@@ -21,7 +21,6 @@
 
 ## 当前模板
 
-- `classic-frame`：经典相框，适合照片标题与信息展示
 - `bottom-info-bar`：底部信息栏，突出设备与拍摄参数
 - `simple-mat`：极简留边，偏干净展示
 - `gallery-caption-mat`：正方形留白标题卡，适合地点 / 机型双行文案
@@ -84,8 +83,8 @@ http://localhost:8001
 
 仓库当前会提交 MiSans 字体文件，用于跨机器保持一致；`Angie Sans Std` 仍按本地私有字体处理，不会随仓库提交。当前支持的本地回退文件名为：
 
-- `assets/fonts/MiSans-Regular.otf`
-- `assets/fonts/MiSans-Light.otf`
+- `assets/fonts/MiSans-Regular.woff2`
+- `assets/fonts/MiSans-Light.woff2`
 - `assets/fonts/Angie_Sans_Std.otf`
 
 ### MiSans 使用说明

@@ -1,5 +1,6 @@
 import { buildCanvasFont } from '../../core/fonts/index.js';
 import { getAppearanceColor } from '../../core/templates/registry.js';
+import { drawBeveledPhotoBorder } from '../photo-border.js';
 
 const TITLE_FONT_RATIO = 1.05;
 const SUBTITLE_FONT_RATIO = 0.6;
@@ -30,44 +31,11 @@ function buildTextMetrics(ctx, runtime, text, fontSize, fontId, fontWeight = 400
     };
 }
 
-function drawBeveledPhotoBorder(ctx, rect, borderWidth, color) {
-    const snappedBorderWidth = Math.max(Math.round(borderWidth), 1);
-    const chamfer = Math.max(Math.round(snappedBorderWidth * 0.72), 1);
-    const innerLeft = Math.round(rect.x);
-    const innerTop = Math.round(rect.y);
-    const innerRight = Math.round(rect.x + rect.width);
-    const innerBottom = Math.round(rect.y + rect.height);
-    const outerLeft = innerLeft - snappedBorderWidth;
-    const outerTop = innerTop - snappedBorderWidth;
-    const outerRight = innerRight + snappedBorderWidth;
-    const outerBottom = innerBottom + snappedBorderWidth;
-
-    ctx.save();
-    ctx.fillStyle = color;
-    ctx.beginPath();
-    ctx.moveTo(outerLeft + chamfer, outerTop);
-    ctx.lineTo(outerRight - chamfer, outerTop);
-    ctx.lineTo(outerRight, outerTop + chamfer);
-    ctx.lineTo(outerRight, outerBottom - chamfer);
-    ctx.lineTo(outerRight - chamfer, outerBottom);
-    ctx.lineTo(outerLeft + chamfer, outerBottom);
-    ctx.lineTo(outerLeft, outerBottom - chamfer);
-    ctx.lineTo(outerLeft, outerTop + chamfer);
-    ctx.closePath();
-
-    ctx.moveTo(innerLeft, innerTop);
-    ctx.lineTo(innerLeft, innerBottom);
-    ctx.lineTo(innerRight, innerBottom);
-    ctx.lineTo(innerRight, innerTop);
-    ctx.closePath();
-    ctx.fill('evenodd');
-    ctx.restore();
-}
-
 export function renderGalleryCaptionMatTemplate(ctx, args) {
     const { area, data, appearance, metrics, runtime, canvasSize } = args;
     const titleText = data.title || 'Untitled';
     const subtitleText = data.showSubtitle ? (data.subtitle || '') : '';
+    const titleFontWeight = Number.isFinite(Number(data.titleFontWeight)) ? Number(data.titleFontWeight) : 400;
     const squareSide = canvasSize.width;
     const titleMaxFontSize = Math.max(metrics.scaledFontSize * TITLE_FONT_RATIO, 16);
     const titleMinFontSize = Math.max(titleMaxFontSize * 0.72, 12);
@@ -80,7 +48,7 @@ export function renderGalleryCaptionMatTemplate(ctx, args) {
         minFontSize: titleMinFontSize,
         buildFont: (fontSize) => buildCanvasFont({
             fontSize,
-            fontWeight: 400,
+            fontWeight: titleFontWeight,
             fontIdEn: data.titleFontId,
             fontIdZh: data.titleFontId,
         }),
@@ -91,15 +59,18 @@ export function renderGalleryCaptionMatTemplate(ctx, args) {
         titleText,
         titleFit.fontSize,
         data.titleFontId,
-        400
+        titleFontWeight
     );
     const textPrimary = getAppearanceColor(appearance, 'title', '#1A1A1A');
     const textSecondary = getAppearanceColor(appearance, 'subtitle', textPrimary);
     const borderColor = getAppearanceColor(appearance, 'photoBorder', '#000000');
     const borderWidth = Math.max(squareSide * BORDER_WIDTH_RATIO, 1);
+    const shouldDrawBorder = appearance.key === 'white' && data.showThinBorder;
 
     ctx.save();
-    drawBeveledPhotoBorder(ctx, metrics.scaledPhotoArea, borderWidth, borderColor);
+    if (shouldDrawBorder) {
+        drawBeveledPhotoBorder(ctx, metrics.scaledPhotoArea, borderWidth, borderColor);
+    }
 
     ctx.textAlign = 'center';
     ctx.fillStyle = textPrimary;

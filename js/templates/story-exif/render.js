@@ -1,15 +1,16 @@
 import { buildCanvasFont } from '../../core/fonts/index.js';
+import { getAppearanceColor } from '../../core/templates/registry.js';
 import { insetRect, joinMetaParts } from '../shared.js';
 
 export function renderStoryExifTemplate(ctx, args) {
-    const { area, data, metrics, runtime } = args;
+    const { area, data, appearance, metrics, runtime } = args;
     const contentArea = insetRect(
         area,
         Math.max(runtime.scaleByShortEdge(0.018), 20),
         Math.max(area.height * 0.16, 12)
     );
     const titleText = data.title || 'Untitled';
-    const subtitleText = data.subtitle || '';
+    const subtitleText = data.showSubtitle ? (data.subtitle || '') : '';
     const primaryMeta = data.hasExif ? joinMetaParts(data.metaPrimary, '   ') : data.fallbackNote;
     const secondaryMeta = data.hasExif ? joinMetaParts(data.metaSecondary, '   ') : '';
 
@@ -33,50 +34,56 @@ export function renderStoryExifTemplate(ctx, args) {
         fontIdZh: data.metaFontId,
         fontIdEn: data.metaFontId,
     });
+    const subtitleFontSize = Math.max(metrics.scaledFontSize * 0.82, 11);
+    const subtitleFont = buildCanvasFont({
+        fontSize: subtitleFontSize,
+        fontWeight: 400,
+        fontIdEn: data.titleFontId,
+        fontIdZh: data.titleFontId,
+    });
+    const titleColor = getAppearanceColor(appearance, 'title', '#F8FAFC');
+    const subtitleColor = getAppearanceColor(appearance, 'subtitle', '#CBD5E1');
+    const metaPrimaryColor = getAppearanceColor(appearance, 'metaPrimary', '#E2E8F0');
+    const metaSecondaryColor = getAppearanceColor(appearance, 'metaSecondary', '#94A3B8');
+    const metaFallbackColor = getAppearanceColor(appearance, 'metaFallback', '#94A3B8');
+    const lineGap = Math.max(metrics.scaledFontSize * 0.18, 6);
+    const leftGroupHeight = titleFit.fontSize + (subtitleText ? lineGap + subtitleFontSize : 0);
+    const leftGroupTop = contentArea.y + (contentArea.height - leftGroupHeight) / 2;
+    const rightHasSecondaryLine = Boolean(secondaryMeta);
+    const rightGroupHeight = metaFontSize + (rightHasSecondaryLine ? lineGap + metaFontSize : 0);
+    const rightGroupTop = contentArea.y + (contentArea.height - rightGroupHeight) / 2;
 
     ctx.save();
     ctx.textBaseline = 'top';
 
-    ctx.fillStyle = '#f8fafc';
+    ctx.fillStyle = titleColor;
     ctx.textAlign = 'left';
     ctx.font = titleFit.font;
-    ctx.fillText(titleText, contentArea.x, contentArea.y);
+    ctx.fillText(titleText, contentArea.x, leftGroupTop);
 
     if (subtitleText) {
-        ctx.font = buildCanvasFont({
-            fontSize: Math.max(metrics.scaledFontSize * 0.82, 11),
-            fontWeight: 400,
-            fontIdEn: data.titleFontId,
-            fontIdZh: data.titleFontId,
-        });
-        ctx.fillStyle = '#cbd5e1';
+        ctx.font = subtitleFont;
+        ctx.fillStyle = subtitleColor;
         ctx.fillText(
             subtitleText,
             contentArea.x,
-            contentArea.y + titleFit.fontSize + Math.max(metrics.scaledFontSize * 0.18, 6)
+            leftGroupTop + titleFit.fontSize + lineGap
         );
     }
 
     ctx.textAlign = 'right';
     ctx.font = metaFont;
-    ctx.fillStyle = data.hasExif ? '#e2e8f0' : '#94a3b8';
-    ctx.fillText(primaryMeta, contentArea.x + contentArea.width, contentArea.y + 2);
+    ctx.fillStyle = data.hasExif ? metaPrimaryColor : metaFallbackColor;
+    ctx.fillText(primaryMeta, contentArea.x + contentArea.width, rightGroupTop);
 
     if (secondaryMeta) {
-        ctx.fillStyle = '#94a3b8';
+        ctx.fillStyle = metaSecondaryColor;
         ctx.fillText(
             secondaryMeta,
             contentArea.x + contentArea.width,
-            contentArea.y + metaFontSize + Math.max(metrics.scaledFontSize * 0.18, 6)
+            rightGroupTop + metaFontSize + lineGap
         );
     }
-
-    ctx.strokeStyle = '#334155';
-    ctx.lineWidth = Math.max(metrics.scaledFontSize * 0.08, 1);
-    ctx.beginPath();
-    ctx.moveTo(area.x, area.y);
-    ctx.lineTo(area.x + area.width, area.y);
-    ctx.stroke();
 
     ctx.restore();
 }

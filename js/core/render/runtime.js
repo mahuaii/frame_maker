@@ -901,7 +901,7 @@ export async function renderTemplateFrame(canvas, image, template, rawConfig, op
 
     const { ctx } = canvasSetup;
 
-    const resolveInput = await buildTemplateResolveInput({
+    const resolveInput = buildTemplateResolveInput({
         photo: options.photo ?? {
             file: null,
             image,
@@ -912,6 +912,7 @@ export async function renderTemplateFrame(canvas, image, template, rawConfig, op
             size: null,
         },
         customText: config,
+        exifOverrides: options.exifOverrides ?? {},
         global: globalSettings,
     });
     const data = template.resolveData(resolveInput);

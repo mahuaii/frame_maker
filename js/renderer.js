@@ -14,10 +14,13 @@ export {
     setupCanvas,
 } from './core/render/runtime.js';
 export {
+    EDITABLE_EXIF_FIELDS,
     buildTemplateResolveInput,
+    createEditableExifOverrideValues,
     createGlobalRenderSettings,
     createPhotoSource,
     extractExifData,
+    resolveEditableExif,
 } from './core/render/input.js';
 
 export function renderFrame(canvas, image, template, fieldValues, scaleOrOptions = 1) {

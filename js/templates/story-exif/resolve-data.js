@@ -15,6 +15,7 @@ export function resolveStoryExifTemplateData(input) {
     return {
         title: String(input.customText.title ?? '').trim(),
         subtitle: String(input.customText.subtitle ?? '').trim(),
+        showSubtitle: Boolean(input.customText.showSubtitle ?? true),
         titleFontId: input.customText.titleFontId ?? 'angieSansStd',
         metaFontId: input.customText.metaFontId ?? 'systemSans',
         metaScale: Number(input.customText.metaScale ?? 1),

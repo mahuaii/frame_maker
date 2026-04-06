@@ -38,6 +38,15 @@ export const simpleMatAppearanceThemes = {
 
 export const simpleMatTemplateFields = [
     buildAppearanceField(simpleMatAppearanceThemes),
+    {
+        key: 'showThinBorder',
+        label: '显示细框',
+        type: 'toggle',
+        defaultValue: false,
+        appearanceVisibility: {
+            showOn: ['white'],
+        },
+    },
 ];
 
 export const simpleMatTemplateSchema = {

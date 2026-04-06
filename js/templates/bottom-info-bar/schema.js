@@ -1,6 +1,7 @@
 import { buildDefaultConfig } from '../../core/templates/fields.js';
 import { buildAppearanceField } from '../../core/templates/appearance.js';
 import { createAppearanceThemes } from '../../core/templates/registry.js';
+import { fontFieldOptions } from '../shared.js';
 
 export const bottomInfoBarAppearanceThemes = createAppearanceThemes({}, {
     white: {
@@ -23,6 +24,20 @@ export const bottomInfoBarAppearanceThemes = createAppearanceThemes({}, {
 
 export const bottomInfoBarTemplateFields = [
     buildAppearanceField(bottomInfoBarAppearanceThemes),
+    {
+        key: 'leftFontId',
+        label: '左侧字体',
+        type: 'select',
+        defaultValue: 'systemSans',
+        options: fontFieldOptions,
+    },
+    {
+        key: 'rightFontId',
+        label: '右侧字体',
+        type: 'select',
+        defaultValue: 'systemSans',
+        options: fontFieldOptions,
+    },
 ];
 
 export const bottomInfoBarTemplateSchema = {

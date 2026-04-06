@@ -1,7 +1,40 @@
 import { buildDefaultConfig } from '../../core/templates/fields.js';
+import { buildAppearanceField } from '../../core/templates/appearance.js';
 import { defaultSizing, fontFieldOptions } from '../shared.js';
 
+export const storyExifAppearanceThemes = {
+    white: {
+        label: '白色',
+        canvasBackground: {
+            type: 'solid',
+            color: '#FFFFFF',
+        },
+        colors: {
+            title: '#111827',
+            subtitle: '#6B7280',
+            metaPrimary: '#1F2937',
+            metaSecondary: '#6B7280',
+            metaFallback: '#9CA3AF',
+        },
+    },
+    black: {
+        label: '黑色',
+        canvasBackground: {
+            type: 'solid',
+            color: '#111111',
+        },
+        colors: {
+            title: '#F8FAFC',
+            subtitle: '#CBD5E1',
+            metaPrimary: '#E2E8F0',
+            metaSecondary: '#94A3B8',
+            metaFallback: '#94A3B8',
+        },
+    },
+};
+
 export const storyExifTemplateFields = [
+    buildAppearanceField(storyExifAppearanceThemes),
     {
         key: 'title',
         label: '标题',
@@ -13,6 +46,12 @@ export const storyExifTemplateFields = [
         label: '副标题',
         type: 'text',
         defaultValue: 'Title and EXIF can coexist without placeholders.',
+    },
+    {
+        key: 'showSubtitle',
+        label: '副标题',
+        type: 'toggle',
+        defaultValue: true,
     },
     {
         key: 'titleFontId',
@@ -55,6 +94,9 @@ export const storyExifTemplateSchema = {
     id: 'story-exif',
     label: '标题 + EXIF',
     backgroundColor: '#111111',
+    appearanceFieldKey: 'colorScheme',
+    appearanceDefaultKey: 'black',
+    appearanceThemes: storyExifAppearanceThemes,
     ...defaultSizing,
     barHeightRatio: 0.14,
     fontSizeRatio: 0.028,

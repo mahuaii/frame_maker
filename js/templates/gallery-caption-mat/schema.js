@@ -33,16 +33,25 @@ export const galleryCaptionMatAppearanceThemes = {
 export const galleryCaptionMatTemplateFields = [
     buildAppearanceField(galleryCaptionMatAppearanceThemes),
     {
+        key: 'showThinBorder',
+        label: '显示细框',
+        type: 'toggle',
+        defaultValue: true,
+        appearanceVisibility: {
+            showOn: ['white'],
+        },
+    },
+    {
         key: 'title',
         label: '主标题',
         type: 'text',
-        defaultValue: '若草山 / 奈良県',
+        defaultValue: 'Sample Location / City',
     },
     {
         key: 'subtitle',
         label: '副标题',
         type: 'text',
-        defaultValue: 'NIKON Z6 III',
+        defaultValue: 'Camera Model / Notes',
     },
     {
         key: 'showSubtitle',
@@ -56,6 +65,13 @@ export const galleryCaptionMatTemplateFields = [
         type: 'select',
         defaultValue: 'miSans',
         options: fontFieldOptions,
+    },
+    {
+        key: 'titleFontWeight',
+        label: '主标题字重',
+        type: 'number',
+        defaultValue: 300,
+        hidden: true,
     },
     {
         key: 'subtitleFontId',

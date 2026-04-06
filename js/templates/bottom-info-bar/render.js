@@ -12,14 +12,14 @@ export function renderBottomInfoBarTemplate(ctx, args) {
     const cameraFont = buildCanvasFont({
         fontSize: Math.max(metrics.scaledFontSize * 0.92, 12),
         fontWeight: 700,
-        fontIdEn: 'systemSans',
-        fontIdZh: 'systemSans',
+        fontIdEn: data.leftFontId,
+        fontIdZh: data.leftFontId,
     });
     const metaFont = buildCanvasFont({
         fontSize: Math.max(metrics.scaledFontSize * 0.8, 11),
         fontWeight: 600,
-        fontIdEn: 'systemSans',
-        fontIdZh: 'systemSans',
+        fontIdEn: data.rightFontId,
+        fontIdZh: data.rightFontId,
     });
     const separatorHeight = Math.max(contentArea.height * 0.42, 10);
     const separatorGap = Math.max(runtime.scaleByShortEdge(0.014), 10);

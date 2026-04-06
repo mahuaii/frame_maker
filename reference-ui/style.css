@@ -1,6 +1,6 @@
 @font-face {
     font-family: "MiSans";
-    src: url("../assets/fonts/MiSans-Regular.otf") format("opentype"),
+    src: url("../assets/fonts/MiSans-Regular.woff2") format("woff2"),
         local("MiSans Regular"),
         local("MiSans-Regular"),
         local("MiSans");
@@ -11,7 +11,7 @@
 
 @font-face {
     font-family: "MiSans";
-    src: url("../assets/fonts/MiSans-Light.otf") format("opentype"),
+    src: url("../assets/fonts/MiSans-Light.woff2") format("woff2"),
         local("MiSans Light"),
         local("MiSans-Light"),
         local("MiSans");

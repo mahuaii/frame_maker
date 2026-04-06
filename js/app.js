@@ -6,17 +6,28 @@
 import { templates, getTemplateById } from './templates.js';
 import { resolveTemplateAppearance } from './core/templates/registry.js';
 import { loadTemplateConfig, saveTemplateConfig } from './core/templates/config-store.js';
+import { isFieldVisible } from './core/templates/fields.js';
 import { resolveTemplateConfig } from './core/templates/registry.js';
 import { preloadRuntimeFontsInBackground } from './core/fonts/index.js';
-import { renderFrame, calculateFrameMetrics, createPhotoSource } from './renderer.js';
+import {
+    renderFrame,
+    calculateFrameMetrics,
+    createPhotoSource,
+    createEditableExifOverrideValues,
+    extractExifData,
+    EDITABLE_EXIF_FIELDS,
+} from './renderer.js';
 
 // ============================================
 // 状态管理
 // ============================================
 let currentImage = null;           // HTMLImageElement | null
 let currentPhoto = null;           // Normalized photo source | null
-let selectedTemplateId = 'classic-frame';  // 默认选经典相框模板
+let selectedTemplateId = 'gallery-caption-mat';  // 默认选第一个模板
 let fieldValues = {};              // Record<string, string>
+let exifOverrideValues = {};       // Record<string, string>
+let initialExifOverrideValues = {}; // 上传后预填写到表单中的 EXIF 快照
+let isExifEditorExpanded = false;
 const THUMBNAIL_MAX_WIDTH = 180;
 const THUMBNAIL_MAX_HEIGHT = 135;
 const ASSET_VERSION = '20260405-181900';
@@ -73,6 +84,30 @@ function parsePositiveInteger(value) {
 
 function formatJpegQualityLabel(quality) {
     return `${Math.round(clampJpegQuality(quality) * 100)}%`;
+}
+
+function getExtensionForMimeType(mimeType) {
+    switch (mimeType) {
+        case 'image/png':
+            return 'png';
+        case 'image/webp':
+            return 'webp';
+        case 'image/jpeg':
+        default:
+            return 'jpg';
+    }
+}
+
+function buildExportFilename(photoName, mimeType) {
+    const fallbackBaseName = 'frame_maker_export';
+    const sourceName = typeof photoName === 'string' ? photoName.trim() : '';
+    const lastDotIndex = sourceName.lastIndexOf('.');
+    const hasExtension = lastDotIndex > 0;
+    const baseName = hasExtension ? sourceName.slice(0, lastDotIndex) : sourceName;
+    const normalizedBaseName = (baseName || fallbackBaseName).trim() || fallbackBaseName;
+    const extension = getExtensionForMimeType(mimeType);
+
+    return `${normalizedBaseName}_framed.${extension}`;
 }
 
 function syncJpegQualityTrack(quality) {
@@ -283,12 +318,11 @@ function renderTextEditor() {
     if (!template) return;
 
     textEditor.innerHTML = '';
-    const orderedFields = [
-        ...template.fields.filter((field) => field.type !== 'toggle'),
-        ...template.fields.filter((field) => field.type === 'toggle'),
-    ];
+    const visibleFields = template.fields.filter((field) => !field.hidden && isFieldVisible(field, fieldValues, template));
+    const nonToggleFields = visibleFields.filter((field) => field.type !== 'toggle');
+    const toggleFields = visibleFields.filter((field) => field.type === 'toggle');
 
-    orderedFields.forEach(field => {
+    nonToggleFields.forEach(field => {
         const fieldGroup = document.createElement('div');
         fieldGroup.className = 'field-group';
 
@@ -303,15 +337,46 @@ function renderTextEditor() {
         fieldGroup.appendChild(input);
         textEditor.appendChild(fieldGroup);
     });
+
+    if (toggleFields.length > 0) {
+        const toggleGroup = document.createElement('div');
+        toggleGroup.className = 'toggle-group';
+
+        toggleFields.forEach((field) => {
+            toggleGroup.appendChild(createFieldInput(field));
+        });
+
+        textEditor.appendChild(toggleGroup);
+    }
+
+    textEditor.appendChild(createExifEditorSection());
+}
+
+function getVisibleFieldKeys(template, values) {
+    return template.fields
+        .filter((field) => isFieldVisible(field, values, template))
+        .map((field) => field.key);
 }
 
 function commitFieldValue(field, nextValue) {
     const template = getTemplateById(selectedTemplateId);
     if (!template) return;
 
+    const previousVisibleFieldKeys = getVisibleFieldKeys(template, fieldValues);
+
     fieldValues[field.key] = nextValue;
     fieldValues = resolveTemplateConfig(template, fieldValues);
     saveTemplateConfig(template, fieldValues);
+
+    const nextVisibleFieldKeys = getVisibleFieldKeys(template, fieldValues);
+    const didVisibleFieldsChange =
+        previousVisibleFieldKeys.length !== nextVisibleFieldKeys.length
+        || previousVisibleFieldKeys.some((key, index) => key !== nextVisibleFieldKeys[index]);
+
+    if (didVisibleFieldsChange) {
+        renderTextEditor();
+    }
+
     updatePreview();
 }
 
@@ -450,6 +515,107 @@ function createFieldInput(field) {
     return input;
 }
 
+function getExifEditorFieldValue(fieldKey) {
+    const currentValue = exifOverrideValues[fieldKey];
+    if (currentValue === null || currentValue === undefined) {
+        return '';
+    }
+
+    return String(currentValue);
+}
+
+function commitExifFieldValue(fieldKey, nextValue) {
+    exifOverrideValues = {
+        ...exifOverrideValues,
+        [fieldKey]: nextValue,
+    };
+
+    updatePreview();
+}
+
+function resetExifFieldValue(fieldKey, input) {
+    const resetValue = initialExifOverrideValues[fieldKey] ?? '';
+
+    exifOverrideValues = {
+        ...exifOverrideValues,
+        [fieldKey]: resetValue,
+    };
+
+    if (input) {
+        input.value = resetValue;
+    }
+
+    updatePreview();
+}
+
+function createExifEditorInput(field) {
+    const input = document.createElement('input');
+    input.type = 'text';
+    input.value = getExifEditorFieldValue(field.key);
+    input.addEventListener('input', (e) => {
+        commitExifFieldValue(field.key, e.target.value);
+    });
+    input.id = `field-exif-${field.key}`;
+    input.dataset.fieldKey = `exif-${field.key}`;
+    return input;
+}
+
+function createExifEditorResetButton(field, input) {
+    const button = document.createElement('button');
+    button.type = 'button';
+    button.className = 'field-reset-button';
+    button.setAttribute('aria-label', `重置${field.label}`);
+    button.setAttribute('title', `重置${field.label}`);
+    button.innerHTML = `
+        <svg viewBox="0 0 16 16" aria-hidden="true" focusable="false">
+            <path d="M3.2 8a4.8 4.8 0 1 0 1.406-3.394" />
+            <path d="M3.2 3.6v2.4h2.4" />
+        </svg>
+    `;
+    button.addEventListener('click', () => {
+        resetExifFieldValue(field.key, input);
+    });
+    return button;
+}
+
+function createExifEditorSection() {
+    const section = document.createElement('details');
+    section.className = 'editor-collapsible-section';
+    section.open = isExifEditorExpanded;
+    section.addEventListener('toggle', () => {
+        isExifEditorExpanded = section.open;
+    });
+
+    const summary = document.createElement('summary');
+    summary.className = 'editor-collapsible-summary';
+    summary.textContent = 'EXIF 编辑';
+    section.appendChild(summary);
+
+    const content = document.createElement('div');
+    content.className = 'editor-collapsible-content';
+
+    EDITABLE_EXIF_FIELDS.forEach((field) => {
+        const fieldGroup = document.createElement('div');
+        fieldGroup.className = 'field-group';
+
+        const input = createExifEditorInput(field);
+        const header = document.createElement('div');
+        header.className = 'field-group-header';
+        const label = document.createElement('label');
+        label.textContent = field.label;
+        label.htmlFor = `field-exif-${field.key}`;
+        header.appendChild(label);
+        header.appendChild(createExifEditorResetButton(field, input));
+        fieldGroup.appendChild(header);
+        fieldGroup.appendChild(input);
+        content.appendChild(fieldGroup);
+    });
+
+    section.appendChild(content);
+
+    return section;
+}
+
 // ============================================
 // 图片上传处理
 // ============================================
@@ -470,11 +636,16 @@ function handleFileSelect(file) {
     image.onload = async () => {
         currentImage = image;
         currentPhoto = createPhotoSource({ file, image });
+        const extractedExif = await extractExifData(currentPhoto);
+        exifOverrideValues = createEditableExifOverrideValues(extractedExif);
+        initialExifOverrideValues = { ...exifOverrideValues };
 
         // 初始化 fieldValues（如果还没有值）
         const template = getTemplateById(selectedTemplateId);
-        if (template && Object.keys(fieldValues).length === 0) {
-            fieldValues = loadTemplateConfig(template);
+        if (template) {
+            if (Object.keys(fieldValues).length === 0) {
+                fieldValues = loadTemplateConfig(template);
+            }
             renderTextEditor();
         }
 
@@ -562,6 +733,7 @@ async function updatePreview() {
         scale: 1,
         mode: 'preview',
         photo: currentPhoto,
+        exifOverrides: exifOverrideValues,
     });
 
     const previewSize = calculateContainedSize(
@@ -608,6 +780,7 @@ async function handleExport() {
         scale: 1,
         mode: 'export',
         photo: currentPhoto,
+        exifOverrides: exifOverrideValues,
         global: {
             resize,
             compression: {
@@ -633,7 +806,7 @@ async function handleExport() {
         const url = URL.createObjectURL(blob);
         const link = document.createElement('a');
         link.href = url;
-        link.download = 'frame_maker_export.jpg';
+        link.download = buildExportFilename(currentPhoto?.name, compression.mimeType);
 
         // 触发下载
         document.body.appendChild(link);

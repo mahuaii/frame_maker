@@ -565,6 +565,42 @@ body {
     line-height: 1;
 }
 
+.field-group-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+}
+
+.field-reset-button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 18px;
+    height: 18px;
+    border: none;
+    padding: 0;
+    background: transparent;
+    color: var(--color-text-secondary);
+    cursor: pointer;
+    opacity: 0.8;
+}
+
+.field-reset-button:hover {
+    opacity: 1;
+    color: var(--color-text-primary);
+}
+
+.field-reset-button svg {
+    width: 14px;
+    height: 14px;
+    stroke: currentColor;
+    stroke-width: 1.35;
+    fill: none;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+}
+
 .field-group input,
 .field-group textarea,
 .field-group select {
@@ -677,15 +713,75 @@ body {
     align-self: flex-start;
 }
 
+.toggle-group {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    align-items: flex-start;
+}
+
+.editor-collapsible-section {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.editor-collapsible-summary {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    list-style: none;
+    cursor: pointer;
+    width: fit-content;
+    font-size: 11px;
+    font-weight: 500;
+    color: var(--color-text-secondary);
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    opacity: 0.92;
+    line-height: 1;
+    user-select: none;
+    transition: background-color 0.18s ease, color 0.18s ease;
+}
+
+.editor-collapsible-summary::-webkit-details-marker {
+    display: none;
+}
+
+.editor-collapsible-summary:hover {
+    color: var(--color-text-primary);
+}
+
+.editor-collapsible-summary::before {
+    content: '';
+    width: 7px;
+    height: 7px;
+    border-right: 1.5px solid currentColor;
+    border-bottom: 1.5px solid currentColor;
+    transform: rotate(-45deg) translateY(-1px);
+    transform-origin: center;
+    transition: transform 0.18s ease;
+    opacity: 0.72;
+}
+
+.editor-collapsible-section[open] .editor-collapsible-summary::before {
+    transform: rotate(45deg) translateY(-1px);
+}
+
+.editor-collapsible-content {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+
 .toggle-pill {
     display: inline-flex;
     align-items: center;
     gap: 6px;
     width: auto;
     min-height: 28px;
-    margin-top: 4px;
     padding: 0 10px;
-    align-self: flex-start;
     border: 2px solid var(--color-control-border);
     border-radius: var(--radius-sm);
     background: transparent;

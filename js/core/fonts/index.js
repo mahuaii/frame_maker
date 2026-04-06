@@ -5,6 +5,14 @@ function resolveFontAssetUrl(relativePath) {
 }
 
 function inferFontFormat(assetRelativePath = '') {
+    if (assetRelativePath.endsWith('.woff2')) {
+        return 'woff2';
+    }
+
+    if (assetRelativePath.endsWith('.woff')) {
+        return 'woff';
+    }
+
     if (assetRelativePath.endsWith('.ttf')) {
         return 'truetype';
     }
@@ -37,7 +45,7 @@ const FONT_REGISTRY = {
         family: 'MiSans',
         source: buildFontSource(
             ['MiSans', 'MiSans Regular', 'MiSans-Regular', 'MiSans Normal', 'MiSans-Normal'],
-            '../../../assets/fonts/MiSans-Regular.otf'
+            '../../../assets/fonts/MiSans-Regular.woff2'
         ),
     },
     timesNewRoman: {

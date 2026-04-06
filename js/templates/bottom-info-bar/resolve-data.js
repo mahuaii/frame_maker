@@ -18,5 +18,7 @@ export function resolveBottomInfoBarTemplateData(input) {
     return {
         cameraText: exif?.model || exif?.formatted?.camera || 'Unknown Camera',
         metaItems,
+        leftFontId: input.customText.leftFontId ?? input.customText.fontId ?? 'systemSans',
+        rightFontId: input.customText.rightFontId ?? input.customText.fontId ?? 'systemSans',
     };
 }
