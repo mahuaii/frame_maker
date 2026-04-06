@@ -7,7 +7,7 @@ import { templates, getTemplateById } from './templates.js';
 import { resolveTemplateAppearance } from './core/templates/registry.js';
 import { loadTemplateConfig, saveTemplateConfig } from './core/templates/config-store.js';
 import { resolveTemplateConfig } from './core/templates/registry.js';
-import { loadRuntimeFonts } from './core/fonts/index.js';
+import { preloadRuntimeFontsInBackground } from './core/fonts/index.js';
 import { renderFrame, calculateFrameMetrics, createPhotoSource } from './renderer.js';
 
 // ============================================
@@ -699,9 +699,7 @@ function bindEvents() {
 // ============================================
 // 初始化
 // ============================================
-async function init() {
-    await loadRuntimeFonts();
-
+function init() {
     // 初始化 fieldValues 为默认模板的默认值
     const template = getTemplateById(selectedTemplateId);
     if (template) {
@@ -721,6 +719,12 @@ async function init() {
 
     // 初始状态：隐藏 canvas，显示上传引导
     canvas.style.display = 'none';
+
+    preloadRuntimeFontsInBackground()?.then(() => {
+        if (currentImage) {
+            updatePreview();
+        }
+    });
 }
 
 // 启动应用

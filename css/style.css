@@ -1,26 +1,4 @@
 /* === Reset & Base === */
-@font-face {
-    font-family: 'MiSans';
-    src: url('../assets/fonts/MiSans-Regular.otf') format('opentype'),
-        local('MiSans Regular'),
-        local('MiSans-Regular'),
-        local('MiSans');
-    font-weight: 400;
-    font-style: normal;
-    font-display: swap;
-}
-
-@font-face {
-    font-family: 'MiSans';
-    src: url('../assets/fonts/MiSans-Light.otf') format('opentype'),
-        local('MiSans Light'),
-        local('MiSans-Light'),
-        local('MiSans');
-    font-weight: 300;
-    font-style: normal;
-    font-display: swap;
-}
-
 *,
 *::before,
 *::after {
@@ -495,6 +473,7 @@ body {
     width: 100%;
     overflow-x: auto;
     overflow-y: hidden;
+    padding-top: 2px;
     padding-bottom: var(--spacing-1);
     scrollbar-width: none;
     -ms-overflow-style: none;
@@ -508,11 +487,12 @@ body {
 
 /* 模板卡片 */
 .template-card {
+    position: relative;
     display: flex;
     align-items: center;
     justify-content: center;
     width: fit-content;
-    max-width: none;
+    height: fit-content;
     flex: 0 0 auto;
     padding: 0;
     border: 2px solid var(--color-template-border);
@@ -527,16 +507,19 @@ body {
 .template-card:hover {
     border-color: var(--color-template-border-hover);
     transform: translateY(-1px);
+    z-index: 1;
 }
 
 .template-card.selected {
     border-color: var(--color-accent);
+    z-index: 1;
 }
 
 .template-thumbnail {
-    max-width: none;
-    height: auto;
+    width: auto;
+    height: 135px;
     display: block;
+    background: transparent;
 }
 
 /* === 右侧设置区 === */

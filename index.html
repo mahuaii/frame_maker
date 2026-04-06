@@ -8,6 +8,43 @@
     <meta http-equiv="Pragma" content="no-cache">
     <meta http-equiv="Expires" content="0">
     <title>Frame Maker</title>
+    <script>
+        (() => {
+            const assetVersion = '20260406-223000';
+            const localFontHref = `css/fonts-local.css?v=${assetVersion}`;
+            const cdnFontHrefs = [
+                'https://cdn.jsdelivr.net/npm/misans@4.1.0/lib/Normal/MiSans-Light.min.css',
+                'https://cdn.jsdelivr.net/npm/misans@4.1.0/lib/Normal/MiSans-Regular.min.css',
+            ];
+            const isLocalHost = ['localhost', '127.0.0.1', '[::1]'].includes(window.location.hostname)
+                || window.location.protocol === 'file:';
+
+            const appendStylesheet = (href) => {
+                const link = document.createElement('link');
+                link.rel = 'stylesheet';
+                link.href = href;
+                document.head.appendChild(link);
+                return link;
+            };
+
+            if (isLocalHost) {
+                appendStylesheet(localFontHref);
+                return;
+            }
+
+            let localFallbackLoaded = false;
+            const loadLocalFallback = () => {
+                if (localFallbackLoaded) return;
+                localFallbackLoaded = true;
+                appendStylesheet(localFontHref);
+            };
+
+            cdnFontHrefs.forEach((href) => {
+                const link = appendStylesheet(href);
+                link.addEventListener('error', loadLocalFallback, { once: true });
+            });
+        })();
+    </script>
     <link rel="stylesheet" href="css/style.css?v=20260405-181900">
 </head>
 

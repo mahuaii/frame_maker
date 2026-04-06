@@ -4,9 +4,17 @@ function resolveFontAssetUrl(relativePath) {
     return new URL(relativePath, import.meta.url).href;
 }
 
+function inferFontFormat(assetRelativePath = '') {
+    if (assetRelativePath.endsWith('.ttf')) {
+        return 'truetype';
+    }
+
+    return 'opentype';
+}
+
 function buildFontSource(localNames = [], assetRelativePath = '') {
     const fileSource = assetRelativePath
-        ? `url("${resolveFontAssetUrl(assetRelativePath)}") format("opentype")`
+        ? `url("${resolveFontAssetUrl(assetRelativePath)}") format("${inferFontFormat(assetRelativePath)}")`
         : '';
     const localSources = localNames.map((name) => `local("${name}")`);
 
@@ -32,6 +40,15 @@ const FONT_REGISTRY = {
             '../../../assets/fonts/MiSans-Regular.otf'
         ),
     },
+    timesNewRoman: {
+        id: 'timesNewRoman',
+        label: 'Times New Roman',
+        family: 'Times New Roman',
+        source: buildFontSource(
+            ['Times New Roman', 'TimesNewRomanPSMT', 'TimesNewRoman'],
+            '../../../assets/fonts/times.ttf'
+        ),
+    },
     systemSans: {
         id: 'systemSans',
         label: 'System Sans',
@@ -53,6 +70,7 @@ export const FONT_FAMILIES = {
 };
 
 let runtimeFontsReadyPromise = null;
+let runtimeFontPreloadStarted = false;
 const loadedFontIds = new Set();
 
 export function getFontById(fontId) {
@@ -124,19 +142,26 @@ export function resolveScaledFontSize(baseFontSize, fontSizeRatio = 1) {
     return Math.max(baseFontSize * fontSizeRatio, 1);
 }
 
-export async function loadRuntimeFonts() {
-    if (runtimeFontsReadyPromise) {
-        return runtimeFontsReadyPromise;
-    }
+function canLoadRuntimeFonts() {
+    return typeof window !== 'undefined' && typeof FontFace !== 'undefined' && Boolean(document?.fonts);
+}
 
+function createRuntimeFontsReadyPromise() {
     runtimeFontsReadyPromise = (async () => {
-        if (typeof window === 'undefined' || typeof FontFace === 'undefined' || !document?.fonts) {
+        if (!canLoadRuntimeFonts()) {
             return;
         }
 
-        await Promise.all(
-            Object.values(FONT_REGISTRY).map((fontConfig) => ensureRuntimeFont(fontConfig.id))
+        const fontConfigs = Object.values(FONT_REGISTRY).filter((fontConfig) => !fontConfig.system);
+        const results = await Promise.allSettled(
+            fontConfigs.map((fontConfig) => ensureRuntimeFont(fontConfig.id))
         );
+
+        results.forEach((result, index) => {
+            if (result.status === 'rejected') {
+                console.warn(`Runtime font "${fontConfigs[index]?.id}" failed to load, falling back.`, result.reason);
+            }
+        });
 
         await document.fonts.ready;
     })().catch((error) => {
@@ -144,6 +169,19 @@ export async function loadRuntimeFonts() {
     });
 
     return runtimeFontsReadyPromise;
+}
+
+export function loadRuntimeFonts() {
+    return runtimeFontsReadyPromise ?? createRuntimeFontsReadyPromise();
+}
+
+export function preloadRuntimeFontsInBackground() {
+    if (runtimeFontPreloadStarted) {
+        return runtimeFontsReadyPromise;
+    }
+
+    runtimeFontPreloadStarted = true;
+    return loadRuntimeFonts();
 }
 
 export async function ensureRuntimeFont(fontId) {
@@ -157,7 +195,7 @@ export async function ensureRuntimeFont(fontId) {
         return;
     }
 
-    if (typeof window === 'undefined' || typeof FontFace === 'undefined' || !document?.fonts) {
+    if (!canLoadRuntimeFonts()) {
         return;
     }
 
