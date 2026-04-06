@@ -35,6 +35,14 @@ function hasCustomPhotoArea(template) {
 }
 
 export function calculateFrameMetrics(image, template, scale = 1) {
+    if (typeof template?.calculateFrameMetrics === 'function') {
+        return template.calculateFrameMetrics({
+            image,
+            template,
+            scale,
+        });
+    }
+
     const imageWidth = image.naturalWidth;
     const imageHeight = image.naturalHeight;
     const barBasisSize = getBasisSize(imageWidth, imageHeight, template.barSizeBasis);
