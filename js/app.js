@@ -27,7 +27,6 @@ let selectedTemplateId = 'gallery-caption-mat';  // 默认选第一个模板
 let fieldValues = {};              // Record<string, string>
 let exifOverrideValues = {};       // Record<string, string>
 let initialExifOverrideValues = {}; // 上传后预填写到表单中的 EXIF 快照
-let isExifEditorExpanded = false;
 const THUMBNAIL_MAX_WIDTH = 180;
 const THUMBNAIL_MAX_HEIGHT = 135;
 const ASSET_VERSION = '20260405-181900';
@@ -50,15 +49,15 @@ const previewArea = document.getElementById('preview-area');
 const uploadGuide = document.getElementById('upload-guide');
 const fileInput = document.getElementById('file-input');
 const btnUpload = document.getElementById('btn-upload');
-const btnExport = document.getElementById('btn-export');
-const exportSizePreset = document.getElementById('export-size-preset');
-const exportCustomSize = document.getElementById('export-custom-size');
-const exportWidthInput = document.getElementById('export-width');
-const exportHeightInput = document.getElementById('export-height');
-const exportQualityInput = document.getElementById('export-quality');
-const exportQualityValue = document.getElementById('export-quality-value');
 const selectorList = document.getElementById('selector-list');
 const textEditor = document.getElementById('text-editor');
+let btnExport = null;
+let exportSizePreset = null;
+let exportCustomSize = null;
+let exportWidthInput = null;
+let exportHeightInput = null;
+let exportQualityInput = null;
+let exportQualityValue = null;
 
 function clampJpegQuality(value) {
     const quality = Number(value);
@@ -111,12 +110,18 @@ function buildExportFilename(photoName, mimeType) {
 }
 
 function syncJpegQualityTrack(quality) {
+    if (!exportQualityInput) return;
+
     const normalizedQuality = clampJpegQuality(quality);
     const progress = ((normalizedQuality - MIN_JPEG_QUALITY) / (MAX_JPEG_QUALITY - MIN_JPEG_QUALITY)) * 100;
     exportQualityInput.style.setProperty('--range-progress', `${progress}%`);
 }
 
 function syncExportControls() {
+    if (!exportSizePreset || !exportWidthInput || !exportHeightInput || !exportQualityInput || !exportQualityValue || !exportCustomSize) {
+        return;
+    }
+
     exportSizePreset.value = exportSettings.sizePreset;
     exportWidthInput.value = exportSettings.customWidth;
     exportHeightInput.value = exportSettings.customHeight;
@@ -240,7 +245,7 @@ function calculateContainedSize(sourceWidth, sourceHeight, containerWidth, conta
 function createThumbnailElement(template) {
     const thumbnailImg = document.createElement('img');
     thumbnailImg.className = 'template-thumbnail';
-    thumbnailImg.alt = template.label;
+    thumbnailImg.alt = template.id;
     thumbnailImg.width = THUMBNAIL_MAX_WIDTH;
     thumbnailImg.height = THUMBNAIL_MAX_HEIGHT;
     const thumbnailSources = [
@@ -313,43 +318,171 @@ async function handleTemplateSelect(templateId) {
 // ============================================
 // 文字编辑区渲染
 // ============================================
+const INSPECTOR_SECTION_DEFINITIONS = [
+    { key: 'layout', title: '版式' },
+    { key: 'appearance', title: '外观' },
+    { key: 'text', title: '文本' },
+    { key: 'exif', title: '拍摄信息' },
+    { key: 'export', title: '导出' },
+];
+const LAYOUT_FIELD_KEYS = new Set([
+    'frameTop',
+    'frameRight',
+    'frameBottom',
+    'frameLeft',
+    'frameVerticalSides',
+    'frameHorizontalSides',
+]);
+const APPEARANCE_FIELD_KEYS = new Set([
+    'colorScheme',
+    'showThinBorder',
+]);
+
 function renderTextEditor() {
     const template = getTemplateById(selectedTemplateId);
     if (!template) return;
 
     textEditor.innerHTML = '';
     const visibleFields = template.fields.filter((field) => !field.hidden && isFieldVisible(field, fieldValues, template));
-    const nonToggleFields = visibleFields.filter((field) => field.type !== 'toggle');
-    const toggleFields = visibleFields.filter((field) => field.type === 'toggle');
+    const fieldsBySection = groupFieldsByInspectorSection(visibleFields);
 
-    nonToggleFields.forEach(field => {
-        const fieldGroup = document.createElement('div');
-        fieldGroup.className = 'field-group';
+    INSPECTOR_SECTION_DEFINITIONS.forEach((definition) => {
+        const section = createInspectorSection(
+            definition.title,
+            definition.key === 'exif' ? createExifEditorResetAllButton() : null
+        );
+        const content = section.querySelector('.inspector-section-content');
 
-        const input = createFieldInput(field);
-
-        if (field.type !== 'toggle') {
-            const label = document.createElement('label');
-            label.textContent = field.label;
-            label.htmlFor = `field-${field.key}`;
-            fieldGroup.appendChild(label);
+        switch (definition.key) {
+            case 'exif':
+                content.appendChild(createExifEditorContent());
+                break;
+            case 'export':
+                content.appendChild(createExportControls());
+                break;
+            default:
+                appendFieldSectionContent(content, fieldsBySection[definition.key], definition.key);
         }
-        fieldGroup.appendChild(input);
-        textEditor.appendChild(fieldGroup);
+
+        textEditor.appendChild(section);
+    });
+}
+
+function groupFieldsByInspectorSection(fields) {
+    const groups = {
+        layout: [],
+        appearance: [],
+        text: [],
+    };
+
+    fields.forEach((field) => {
+        if (LAYOUT_FIELD_KEYS.has(field.key)) {
+            groups.layout.push(field);
+            return;
+        }
+
+        if (APPEARANCE_FIELD_KEYS.has(field.key)) {
+            groups.appearance.push(field);
+            return;
+        }
+
+        groups.text.push(field);
     });
 
-    if (toggleFields.length > 0) {
-        const toggleGroup = document.createElement('div');
-        toggleGroup.className = 'toggle-group';
+    return groups;
+}
 
-        toggleFields.forEach((field) => {
-            toggleGroup.appendChild(createFieldInput(field));
-        });
+function createInspectorSection(title, headerAction = null) {
+    const section = document.createElement('section');
+    section.className = 'inspector-section';
 
-        textEditor.appendChild(toggleGroup);
+    const header = document.createElement('div');
+    header.className = 'inspector-section-header';
+
+    const heading = document.createElement('h2');
+    heading.className = 'inspector-section-title';
+    heading.textContent = title;
+    header.appendChild(heading);
+
+    if (headerAction) {
+        header.appendChild(headerAction);
     }
 
-    textEditor.appendChild(createExifEditorSection());
+    const content = document.createElement('div');
+    content.className = 'inspector-section-content';
+
+    section.appendChild(header);
+    section.appendChild(content);
+
+    return section;
+}
+
+function appendFieldSectionContent(content, fields, sectionKey) {
+    if (!fields || fields.length === 0) {
+        return;
+    }
+
+    if (sectionKey === 'layout') {
+        const grid = document.createElement('div');
+        grid.className = 'inspector-field-grid';
+        fields.forEach((field) => {
+            grid.appendChild(createFieldGroup(field, { compact: true }));
+        });
+        content.appendChild(grid);
+        return;
+    }
+
+    fields.forEach((field) => {
+        content.appendChild(createFieldGroup(field));
+    });
+}
+
+function createFieldGroup(field, { compact = false } = {}) {
+    const fieldGroup = document.createElement('fieldset');
+    fieldGroup.className = `field-group${compact ? ' field-group-compact' : ''}`;
+
+    const input = createFieldInput(field);
+
+    if (field.type === 'toggle') {
+        const label = document.createElement('label');
+        label.className = 'checkbox-field';
+        label.appendChild(input);
+
+        if (field.label) {
+            const text = document.createElement('span');
+            text.textContent = field.label;
+            label.appendChild(text);
+        }
+
+        fieldGroup.appendChild(label);
+        return fieldGroup;
+    }
+
+    const labelText = compact ? getCompactFieldLabel(field) : field.label;
+    if (labelText) {
+        const label = document.createElement('label');
+        label.className = 'field-group-label';
+        label.textContent = labelText;
+        label.htmlFor = `field-${field.key}`;
+        fieldGroup.appendChild(label);
+    }
+
+    fieldGroup.appendChild(input);
+
+    return fieldGroup;
+}
+
+function getCompactFieldLabel(field) {
+    const compactLabels = {
+        frameTop: 'T',
+        frameRight: 'R',
+        frameBottom: 'B',
+        frameLeft: 'L',
+        frameVerticalSides: 'Y',
+        frameHorizontalSides: 'X',
+    };
+
+    return compactLabels[field.key] ?? field.label;
 }
 
 function getVisibleFieldKeys(template, values) {
@@ -405,6 +538,19 @@ function createAutoSizingTextarea(field, defaultRows = 1) {
     return input;
 }
 
+function formatColorOptionValue(value) {
+    if (typeof value !== 'string') {
+        return '000000';
+    }
+
+    const hex = value.trim().match(/^#?([0-9a-f]{6})$/i);
+    if (hex) {
+        return hex[1].toUpperCase();
+    }
+
+    return value.trim().toUpperCase();
+}
+
 function createFieldInput(field) {
     let input;
 
@@ -437,20 +583,47 @@ function createFieldInput(field) {
         case 'select': {
             if (field.control === 'color-buttons') {
                 input = document.createElement('div');
-                input.className = 'option-button-group';
+                input.className = 'option-button-group color-option-list';
                 input.setAttribute('role', 'radiogroup');
 
                 const selectedValue = fieldValues[field.key] ?? field.defaultValue ?? '';
 
                 (field.options ?? []).forEach((option) => {
+                    const swatch = option.swatch ?? '#111111';
                     const button = document.createElement('button');
                     button.type = 'button';
-                    button.className = 'option-button' + (option.value === selectedValue ? ' selected' : '');
+                    button.className = 'option-button color-option-row' + (option.value === selectedValue ? ' selected' : '');
                     button.dataset.value = option.value;
                     button.setAttribute('role', 'radio');
                     button.setAttribute('aria-checked', option.value === selectedValue ? 'true' : 'false');
                     button.setAttribute('aria-label', option.label);
-                    button.style.setProperty('--option-swatch', option.swatch ?? '#111111');
+                    button.style.setProperty('--option-swatch', swatch);
+
+                    const swatchElement = document.createElement('span');
+                    swatchElement.className = 'color-option-swatch';
+                    swatchElement.setAttribute('aria-hidden', 'true');
+
+                    const valueElement = document.createElement('span');
+                    valueElement.className = 'color-option-value';
+                    valueElement.textContent = option.displayValue ?? formatColorOptionValue(swatch);
+
+                    const dividerElement = document.createElement('span');
+                    dividerElement.className = 'color-option-divider';
+                    dividerElement.setAttribute('aria-hidden', 'true');
+
+                    const opacityElement = document.createElement('span');
+                    opacityElement.className = 'color-option-opacity';
+
+                    const opacityValueElement = document.createElement('span');
+                    opacityValueElement.className = 'color-option-opacity-value';
+                    opacityValueElement.textContent = option.opacity ?? '100';
+
+                    const opacityUnitElement = document.createElement('span');
+                    opacityUnitElement.className = 'color-option-opacity-unit';
+                    opacityUnitElement.textContent = '%';
+
+                    opacityElement.append(opacityValueElement, opacityUnitElement);
+                    button.append(swatchElement, valueElement, dividerElement, opacityElement);
 
                     button.addEventListener('click', () => {
                         const group = button.parentElement;
@@ -482,20 +655,11 @@ function createFieldInput(field) {
         }
         case 'toggle': {
             const currentValue = Boolean(fieldValues[field.key] ?? field.defaultValue);
-            input = document.createElement('button');
-            input.type = 'button';
-            input.className = 'toggle-pill' + (currentValue ? ' is-active' : '');
-            input.setAttribute('role', 'switch');
-            input.setAttribute('aria-checked', currentValue ? 'true' : 'false');
-            const text = document.createElement('span');
-            text.className = 'toggle-pill-text';
-            text.textContent = field.label;
-            input.appendChild(text);
-            input.addEventListener('click', () => {
-                const nextValue = input.getAttribute('aria-checked') !== 'true';
-                input.classList.toggle('is-active', nextValue);
-                input.setAttribute('aria-checked', nextValue ? 'true' : 'false');
-                commitFieldValue(field, nextValue);
+            input = document.createElement('input');
+            input.type = 'checkbox';
+            input.checked = currentValue;
+            input.addEventListener('change', () => {
+                commitFieldValue(field, input.checked);
             });
             break;
         }
@@ -533,21 +697,6 @@ function commitExifFieldValue(fieldKey, nextValue) {
     updatePreview();
 }
 
-function resetExifFieldValue(fieldKey, input) {
-    const resetValue = initialExifOverrideValues[fieldKey] ?? '';
-
-    exifOverrideValues = {
-        ...exifOverrideValues,
-        [fieldKey]: resetValue,
-    };
-
-    if (input) {
-        input.value = resetValue;
-    }
-
-    updatePreview();
-}
-
 function createExifEditorInput(field) {
     const input = document.createElement('input');
     input.type = 'text';
@@ -560,12 +709,28 @@ function createExifEditorInput(field) {
     return input;
 }
 
-function createExifEditorResetButton(field, input) {
+function resetAllExifFieldValues() {
+    const resetValues = {};
+
+    EDITABLE_EXIF_FIELDS.forEach((field) => {
+        resetValues[field.key] = initialExifOverrideValues[field.key] ?? '';
+    });
+
+    exifOverrideValues = {
+        ...exifOverrideValues,
+        ...resetValues,
+    };
+
+    renderTextEditor();
+    updatePreview();
+}
+
+function createExifEditorResetAllButton() {
     const button = document.createElement('button');
     button.type = 'button';
-    button.className = 'field-reset-button';
-    button.setAttribute('aria-label', `重置${field.label}`);
-    button.setAttribute('title', `重置${field.label}`);
+    button.className = 'field-reset-button inspector-section-reset-button';
+    button.setAttribute('aria-label', '重置拍摄信息');
+    button.setAttribute('title', '重置拍摄信息');
     button.innerHTML = `
         <svg viewBox="0 0 16 16" aria-hidden="true" focusable="false">
             <path d="M3.2 8a4.8 4.8 0 1 0 1.406-3.394" />
@@ -573,47 +738,117 @@ function createExifEditorResetButton(field, input) {
         </svg>
     `;
     button.addEventListener('click', () => {
-        resetExifFieldValue(field.key, input);
+        resetAllExifFieldValues();
     });
     return button;
 }
 
-function createExifEditorSection() {
-    const section = document.createElement('details');
-    section.className = 'editor-collapsible-section';
-    section.open = isExifEditorExpanded;
-    section.addEventListener('toggle', () => {
-        isExifEditorExpanded = section.open;
-    });
-
-    const summary = document.createElement('summary');
-    summary.className = 'editor-collapsible-summary';
-    summary.textContent = 'EXIF 编辑';
-    section.appendChild(summary);
-
+function createExifEditorContent() {
     const content = document.createElement('div');
     content.className = 'editor-collapsible-content';
 
     EDITABLE_EXIF_FIELDS.forEach((field) => {
-        const fieldGroup = document.createElement('div');
+        const fieldGroup = document.createElement('fieldset');
         fieldGroup.className = 'field-group';
 
         const input = createExifEditorInput(field);
         const header = document.createElement('div');
         header.className = 'field-group-header';
         const label = document.createElement('label');
+        label.className = 'field-group-label';
         label.textContent = field.label;
         label.htmlFor = `field-exif-${field.key}`;
         header.appendChild(label);
-        header.appendChild(createExifEditorResetButton(field, input));
         fieldGroup.appendChild(header);
         fieldGroup.appendChild(input);
         content.appendChild(fieldGroup);
     });
 
-    section.appendChild(content);
+    return content;
+}
 
-    return section;
+function createExportControls() {
+    const controls = document.createElement('div');
+    controls.className = 'export-controls';
+    controls.innerHTML = `
+        <fieldset class="field-group export-field export-size-field">
+            <label class="field-group-label" for="export-size-preset">尺寸</label>
+            <select id="export-size-preset">
+                <option value="original">原始尺寸</option>
+                <option value="1080">长边 1080px</option>
+                <option value="2048">长边 2048px</option>
+                <option value="custom">自定义</option>
+            </select>
+        </fieldset>
+        <div class="export-custom-size hidden" id="export-custom-size">
+            <fieldset class="field-group">
+                <label class="field-group-label" for="export-width">W</label>
+                <input type="number" id="export-width" min="1" step="1" inputmode="numeric" placeholder="宽度">
+            </fieldset>
+            <fieldset class="field-group">
+                <label class="field-group-label" for="export-height">H</label>
+                <input type="number" id="export-height" min="1" step="1" inputmode="numeric" placeholder="高度">
+            </fieldset>
+        </div>
+        <fieldset class="field-group export-field export-quality-field">
+            <label class="field-group-label" for="export-quality">JPEG 质量</label>
+            <div class="export-quality-control">
+                <input type="range" id="export-quality" min="0.1" max="1" step="0.01" value="1">
+                <span class="export-quality-value" id="export-quality-value">100%</span>
+            </div>
+        </fieldset>
+        <button class="btn btn-primary btn-export-panel" id="btn-export">
+            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none"
+                stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+                <polyline points="7 10 12 15 17 10" />
+                <line x1="12" y1="15" x2="12" y2="3" />
+            </svg>
+            导出 JPG
+        </button>
+    `;
+
+    cacheExportControlRefs(controls);
+    bindExportControlEvents();
+    syncExportControls();
+
+    return controls;
+}
+
+function cacheExportControlRefs(root = document) {
+    btnExport = root.querySelector('#btn-export');
+    exportSizePreset = root.querySelector('#export-size-preset');
+    exportCustomSize = root.querySelector('#export-custom-size');
+    exportWidthInput = root.querySelector('#export-width');
+    exportHeightInput = root.querySelector('#export-height');
+    exportQualityInput = root.querySelector('#export-quality');
+    exportQualityValue = root.querySelector('#export-quality-value');
+}
+
+function bindExportControlEvents() {
+    if (!btnExport || !exportSizePreset || !exportWidthInput || !exportHeightInput || !exportQualityInput) {
+        return;
+    }
+
+    btnExport.addEventListener('click', () => {
+        handleExport();
+    });
+
+    exportSizePreset.addEventListener('change', (e) => {
+        setExportSizePreset(e.target.value);
+    });
+
+    exportWidthInput.addEventListener('input', (e) => {
+        setCustomExportDimension('customWidth', e.target.value.trim());
+    });
+
+    exportHeightInput.addEventListener('input', (e) => {
+        setCustomExportDimension('customHeight', e.target.value.trim());
+    });
+
+    exportQualityInput.addEventListener('input', (e) => {
+        setJpegQuality(e.target.value);
+    });
 }
 
 // ============================================
@@ -808,27 +1043,6 @@ function bindEvents() {
     // 上传按钮点击
     btnUpload.addEventListener('click', () => {
         fileInput.click();
-    });
-
-    // 导出按钮点击
-    btnExport.addEventListener('click', () => {
-        handleExport();
-    });
-
-    exportSizePreset.addEventListener('change', (e) => {
-        setExportSizePreset(e.target.value);
-    });
-
-    exportWidthInput.addEventListener('input', (e) => {
-        setCustomExportDimension('customWidth', e.target.value.trim());
-    });
-
-    exportHeightInput.addEventListener('input', (e) => {
-        setCustomExportDimension('customHeight', e.target.value.trim());
-    });
-
-    exportQualityInput.addEventListener('input', (e) => {
-        setJpegQuality(e.target.value);
     });
 
     // 文件选择变化
