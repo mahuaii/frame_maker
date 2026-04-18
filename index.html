@@ -98,8 +98,16 @@
 
     <!-- 主体区域 -->
     <main class="main-content">
+        <!-- 左侧相框选择器 -->
+        <section class="frame-selector" id="frame-selector">
+            <h2 class="selector-title">相框选择器</h2>
+            <div class="selector-list" id="selector-list">
+                <!-- 由 JS 动态生成模板卡片 -->
+            </div>
+        </section>
+
         <div class="workspace-column">
-            <!-- 左侧预览区 -->
+            <!-- 预览区 -->
             <section class="preview-area" id="preview-area">
                 <div class="upload-guide" id="upload-guide">
                     <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none"
@@ -112,14 +120,6 @@
                     <p class="upload-hint">支持 JPG / PNG / WebP 格式</p>
                 </div>
                 <canvas id="preview-canvas"></canvas>
-            </section>
-
-            <!-- 底部相框选择器 -->
-            <section class="frame-selector" id="frame-selector">
-                <h2 class="selector-title">相框选择器</h2>
-                <div class="selector-list" id="selector-list">
-                    <!-- 由 JS 动态生成模板卡片 -->
-                </div>
             </section>
         </div>
 

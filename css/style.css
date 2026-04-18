@@ -8,9 +8,9 @@
 }
 
 :root {
-    --color-bg-primary: #f2f2f2;
-    --color-bg-secondary: #ececec;
-    --color-bg-preview: #f2f2f2;
+    --color-bg-primary: #f5f5f5;
+    --color-bg-secondary: #f5f5f5;
+    --color-bg-preview: #f5f5f5;
     --color-bg-elevated: rgba(255, 255, 255, 0.78);
     --color-bg-field: rgba(255, 255, 255, 0.72);
     --color-bg-field-hover: rgba(255, 255, 255, 0.94);
@@ -57,9 +57,7 @@ body {
     height: 100%;
     font-family: var(--font-ui);
     color: var(--color-text-primary);
-    background:
-        radial-gradient(circle at top, rgba(255, 255, 255, 0.68), rgba(255, 255, 255, 0) 36%),
-        linear-gradient(180deg, #f6f6f6 0%, var(--color-bg-primary) 52%, var(--color-bg-secondary) 100%);
+    background: var(--color-bg-primary);
     -webkit-font-smoothing: antialiased;
 }
 
@@ -84,7 +82,7 @@ body {
     justify-content: space-between;
     min-height: 64px;
     padding: 0 var(--spacing-6);
-    background: rgba(242, 242, 242, 0.9);
+    background: rgba(245, 245, 245, 0.9);
     border-bottom: 1px solid var(--color-divider);
     backdrop-filter: blur(16px);
     -webkit-backdrop-filter: blur(16px);
@@ -252,13 +250,11 @@ body {
 .export-quality-control input[type="range"]::-webkit-slider-runnable-track {
     height: 4px;
     border-radius: var(--radius-sm);
-    background: linear-gradient(
-        90deg,
-        var(--color-accent) 0%,
-        var(--color-accent) var(--range-progress),
-        rgba(31, 31, 31, 0.16) var(--range-progress),
-        rgba(31, 31, 31, 0.16) 100%
-    );
+    background: linear-gradient(90deg,
+            var(--color-accent) 0%,
+            var(--color-accent) var(--range-progress),
+            rgba(31, 31, 31, 0.16) var(--range-progress),
+            rgba(31, 31, 31, 0.16) 100%);
 }
 
 .export-quality-control input[type="range"]::-webkit-slider-thumb {
@@ -381,7 +377,7 @@ body {
     display: flex;
     align-items: center;
     justify-content: center;
-    background: #f2f2f2;
+    background: var(--color-bg-preview);
     position: relative;
     overflow: hidden;
     cursor: default;
@@ -392,7 +388,7 @@ body {
 }
 
 .preview-area.drag-over {
-    background: #f2f2f2;
+    background: var(--color-bg-preview);
     outline: 3px dashed var(--color-accent);
     outline-offset: -3px;
 }
@@ -444,9 +440,11 @@ body {
 /* === 相框选择器 === */
 .frame-selector {
     flex-shrink: 0;
-    min-height: 72px;
-    background: #f2f2f2;
-    border-top: 1px solid #f2f2f2;
+    width: 178px;
+    min-width: 178px;
+    min-height: 0;
+    background: var(--color-bg-primary);
+    border-right: 1px solid var(--color-bg-primary);
     padding: var(--spacing-3) var(--spacing-4);
     overflow: hidden;
     display: flex;
@@ -467,18 +465,21 @@ body {
 
 .selector-list {
     display: flex;
-    flex-direction: row;
-    align-items: flex-start;
+    flex-direction: column;
+    align-items: stretch;
     gap: var(--spacing-2);
     width: 100%;
-    overflow-x: auto;
-    overflow-y: hidden;
+    min-height: 0;
+    flex: 1;
+    overflow-x: hidden;
+    overflow-y: auto;
     padding-top: 2px;
+    padding-right: 2px;
     padding-bottom: var(--spacing-1);
     scrollbar-width: none;
     -ms-overflow-style: none;
     scroll-behavior: smooth;
-    overscroll-behavior-x: contain;
+    overscroll-behavior-y: contain;
 }
 
 .selector-list::-webkit-scrollbar {
@@ -491,7 +492,7 @@ body {
     display: flex;
     align-items: center;
     justify-content: center;
-    width: fit-content;
+    width: calc(100% - 2px);
     height: fit-content;
     flex: 0 0 auto;
     padding: 0;
@@ -506,7 +507,7 @@ body {
 
 .template-card:hover {
     border-color: var(--color-template-border-hover);
-    transform: translateY(-1px);
+    transform: translateX(1px);
     z-index: 1;
 }
 
@@ -516,8 +517,8 @@ body {
 }
 
 .template-thumbnail {
-    width: auto;
-    height: 135px;
+    width: 100%;
+    height: auto;
     display: block;
     background: transparent;
 }
@@ -531,7 +532,7 @@ body {
     padding: 18px 22px 22px;
     background:
         linear-gradient(180deg, rgba(255, 255, 255, 0.12), rgba(255, 255, 255, 0.02)),
-        rgba(242, 242, 242, 0.88);
+        rgba(245, 245, 245, 0.88);
     border-left: 1px solid var(--color-divider);
     flex-shrink: 0;
     flex-wrap: nowrap;
