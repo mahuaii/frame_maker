@@ -51,14 +51,13 @@ export const simpleMatTemplateFields = [
     ...buildFrameSideFields(simpleMatFrame, ['top', 'bottom', 'horizontalSides']),
     buildWhiteAppearanceToggleField({
         key: 'showThinBorder',
-        label: '显示细框',
+        label: '内边框',
         defaultValue: false,
     }),
 ];
 
 export const simpleMatTemplateSchema = {
     id: 'simple-mat',
-    label: '极简留边',
     backgroundColor: '#FFFFFF',
     appearanceFieldKey: 'colorScheme',
     appearanceDefaultKey: 'black',

@@ -1,15 +1,14 @@
 import { getAppearanceColor } from '../../core/templates/registry.js';
-import { drawOptionalThinPhotoBorder } from '../photo-border.js';
+import { drawBeveledPhotoBorder } from '../photo-border.js';
 
 export function renderGalleryCaptionMatTemplate(ctx, args) {
     const { appearance, config, metrics, canvasSize } = args;
     const borderColor = getAppearanceColor(appearance, 'photoBorder', '#000000');
 
-    drawOptionalThinPhotoBorder(ctx, {
-        appearanceKey: appearance.key,
-        enabled: config.showThinBorder,
-        rect: metrics.scaledPhotoArea,
-        canvasWidth: canvasSize.width,
-        color: borderColor,
-    });
+    if (!config.showThinBorder || !metrics.scaledPhotoArea) {
+        return;
+    }
+
+    const borderWidth = Math.max(canvasSize.width * 0.0022, 1);
+    drawBeveledPhotoBorder(ctx, metrics.scaledPhotoArea, borderWidth, borderColor);
 }

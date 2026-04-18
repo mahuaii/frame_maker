@@ -53,7 +53,6 @@ export const bottomInfoBarTemplateFields = [
 
 export const bottomInfoBarTemplateSchema = {
     id: 'bottom-info-bar',
-    label: '底部信息栏',
     backgroundColor: '#000000',
     appearanceFieldKey: 'colorScheme',
     appearanceDefaultKey: 'white',

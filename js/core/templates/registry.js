@@ -14,10 +14,6 @@ export function defineTemplate(template) {
         throw new Error('Template module requires a stable id.');
     }
 
-    if (!template?.label) {
-        throw new Error(`Template "${template.id}" requires a user-facing label.`);
-    }
-
     if (!template.defaultConfig || typeof template.defaultConfig !== 'object') {
         throw new Error(`Template "${template.id}" requires a defaultConfig object.`);
     }

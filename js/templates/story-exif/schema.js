@@ -103,7 +103,6 @@ export const storyExifTemplateFields = [
 
 export const storyExifTemplateSchema = {
     id: 'story-exif',
-    label: '标题 + EXIF',
     backgroundColor: '#111111',
     appearanceFieldKey: 'colorScheme',
     appearanceDefaultKey: 'black',

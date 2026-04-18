@@ -1,6 +1,6 @@
 import { buildDefaultConfig } from '../../core/templates/fields.js';
 import { buildAppearanceField } from '../../core/templates/appearance.js';
-import { buildFontSelectField, buildWhiteAppearanceToggleField } from '../shared.js';
+import { buildFontSelectField } from '../shared.js';
 
 export const galleryCaptionMatAppearanceThemes = {
     white: {
@@ -46,11 +46,12 @@ export const galleryCaptionMatFrame = {
 
 export const galleryCaptionMatTemplateFields = [
     buildAppearanceField(galleryCaptionMatAppearanceThemes),
-    buildWhiteAppearanceToggleField({
+    {
         key: 'showThinBorder',
-        label: '显示细框',
+        label: '内边框',
+        type: 'toggle',
         defaultValue: true,
-    }),
+    },
     {
         key: 'title',
         label: '主标题',
@@ -90,7 +91,6 @@ export const galleryCaptionMatTemplateFields = [
 
 export const galleryCaptionMatTemplateSchema = {
     id: 'gallery-caption-mat',
-    label: '留白标题卡',
     backgroundColor: '#FFFFFF',
     appearanceFieldKey: 'colorScheme',
     appearanceDefaultKey: 'white',
