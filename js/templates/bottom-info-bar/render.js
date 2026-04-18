@@ -1,14 +1,14 @@
 import { buildCanvasFont } from '../../core/fonts/index.js';
 import { getAppearanceColor } from '../../core/templates/registry.js';
-import { insetRect } from '../shared.js';
 
 export function renderBottomInfoBarTemplate(ctx, args) {
-    const { area, config, data, appearance, metrics, runtime } = args;
-    const contentArea = insetRect(
-        area,
-        Math.max(runtime.scaleByShortEdge(0.028), 20),
-        Math.max(area.height * 0.3, 10)
-    );
+    const { config, data, appearance, metrics, runtime } = args;
+    const area = metrics.scaledTextRegions.bottom;
+    if (!area || area.width <= 0 || area.height <= 0) {
+        return;
+    }
+
+    const contentArea = metrics.scaledTextContentRegions.bottom;
     const cameraFont = buildCanvasFont({
         fontSize: Math.max(metrics.scaledFontSize * 0.92, 12),
         fontWeight: 700,

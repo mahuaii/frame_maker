@@ -151,7 +151,7 @@ function setJpegQuality(rawValue) {
 }
 
 function getBaseExportDimensions(template) {
-    const metrics = calculateFrameMetrics(currentImage, template, 1);
+    const metrics = calculateFrameMetrics(currentImage, template, 1, fieldValues);
     return {
         width: metrics.fullWidth,
         height: metrics.fullHeight,

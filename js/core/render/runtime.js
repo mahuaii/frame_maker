@@ -1,6 +1,18 @@
-import { loadRuntimeFonts, ensureRuntimeFont } from '../fonts/index.js';
+import { buildCanvasFont, loadRuntimeFonts, ensureRuntimeFont } from '../fonts/index.js';
 import { buildTemplateResolveInput, createGlobalRenderSettings } from './input.js';
-import { resolveTemplateAppearance, resolveTemplateConfig } from '../templates/registry.js';
+import { getAppearanceColor, resolveTemplateAppearance, resolveTemplateConfig } from '../templates/registry.js';
+
+const FRAME_SIDE_KEYS = ['top', 'right', 'bottom', 'left'];
+const FRAME_SIDE_FIELD_KEYS = {
+    top: 'frameTop',
+    right: 'frameRight',
+    bottom: 'frameBottom',
+    left: 'frameLeft',
+    vertical: 'frameVerticalSides',
+    horizontal: 'frameHorizontalSides',
+};
+const ANCHOR_COLUMNS = ['left', 'center', 'right'];
+const ANCHOR_ROWS = ['top', 'middle', 'bottom'];
 
 function getBasisSize(imageWidth, imageHeight, basis) {
     switch (basis) {
@@ -19,85 +31,373 @@ function getBasisSize(imageWidth, imageHeight, basis) {
     }
 }
 
-function normalizePositiveRatio(value, fallbackValue) {
-    const numericValue = Number(value);
-    return Number.isFinite(numericValue) && numericValue > 0 ? numericValue : fallbackValue;
-}
-
-function normalizeNonNegativeRatio(value, fallbackValue) {
+function normalizeNonNegativeNumber(value, fallbackValue = 0) {
     const numericValue = Number(value);
     return Number.isFinite(numericValue) && numericValue >= 0 ? numericValue : fallbackValue;
 }
 
-function hasCustomPhotoArea(template) {
-    return ['photoAreaXRatio', 'photoAreaYRatio', 'photoAreaWidthRatio', 'photoAreaHeightRatio']
-        .some((key) => Number.isFinite(Number(template?.[key])));
-}
+function normalizeFrameSides(template, config = {}) {
+    const templateSides = template?.frame?.sides ?? {};
+    const sides = FRAME_SIDE_KEYS.reduce((result, side) => {
+        result[side] = normalizeNonNegativeNumber(templateSides[side], 0);
+        return result;
+    }, {});
 
-export function calculateFrameMetrics(image, template, scale = 1) {
-    if (typeof template?.calculateFrameMetrics === 'function') {
-        return template.calculateFrameMetrics({
-            image,
-            template,
-            scale,
-        });
+    const verticalValue = config[FRAME_SIDE_FIELD_KEYS.vertical];
+    if (Number.isFinite(Number(verticalValue))) {
+        const value = normalizeNonNegativeNumber(verticalValue, 0);
+        sides.top = value;
+        sides.bottom = value;
     }
 
+    const horizontalValue = config[FRAME_SIDE_FIELD_KEYS.horizontal];
+    if (Number.isFinite(Number(horizontalValue))) {
+        const value = normalizeNonNegativeNumber(horizontalValue, 0);
+        sides.left = value;
+        sides.right = value;
+    }
+
+    FRAME_SIDE_KEYS.forEach((side) => {
+        const value = config[FRAME_SIDE_FIELD_KEYS[side]];
+        if (Number.isFinite(Number(value))) {
+            sides[side] = normalizeNonNegativeNumber(value, 0);
+        }
+    });
+
+    return sides;
+}
+
+function scaleRect(rect, scale) {
+    return {
+        x: rect.x * scale,
+        y: rect.y * scale,
+        width: rect.width * scale,
+        height: rect.height * scale,
+    };
+}
+
+function scaleInsets(insets, scale) {
+    return {
+        top: insets.top * scale,
+        right: insets.right * scale,
+        bottom: insets.bottom * scale,
+        left: insets.left * scale,
+    };
+}
+
+function insetRegion(region, insets) {
+    return {
+        x: region.x + insets.left,
+        y: region.y + insets.top,
+        width: Math.max(region.width - insets.left - insets.right, 0),
+        height: Math.max(region.height - insets.top - insets.bottom, 0),
+    };
+}
+
+function getFrameMarginConfig(template) {
+    return {
+        edgeRatio: normalizeNonNegativeNumber(template?.frame?.margin?.edgeRatio, 0.24),
+        crossRatio: normalizeNonNegativeNumber(template?.frame?.margin?.crossRatio, 0.025),
+        min: normalizeNonNegativeNumber(template?.frame?.margin?.min, 12),
+    };
+}
+
+function clampInset(value, maxValue) {
+    return Math.min(Math.max(value, 0), Math.max(maxValue, 0));
+}
+
+function buildTextInsets({ imageWidth, imageHeight, textRegions, template }) {
+    const margin = getFrameMarginConfig(template);
+    const crossBasis = Math.min(imageWidth, imageHeight);
+    const crossInset = Math.max(crossBasis * margin.crossRatio, margin.min);
+
+    return {
+        top: {
+            top: clampInset(Math.max(textRegions.top.height * margin.edgeRatio, margin.min), textRegions.top.height / 2),
+            right: clampInset(crossInset, textRegions.top.width / 2),
+            bottom: clampInset(Math.max(textRegions.top.height * margin.edgeRatio, margin.min), textRegions.top.height / 2),
+            left: clampInset(crossInset, textRegions.top.width / 2),
+        },
+        right: {
+            top: clampInset(crossInset, textRegions.right.height / 2),
+            right: clampInset(Math.max(textRegions.right.width * margin.edgeRatio, margin.min), textRegions.right.width / 2),
+            bottom: clampInset(crossInset, textRegions.right.height / 2),
+            left: clampInset(Math.max(textRegions.right.width * margin.edgeRatio, margin.min), textRegions.right.width / 2),
+        },
+        bottom: {
+            top: clampInset(Math.max(textRegions.bottom.height * margin.edgeRatio, margin.min), textRegions.bottom.height / 2),
+            right: clampInset(crossInset, textRegions.bottom.width / 2),
+            bottom: clampInset(Math.max(textRegions.bottom.height * margin.edgeRatio, margin.min), textRegions.bottom.height / 2),
+            left: clampInset(crossInset, textRegions.bottom.width / 2),
+        },
+        left: {
+            top: clampInset(crossInset, textRegions.left.height / 2),
+            right: clampInset(Math.max(textRegions.left.width * margin.edgeRatio, margin.min), textRegions.left.width / 2),
+            bottom: clampInset(crossInset, textRegions.left.height / 2),
+            left: clampInset(Math.max(textRegions.left.width * margin.edgeRatio, margin.min), textRegions.left.width / 2),
+        },
+    };
+}
+
+function buildRegionAnchors(contentRect) {
+    const xPositions = {
+        left: contentRect.x,
+        center: contentRect.x + contentRect.width / 2,
+        right: contentRect.x + contentRect.width,
+    };
+    const yPositions = {
+        top: contentRect.y,
+        middle: contentRect.y + contentRect.height / 2,
+        bottom: contentRect.y + contentRect.height,
+    };
+
+    return ANCHOR_ROWS.reduce((anchors, row) => {
+        ANCHOR_COLUMNS.forEach((column) => {
+            const key = row === 'middle' && column === 'center' ? 'center' : `${row}-${column}`;
+            anchors[key] = {
+                x: xPositions[column],
+                y: yPositions[row],
+            };
+        });
+        return anchors;
+    }, {});
+}
+
+function buildTextAnchors(contentRegions) {
+    return FRAME_SIDE_KEYS.reduce((anchors, side) => {
+        anchors[side] = buildRegionAnchors(contentRegions[side]);
+        return anchors;
+    }, {});
+}
+
+function scalePoint(point, scale) {
+    return {
+        x: point.x * scale,
+        y: point.y * scale,
+    };
+}
+
+function scaleAnchors(anchors, scale) {
+    return FRAME_SIDE_KEYS.reduce((scaled, side) => {
+        scaled[side] = Object.entries(anchors[side]).reduce((result, [key, point]) => {
+            result[key] = scalePoint(point, scale);
+            return result;
+        }, {});
+        return scaled;
+    }, {});
+}
+
+function getFrameFontSize(imageWidth, imageHeight, template) {
+    const font = template?.frame?.font ?? {};
+    const basis = getBasisSize(imageWidth, imageHeight, font.basis ?? 'height');
+    const sizePercent = normalizeNonNegativeNumber(font.size, 2.8);
+    const min = normalizeNonNegativeNumber(font.min, 12);
+    return Math.max(Math.round(basis * (sizePercent / 100)), min);
+}
+
+function getLayoutBasisSize(metrics, basis = 'contentWidth', regionKey = 'bottom') {
+    const region = metrics.scaledTextRegions?.[regionKey] ?? { width: 0, height: 0 };
+    const contentRegion = metrics.scaledTextContentRegions?.[regionKey] ?? region;
+
+    switch (basis) {
+        case 'frameWidth':
+            return metrics.fullWidth;
+        case 'frameHeight':
+            return metrics.fullHeight;
+        case 'photoWidth':
+            return metrics.scaledPhotoArea?.width ?? metrics.imageWidth;
+        case 'photoHeight':
+            return metrics.scaledPhotoArea?.height ?? metrics.imageHeight;
+        case 'regionWidth':
+            return region.width;
+        case 'regionHeight':
+            return region.height;
+        case 'contentHeight':
+            return contentRegion.height;
+        case 'contentWidth':
+        default:
+            return contentRegion.width;
+    }
+}
+
+function buildDefaultFourSideFrame({ imageWidth, imageHeight, template, config }) {
+    const sidesPercent = normalizeFrameSides(template, config);
+    const sidesPx = {
+        top: Math.round(imageHeight * (sidesPercent.top / 100)),
+        right: Math.round(imageWidth * (sidesPercent.right / 100)),
+        bottom: Math.round(imageHeight * (sidesPercent.bottom / 100)),
+        left: Math.round(imageWidth * (sidesPercent.left / 100)),
+    };
+
+    return {
+        sidesPercent,
+        sidesPx,
+        fullWidth: sidesPx.left + imageWidth + sidesPx.right,
+        fullHeight: sidesPx.top + imageHeight + sidesPx.bottom,
+    };
+}
+
+function buildFrameSidesPxFromPercent(imageWidth, imageHeight, sidesPercent) {
+    return {
+        top: Math.round(imageHeight * (sidesPercent.top / 100)),
+        right: Math.round(imageWidth * (sidesPercent.right / 100)),
+        bottom: Math.round(imageHeight * (sidesPercent.bottom / 100)),
+        left: Math.round(imageWidth * (sidesPercent.left / 100)),
+    };
+}
+
+function parseAspectRatio(value) {
+    if (typeof value !== 'string') {
+        const numericValue = Number(value);
+        return Number.isFinite(numericValue) && numericValue > 0 ? numericValue : null;
+    }
+
+    const parts = value.split(':').map((part) => Number(part.trim()));
+    if (parts.length !== 2 || parts.some((part) => !Number.isFinite(part) || part <= 0)) {
+        return null;
+    }
+
+    return parts[0] / parts[1];
+}
+
+function splitAdditionalSpace(firstSidePx, secondSidePx, additionalSpace) {
+    if (additionalSpace <= 0) {
+        return [firstSidePx, secondSidePx];
+    }
+
+    const total = firstSidePx + secondSidePx;
+    const firstShare = total > 0 ? firstSidePx / total : 0.5;
+    const firstAddition = Math.round(additionalSpace * firstShare);
+
+    return [
+        firstSidePx + firstAddition,
+        secondSidePx + additionalSpace - firstAddition,
+    ];
+}
+
+function buildFixedAspectRatioFrame({ imageWidth, imageHeight, template, config }) {
+    const sidesPercent = normalizeFrameSides(template, config);
+    const sidesPx = buildFrameSidesPxFromPercent(imageWidth, imageHeight, sidesPercent);
+    const aspectRatio = parseAspectRatio(template?.frame?.fixedAspectRatio);
+    const rawFullWidth = sidesPx.left + imageWidth + sidesPx.right;
+    const rawFullHeight = sidesPx.top + imageHeight + sidesPx.bottom;
+    const targetWidthFromHeight = Math.ceil(rawFullHeight * aspectRatio);
+    const targetHeightFromWidth = Math.ceil(rawFullWidth / aspectRatio);
+
+    if (aspectRatio && targetWidthFromHeight > rawFullWidth) {
+        const additionalWidth = targetWidthFromHeight - rawFullWidth;
+        [sidesPx.left, sidesPx.right] = splitAdditionalSpace(sidesPx.left, sidesPx.right, additionalWidth);
+    } else if (aspectRatio && targetHeightFromWidth > rawFullHeight) {
+        const additionalHeight = targetHeightFromWidth - rawFullHeight;
+        [sidesPx.top, sidesPx.bottom] = splitAdditionalSpace(sidesPx.top, sidesPx.bottom, additionalHeight);
+    }
+
+    const adjustedSidesPercent = {
+        top: imageHeight > 0 ? (sidesPx.top / imageHeight) * 100 : 0,
+        right: imageWidth > 0 ? (sidesPx.right / imageWidth) * 100 : 0,
+        bottom: imageHeight > 0 ? (sidesPx.bottom / imageHeight) * 100 : 0,
+        left: imageWidth > 0 ? (sidesPx.left / imageWidth) * 100 : 0,
+    };
+
+    return {
+        sidesPercent: adjustedSidesPercent,
+        sidesPx,
+        fullWidth: sidesPx.left + imageWidth + sidesPx.right,
+        fullHeight: sidesPx.top + imageHeight + sidesPx.bottom,
+    };
+}
+
+export function calculateFrameMetrics(image, template, scale = 1, rawConfig = {}) {
+    const config = resolveTemplateConfig(template, rawConfig);
     const imageWidth = image.naturalWidth;
     const imageHeight = image.naturalHeight;
-    const barBasisSize = getBasisSize(imageWidth, imageHeight, template.barSizeBasis);
-    const fontBasisSize = getBasisSize(imageWidth, imageHeight, template.fontSizeBasis);
-    const barHeight = Math.round(barBasisSize * template.barHeightRatio);
-    const rawFontSize = Math.round(fontBasisSize * template.fontSizeRatio);
-    const fontSize = Math.max(template.minFontSize ?? 12, rawFontSize);
-    const canvasWidthRatio = normalizePositiveRatio(template.canvasWidthRatio, 1);
-    const canvasHeightRatio = normalizePositiveRatio(
-        template.canvasHeightRatio,
-        (imageHeight + barHeight) / imageHeight
-    );
-    const fullWidth = Math.round(imageWidth * canvasWidthRatio);
-    const fullHeight = Math.round(imageHeight * canvasHeightRatio);
-    const photoArea = hasCustomPhotoArea(template)
-        ? {
-            x: Math.round(fullWidth * normalizeNonNegativeRatio(template.photoAreaXRatio, 0)),
-            y: Math.round(fullHeight * normalizeNonNegativeRatio(template.photoAreaYRatio, 0)),
-            width: Math.round(fullWidth * normalizePositiveRatio(template.photoAreaWidthRatio, imageWidth / fullWidth)),
-            height: Math.round(fullHeight * normalizePositiveRatio(template.photoAreaHeightRatio, imageHeight / fullHeight)),
-        }
-        : {
-            x: 0,
+    const frameGeometry = template?.frame?.fixedAspectRatio
+        ? buildFixedAspectRatioFrame({ imageWidth, imageHeight, template, config })
+        : buildDefaultFourSideFrame({ imageWidth, imageHeight, template, config });
+    const { sidesPercent, sidesPx, fullWidth, fullHeight } = frameGeometry;
+    const photoArea = {
+        x: sidesPx.left,
+        y: sidesPx.top,
+        width: imageWidth,
+        height: imageHeight,
+    };
+    const textRegions = {
+        top: {
+            x: sidesPx.left,
             y: 0,
             width: imageWidth,
+            height: sidesPx.top,
+        },
+        right: {
+            x: sidesPx.left + imageWidth,
+            y: sidesPx.top,
+            width: sidesPx.right,
             height: imageHeight,
-        };
+        },
+        bottom: {
+            x: sidesPx.left,
+            y: sidesPx.top + imageHeight,
+            width: imageWidth,
+            height: sidesPx.bottom,
+        },
+        left: {
+            x: 0,
+            y: sidesPx.top,
+            width: sidesPx.left,
+            height: imageHeight,
+        },
+    };
+    const textInsets = buildTextInsets({ imageWidth, imageHeight, textRegions, template });
+    const textContentRegions = FRAME_SIDE_KEYS.reduce((regions, side) => {
+        regions[side] = insetRegion(textRegions[side], textInsets[side]);
+        return regions;
+    }, {});
+    const anchors = buildTextAnchors(textContentRegions);
+    const fontSize = getFrameFontSize(imageWidth, imageHeight, template);
 
     return {
         imageWidth,
         imageHeight,
         fullWidth,
         fullHeight,
-        barBasisSize,
-        fontBasisSize,
-        barHeight,
+        canvasSize: {
+            width: fullWidth,
+            height: fullHeight,
+        },
+        sidesPercent,
+        sidesPx,
         fontSize,
         photoArea,
-        textRunBaseFontSize: fontSize,
-        scaledImageWidth: photoArea.width * scale,
-        scaledImageHeight: photoArea.height * scale,
-        scaledPhotoArea: {
-            x: photoArea.x * scale,
-            y: photoArea.y * scale,
-            width: photoArea.width * scale,
-            height: photoArea.height * scale,
+        textRegions,
+        textInsets,
+        textContentRegions,
+        anchors,
+        scaledPhotoArea: scaleRect(photoArea, scale),
+        scaledSidesPx: {
+            top: sidesPx.top * scale,
+            right: sidesPx.right * scale,
+            bottom: sidesPx.bottom * scale,
+            left: sidesPx.left * scale,
         },
-        scaledBarHeight: barHeight * scale,
+        scaledTextRegions: FRAME_SIDE_KEYS.reduce((regions, side) => {
+            regions[side] = scaleRect(textRegions[side], scale);
+            return regions;
+        }, {}),
+        scaledTextInsets: FRAME_SIDE_KEYS.reduce((insets, side) => {
+            insets[side] = scaleInsets(textInsets[side], scale);
+            return insets;
+        }, {}),
+        scaledTextContentRegions: FRAME_SIDE_KEYS.reduce((regions, side) => {
+            regions[side] = scaleRect(textContentRegions[side], scale);
+            return regions;
+        }, {}),
+        scaledAnchors: scaleAnchors(anchors, scale),
         scaledFontSize: fontSize * scale,
-        scaledTextRunBaseFontSize: fontSize * scale,
     };
 }
 
-export function calculatePreviewScale(image, template, containerWidth, containerHeight, padding = 0.9) {
-    const { fullWidth, fullHeight } = calculateFrameMetrics(image, template, 1);
+export function calculatePreviewScale(image, template, containerWidth, containerHeight, padding = 0.9, rawConfig = {}) {
+    const { fullWidth, fullHeight } = calculateFrameMetrics(image, template, 1, rawConfig);
 
     const maxWidth = containerWidth * padding;
     const maxHeight = containerHeight * padding;
@@ -125,18 +425,6 @@ export function setupCanvas(canvas, displayWidth, displayHeight, scale = 1) {
         ctx,
         dpr,
     };
-}
-
-export function drawBasePhoto(ctx, image, { displayWidth, displayHeight, layoutMetrics, backgroundColor }) {
-    ctx.fillStyle = backgroundColor;
-    ctx.fillRect(0, 0, displayWidth, displayHeight);
-    ctx.drawImage(
-        image,
-        layoutMetrics.scaledPhotoArea.x,
-        layoutMetrics.scaledPhotoArea.y,
-        layoutMetrics.scaledPhotoArea.width,
-        layoutMetrics.scaledPhotoArea.height
-    );
 }
 
 function drawCoverImage(ctx, image, area) {
@@ -560,6 +848,228 @@ export function createRuntimeHelpers({ canvas, ctx, canvasSize }) {
     };
 }
 
+function getPathValue(source, path) {
+    if (!path) {
+        return undefined;
+    }
+
+    return String(path)
+        .split('.')
+        .reduce((value, key) => (value == null ? undefined : value[key]), source);
+}
+
+function resolveTextDefinitionValue(textDefinition, { config, data }) {
+    if (textDefinition.text !== undefined) {
+        return textDefinition.text;
+    }
+
+    if (textDefinition.configPath) {
+        return getPathValue(config, textDefinition.configPath);
+    }
+
+    if (textDefinition.dataPath) {
+        return getPathValue(data, textDefinition.dataPath);
+    }
+
+    return textDefinition.fallbackText ?? '';
+}
+
+function isTextDefinitionVisible(textDefinition, { config, data }) {
+    if (textDefinition.whenConfig) {
+        return Boolean(getPathValue(config, textDefinition.whenConfig));
+    }
+
+    if (textDefinition.whenData) {
+        return Boolean(getPathValue(data, textDefinition.whenData));
+    }
+
+    if (typeof textDefinition.visible === 'boolean') {
+        return textDefinition.visible;
+    }
+
+    return true;
+}
+
+function getAnchorAlignment(anchor = 'center') {
+    const horizontal = anchor.endsWith('-left')
+        ? 'left'
+        : anchor.endsWith('-right')
+            ? 'right'
+            : 'center';
+    const vertical = anchor.startsWith('top-')
+        ? 'top'
+        : anchor.startsWith('bottom-')
+            ? 'bottom'
+            : 'middle';
+
+    return {
+        horizontal,
+        vertical,
+    };
+}
+
+function resolveTextDefinitionStyle(textDefinition, group, { config, data, metrics, appearance }) {
+    const fontId = textDefinition.fontId
+        ?? (textDefinition.fontIdConfigKey ? config[textDefinition.fontIdConfigKey] : undefined)
+        ?? group.fontId
+        ?? (group.fontIdConfigKey ? config[group.fontIdConfigKey] : undefined)
+        ?? 'systemSans';
+    const configuredRatio = textDefinition.fontSizeRatioConfigKey
+        ? normalizeNonNegativeNumber(config[textDefinition.fontSizeRatioConfigKey], 1)
+        : (group.fontSizeRatioConfigKey ? normalizeNonNegativeNumber(config[group.fontSizeRatioConfigKey], 1) : 1);
+    const fontSize = Math.max(
+        metrics.scaledFontSize * (textDefinition.fontSizeRatio ?? group.fontSizeRatio ?? 1) * configuredRatio,
+        textDefinition.minFontSize ?? group.minFontSize ?? 1
+    );
+    const fontWeight = textDefinition.fontWeight
+        ?? (textDefinition.fontWeightConfigKey ? config[textDefinition.fontWeightConfigKey] : undefined)
+        ?? group.fontWeight
+        ?? (group.fontWeightConfigKey ? config[group.fontWeightConfigKey] : undefined)
+        ?? 400;
+    const fontStyle = textDefinition.fontStyle ?? group.fontStyle ?? 'normal';
+    const colorKey = textDefinition.colorKeyDataPath
+        ? getPathValue(data, textDefinition.colorKeyDataPath)
+        : (textDefinition.colorKey ?? group.colorKey);
+    const color = getAppearanceColor(
+        appearance,
+        colorKey,
+        textDefinition.color ?? group.color ?? '#000000'
+    );
+
+    return {
+        fontId,
+        fontSize,
+        fontWeight,
+        fontStyle,
+        color,
+        letterSpacing: textDefinition.letterSpacing ?? group.letterSpacing ?? 0,
+        font: buildCanvasFont({
+            fontSize,
+            fontWeight,
+            fontStyle,
+            fontIdEn: fontId,
+            fontIdZh: fontId,
+        }),
+    };
+}
+
+function buildTextGroupDefinitions(group, args) {
+    const rawDefinitions = Array.isArray(group.texts) ? group.texts : [];
+
+    return rawDefinitions
+        .filter((textDefinition) => isTextDefinitionVisible(textDefinition, args))
+        .map((textDefinition) => {
+            const rawText = resolveTextDefinitionValue(textDefinition, args);
+            const text = String(rawText ?? '').trim() || String(textDefinition.fallbackText ?? '').trim();
+            if (!text) {
+                return null;
+            }
+
+            return {
+                ...textDefinition,
+                text,
+                style: resolveTextDefinitionStyle(textDefinition, group, args),
+            };
+        })
+        .filter(Boolean);
+}
+
+function drawDeclarativeTextGroup(ctx, group, args) {
+    const { metrics, runtime } = args;
+    const regionKey = group.region ?? 'bottom';
+    const region = metrics.scaledTextRegions?.[regionKey];
+    if (!region || region.width <= 0 || region.height <= 0) {
+        return;
+    }
+
+    const anchorKey = group.anchor ?? 'center';
+    const anchor = metrics.scaledAnchors?.[regionKey]?.[anchorKey];
+    const contentRegion = metrics.scaledTextContentRegions?.[regionKey] ?? region;
+    if (!anchor || contentRegion.width <= 0 || contentRegion.height <= 0) {
+        return;
+    }
+
+    const textDefinitions = buildTextGroupDefinitions(group, args);
+    if (textDefinitions.length === 0) {
+        return;
+    }
+
+    const groupMaxWidthBasis = getLayoutBasisSize(metrics, group.maxWidthBasis ?? 'contentWidth', regionKey);
+    const maxWidth = Math.max(groupMaxWidthBasis * (group.maxWidthRatio ?? 1), 1);
+    const measuredTexts = textDefinitions.map((textDefinition) => {
+        const textMaxWidthBasis = getLayoutBasisSize(metrics, textDefinition.maxWidthBasis ?? group.maxWidthBasis ?? 'contentWidth', regionKey);
+        const fit = runtime.fitText({
+            text: textDefinition.text,
+            maxWidth: textDefinition.maxWidthRatio ? textMaxWidthBasis * textDefinition.maxWidthRatio : maxWidth,
+            maxFontSize: textDefinition.style.fontSize,
+            minFontSize: textDefinition.minFontSize ?? group.minFontSize ?? Math.max(textDefinition.style.fontSize * 0.72, 8),
+            letterSpacing: textDefinition.style.letterSpacing,
+            buildFont: (fontSize) => buildCanvasFont({
+                fontSize,
+                fontWeight: textDefinition.style.fontWeight,
+                fontStyle: textDefinition.style.fontStyle,
+                fontIdEn: textDefinition.style.fontId,
+                fontIdZh: textDefinition.style.fontId,
+            }),
+        });
+        const metricsForText = runtime.measureText({
+            text: textDefinition.text,
+            font: fit.font,
+            letterSpacing: textDefinition.style.letterSpacing,
+        });
+        const height = (metricsForText.actualBoundingBoxAscent ?? fit.fontSize)
+            + (metricsForText.actualBoundingBoxDescent ?? 0);
+
+        return {
+            ...textDefinition,
+            font: fit.font,
+            fontSize: fit.fontSize,
+            ascent: metricsForText.actualBoundingBoxAscent ?? fit.fontSize,
+            descent: metricsForText.actualBoundingBoxDescent ?? 0,
+            height: Math.max(height, 0),
+        };
+    });
+    const gapBasis = getLayoutBasisSize(metrics, group.gapBasis ?? 'fontSize', regionKey);
+    const rawGap = group.gapBasis === 'fontSize' || !group.gapBasis
+        ? metrics.scaledFontSize * (group.gapRatio ?? 0.18)
+        : gapBasis * (group.gapRatio ?? 0.18);
+    const gap = Math.max(rawGap, group.minGap ?? 0);
+    const groupHeight = measuredTexts.reduce((sum, textDefinition) => sum + textDefinition.height, 0)
+        + gap * Math.max(measuredTexts.length - 1, 0);
+    const alignment = getAnchorAlignment(anchorKey);
+    const textAlign = group.textAlign ?? alignment.horizontal;
+    const offsetBasis = getLayoutBasisSize(metrics, group.offsetBasis ?? 'frameWidth', regionKey);
+    const baseX = anchor.x + (group.offsetX ?? 0) + offsetBasis * (group.offsetXRatio ?? 0);
+    let currentY = anchor.y + (group.offsetY ?? 0) + offsetBasis * (group.offsetYRatio ?? 0);
+
+    if (alignment.vertical === 'middle') {
+        currentY -= groupHeight / 2;
+    } else if (alignment.vertical === 'bottom') {
+        currentY -= groupHeight;
+    }
+
+    ctx.save();
+    ctx.textAlign = textAlign;
+    ctx.textBaseline = 'alphabetic';
+
+    measuredTexts.forEach((textDefinition, index) => {
+        ctx.font = textDefinition.font;
+        ctx.fillStyle = textDefinition.style.color;
+        ctx.fillText(textDefinition.text, baseX, currentY + textDefinition.ascent);
+        currentY += textDefinition.height + (index < measuredTexts.length - 1 ? gap : 0);
+    });
+
+    ctx.restore();
+}
+
+function renderDeclarativeTextGroups(ctx, args) {
+    const groups = Array.isArray(args.template?.textGroups) ? args.template.textGroups : [];
+
+    groups.forEach((group) => {
+        drawDeclarativeTextGroup(ctx, group, args);
+    });
+}
+
 function createScratchCanvas(width, height) {
     const scratchCanvas = document.createElement('canvas');
     scratchCanvas.width = Math.max(Math.round(width), 1);
@@ -890,7 +1400,7 @@ export async function renderTemplateFrame(canvas, image, template, rawConfig, op
         scale,
         mode: options.mode ?? options.global?.mode ?? 'preview',
     });
-    const layoutMetrics = calculateFrameMetrics(image, template, scale);
+    const layoutMetrics = calculateFrameMetrics(image, template, scale, config);
     const displayWidth = Math.round(layoutMetrics.fullWidth * scale);
     const displayHeight = Math.round(layoutMetrics.fullHeight * scale);
     const canvasSetup = setupCanvas(canvas, displayWidth, displayHeight, scale);
@@ -938,13 +1448,6 @@ export async function renderTemplateFrame(canvas, image, template, rawConfig, op
         layoutMetrics.scaledPhotoArea.height
     );
 
-    const area = {
-        x: 0,
-        y: layoutMetrics.scaledPhotoArea.y + layoutMetrics.scaledPhotoArea.height,
-        width: displayWidth,
-        height: Math.max(displayHeight - (layoutMetrics.scaledPhotoArea.y + layoutMetrics.scaledPhotoArea.height), 0),
-    };
-
     const canvasSize = {
         width: displayWidth,
         height: displayHeight,
@@ -956,16 +1459,9 @@ export async function renderTemplateFrame(canvas, image, template, rawConfig, op
         canvasSize,
     });
 
-    if (appearance.barBackground) {
-        drawSurfaceBackground(ctx, image, area, appearance.barBackground, {
-            photoArea: layoutMetrics.scaledPhotoArea,
-        });
-    }
-
-    template.render(ctx, {
+    const renderArgs = {
         template,
         photo: resolveInput.photo,
-        area,
         config,
         data,
         appearance,
@@ -973,7 +1469,13 @@ export async function renderTemplateFrame(canvas, image, template, rawConfig, op
         metrics: layoutMetrics,
         canvasSize,
         runtime,
-    });
+    };
+
+    renderDeclarativeTextGroups(ctx, renderArgs);
+
+    if (typeof template.renderOverlay === 'function') {
+        template.renderOverlay(ctx, renderArgs);
+    }
 
     const processedCanvas = applyGlobalPostProcessing(canvas, globalSettings);
     if (processedCanvas !== canvas) {

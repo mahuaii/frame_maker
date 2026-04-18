@@ -1,6 +1,6 @@
 import { buildDefaultConfig } from '../../core/templates/fields.js';
 import { buildAppearanceField } from '../../core/templates/appearance.js';
-import { buildFontSelectField, defaultSizing } from '../shared.js';
+import { buildFontSelectField, buildFrameSideFields } from '../shared.js';
 
 export const storyExifAppearanceThemes = {
     white: {
@@ -33,8 +33,23 @@ export const storyExifAppearanceThemes = {
     },
 };
 
+export const storyExifFrame = {
+    sides: {
+        top: 0,
+        right: 0,
+        bottom: 14,
+        left: 0,
+    },
+    font: {
+        basis: 'height',
+        size: 2.8,
+        min: 12,
+    },
+};
+
 export const storyExifTemplateFields = [
     buildAppearanceField(storyExifAppearanceThemes),
+    ...buildFrameSideFields(storyExifFrame, ['bottom']),
     {
         key: 'title',
         label: '标题',
@@ -93,9 +108,59 @@ export const storyExifTemplateSchema = {
     appearanceFieldKey: 'colorScheme',
     appearanceDefaultKey: 'black',
     appearanceThemes: storyExifAppearanceThemes,
-    ...defaultSizing,
-    barHeightRatio: 0.14,
-    fontSizeRatio: 0.028,
+    frame: storyExifFrame,
+    textGroups: [
+        {
+            region: 'bottom',
+            anchor: 'middle-left',
+            maxWidthRatio: 0.58,
+            gapRatio: 0.18,
+            texts: [
+                {
+                    configPath: 'title',
+                    fontIdConfigKey: 'titleFontId',
+                    fontWeight: 600,
+                    fontSizeRatio: 1.28,
+                    colorKey: 'title',
+                    minFontSize: 14,
+                },
+                {
+                    configPath: 'subtitle',
+                    whenConfig: 'showSubtitle',
+                    fontIdConfigKey: 'titleFontId',
+                    fontSizeRatio: 0.82,
+                    colorKey: 'subtitle',
+                    minFontSize: 11,
+                },
+            ],
+        },
+        {
+            region: 'bottom',
+            anchor: 'middle-right',
+            textAlign: 'right',
+            maxWidthRatio: 0.38,
+            gapRatio: 0.18,
+            texts: [
+                {
+                    dataPath: 'primaryMetaText',
+                    fontIdConfigKey: 'metaFontId',
+                    fontSizeRatioConfigKey: 'metaScale',
+                    fontSizeRatio: 0.88,
+                    colorKeyDataPath: 'primaryMetaColorKey',
+                    minFontSize: 11,
+                },
+                {
+                    dataPath: 'secondaryMetaText',
+                    whenData: 'hasSecondaryMeta',
+                    fontIdConfigKey: 'metaFontId',
+                    fontSizeRatioConfigKey: 'metaScale',
+                    fontSizeRatio: 0.88,
+                    colorKey: 'metaSecondary',
+                    minFontSize: 11,
+                },
+            ],
+        },
+    ],
     defaultConfig: buildDefaultConfig(storyExifTemplateFields),
     fields: storyExifTemplateFields,
 };

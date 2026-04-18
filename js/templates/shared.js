@@ -1,12 +1,56 @@
 import { DEFAULT_FONT_IDS, FONT_FAMILIES, getFontFieldOptions } from '../core/fonts/index.js';
 
-export const defaultSizing = {
-    barSizeBasis: 'height',
-    fontSizeBasis: 'height',
-    barHeightRatio: 0.08,
-    fontSizeRatio: 0.028,
-    minFontSize: 12,
+export const defaultFrameFont = {
+    basis: 'height',
+    size: 2.8,
+    min: 12,
 };
+
+const sideFieldDefinitions = {
+    top: { key: 'frameTop', label: '上边宽度 (%)' },
+    right: { key: 'frameRight', label: '右边宽度 (%)' },
+    bottom: { key: 'frameBottom', label: '下边宽度 (%)' },
+    left: { key: 'frameLeft', label: '左边宽度 (%)' },
+    verticalSides: { key: 'frameVerticalSides', label: '上下边宽度 (%)' },
+    horizontalSides: { key: 'frameHorizontalSides', label: '左右边宽度 (%)' },
+};
+
+function getFrameSideDefault(frame = {}, control) {
+    const sides = frame.sides ?? {};
+
+    switch (control) {
+        case 'verticalSides':
+            return sides.top ?? sides.bottom ?? 0;
+        case 'horizontalSides':
+            return sides.left ?? sides.right ?? 0;
+        case 'top':
+        case 'right':
+        case 'bottom':
+        case 'left':
+            return sides[control] ?? 0;
+        default:
+            return 0;
+    }
+}
+
+export function buildFrameSideFields(frame = {}, controls = ['verticalSides', 'horizontalSides']) {
+    return controls.map((control) => {
+        const definition = sideFieldDefinitions[control];
+        if (!definition) {
+            throw new Error(`Unknown frame side control "${control}".`);
+        }
+
+        return {
+            key: definition.key,
+            label: definition.label,
+            type: 'number',
+            min: 0,
+            max: 80,
+            step: 0.1,
+            defaultValue: getFrameSideDefault(frame, control),
+        };
+    });
+}
 
 export const defaultTextStyleDefaults = {
     fontIdEn: DEFAULT_FONT_IDS.en,

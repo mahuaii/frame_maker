@@ -5,7 +5,6 @@ export {
     calculateFrameMetrics,
     calculatePreviewScale,
     createRuntimeHelpers,
-    drawBasePhoto,
     fitText,
     measureText,
     safeArea,

@@ -10,6 +10,12 @@ export function resolveStoryExifTemplateData(input) {
     return {
         metaPrimary,
         metaSecondary,
+        primaryMetaText: exif && metaPrimary.length > 0
+            ? metaPrimary.join('   ')
+            : (input.customText.fallbackNote || 'EXIF unavailable'),
+        secondaryMetaText: metaSecondary.join('   '),
+        primaryMetaColorKey: exif && metaPrimary.length > 0 ? 'metaPrimary' : 'metaFallback',
+        hasSecondaryMeta: Boolean(metaSecondary.length > 0),
         hasExif: Boolean(exif && (metaPrimary.length > 0 || metaSecondary.length > 0)),
     };
 }

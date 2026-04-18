@@ -5,8 +5,8 @@ function defaultResolveTemplateData() {
     return {};
 }
 
-function defaultRenderTemplate() {
-    // Templates without custom overlays rely on runtime background/photo placement only.
+function defaultRenderOverlay() {
+    // Templates without custom overlays rely on runtime background/photo/text placement.
 }
 
 export function defineTemplate(template) {
@@ -26,12 +26,20 @@ export function defineTemplate(template) {
         throw new Error(`Template "${template.id}" requires a fields array.`);
     }
 
+    if (!template.frame?.sides || typeof template.frame.sides !== 'object') {
+        throw new Error(`Template "${template.id}" requires frame.sides.`);
+    }
+
+    if (!Array.isArray(template.textGroups)) {
+        throw new Error(`Template "${template.id}" requires a textGroups array.`);
+    }
+
     const resolveData = typeof template.resolveData === 'function'
         ? template.resolveData
         : defaultResolveTemplateData;
-    const render = typeof template.render === 'function'
-        ? template.render
-        : defaultRenderTemplate;
+    const renderOverlay = typeof template.renderOverlay === 'function'
+        ? template.renderOverlay
+        : defaultRenderOverlay;
 
     if (template.appearanceThemes !== undefined) {
         const themes = template.appearanceThemes;
@@ -49,7 +57,7 @@ export function defineTemplate(template) {
     return Object.freeze({
         ...template,
         resolveData,
-        render,
+        renderOverlay,
     });
 }
 

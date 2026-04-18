@@ -1,6 +1,5 @@
 import { buildDefaultConfig } from '../../core/templates/fields.js';
 import { buildAppearanceField } from '../../core/templates/appearance.js';
-import { buildTemplateLayoutMetrics } from '../layout-metrics.js';
 import { buildFontSelectField, buildWhiteAppearanceToggleField } from '../shared.js';
 
 export const galleryCaptionMatAppearanceThemes = {
@@ -27,6 +26,21 @@ export const galleryCaptionMatAppearanceThemes = {
             subtitle: '#FFFFFF',
             photoBorder: '#FFFFFF',
         },
+    },
+};
+
+export const galleryCaptionMatFrame = {
+    fixedAspectRatio: '1:1',
+    sides: {
+        top: 7.75,
+        right: 7.75,
+        bottom: 7.75,
+        left: 7.75,
+    },
+    font: {
+        basis: 'width',
+        size: 3.003,
+        min: 12,
     },
 };
 
@@ -74,34 +88,6 @@ export const galleryCaptionMatTemplateFields = [
     }),
 ];
 
-export function calculateGalleryCaptionMatMetrics({ image, template, scale = 1 }) {
-    const imageWidth = image.naturalWidth;
-    const imageHeight = image.naturalHeight;
-    const squareSide = Math.round(imageWidth * (template.squareSideToPhotoWidthRatio ?? 1.146));
-    const baseFontSize = Math.max(Math.round(squareSide * (template.fontSizeRatio ?? 0.026)), template.minFontSize ?? 12);
-    const borderWidth = Math.max(squareSide * 0.0022, 1);
-    const outerFrameX = Math.round((squareSide - imageWidth) / 2);
-    const outerFrameY = Math.round((squareSide - imageHeight) / 2);
-    const photoAreaX = Math.round(outerFrameX + borderWidth);
-    const photoAreaY = Math.round(outerFrameY + borderWidth);
-    const photoAreaWidth = Math.max(Math.round(imageWidth - borderWidth * 2), 1);
-    const photoAreaHeight = Math.max(Math.round(imageHeight - borderWidth * 2), 1);
-    return buildTemplateLayoutMetrics({
-        imageWidth,
-        imageHeight,
-        fullWidth: squareSide,
-        fullHeight: squareSide,
-        photoArea: {
-            x: photoAreaX,
-            y: photoAreaY,
-            width: photoAreaWidth,
-            height: photoAreaHeight,
-        },
-        fontSize: baseFontSize,
-        scale,
-    });
-}
-
 export const galleryCaptionMatTemplateSchema = {
     id: 'gallery-caption-mat',
     label: '留白标题卡',
@@ -109,9 +95,38 @@ export const galleryCaptionMatTemplateSchema = {
     appearanceFieldKey: 'colorScheme',
     appearanceDefaultKey: 'white',
     appearanceThemes: galleryCaptionMatAppearanceThemes,
-    squareSideToPhotoWidthRatio: 1.155,
-    fontSizeRatio: 0.026,
-    minFontSize: 12,
+    frame: galleryCaptionMatFrame,
+    textGroups: [
+        {
+            region: 'bottom',
+            anchor: 'center',
+            maxWidthBasis: 'frameWidth',
+            maxWidthRatio: 0.56,
+            gapBasis: 'frameWidth',
+            gapRatio: 0.014,
+            texts: [
+                {
+                    configPath: 'title',
+                    fallbackText: 'Untitled',
+                    fontIdConfigKey: 'titleFontId',
+                    fontWeightConfigKey: 'titleFontWeight',
+                    fontSizeRatio: 1.05,
+                    colorKey: 'title',
+                    minFontSize: 12,
+                },
+                {
+                    configPath: 'subtitle',
+                    whenConfig: 'showSubtitle',
+                    fontIdConfigKey: 'subtitleFontId',
+                    fontSizeRatio: 0.6,
+                    colorKey: 'subtitle',
+                    minFontSize: 8,
+                    maxWidthBasis: 'frameWidth',
+                    maxWidthRatio: 0.34,
+                },
+            ],
+        },
+    ],
     defaultConfig: buildDefaultConfig(galleryCaptionMatTemplateFields),
     fields: galleryCaptionMatTemplateFields,
 };

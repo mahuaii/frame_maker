@@ -1,7 +1,7 @@
 import { buildDefaultConfig } from '../../core/templates/fields.js';
 import { buildAppearanceField } from '../../core/templates/appearance.js';
 import { createAppearanceThemes } from '../../core/templates/registry.js';
-import { buildFontSelectField } from '../shared.js';
+import { buildFontSelectField, buildFrameSideFields } from '../shared.js';
 
 export const bottomInfoBarAppearanceThemes = createAppearanceThemes({}, {
     white: {
@@ -22,8 +22,23 @@ export const bottomInfoBarAppearanceThemes = createAppearanceThemes({}, {
     },
 });
 
+export const bottomInfoBarFrame = {
+    sides: {
+        top: 0,
+        right: 0,
+        bottom: 9.5,
+        left: 0,
+    },
+    font: {
+        basis: 'height',
+        size: 2.8,
+        min: 12,
+    },
+};
+
 export const bottomInfoBarTemplateFields = [
     buildAppearanceField(bottomInfoBarAppearanceThemes),
+    ...buildFrameSideFields(bottomInfoBarFrame, ['bottom']),
     buildFontSelectField({
         key: 'leftFontId',
         label: '左侧字体',
@@ -43,11 +58,8 @@ export const bottomInfoBarTemplateSchema = {
     appearanceFieldKey: 'colorScheme',
     appearanceDefaultKey: 'white',
     appearanceThemes: bottomInfoBarAppearanceThemes,
-    barSizeBasis: 'height',
-    fontSizeBasis: 'height',
-    barHeightRatio: 0.095,
-    fontSizeRatio: 0.028,
-    minFontSize: 12,
+    frame: bottomInfoBarFrame,
+    textGroups: [],
     defaultConfig: buildDefaultConfig(bottomInfoBarTemplateFields),
     fields: bottomInfoBarTemplateFields,
 };

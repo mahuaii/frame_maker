@@ -129,15 +129,24 @@ frame_maker/
 
 模板位于 `js/templates/<template-id>/`，通常包含：
 
-- `schema.js`：定义模板字段、默认配置和外观主题
+- `schema.js`：定义 `frame.sides`、`textGroups`、模板字段、默认配置和外观主题
 - `resolve-data.js`：把输入数据转换成渲染可用的数据结构
-- `render.js`：在 canvas 上绘制模板内容
+- `render.js`：可选的 overlay 绘制，用于细框、分隔线等无法声明的附加图形
 - `index.js`：导出模板定义
+
+模板几何统一按“原照片四边向外扩展”计算：
+
+- `frame.sides = { top, right, bottom, left }` 使用百分比数值，例如 `9.5` 表示 `9.5%`
+- 左右边宽以原照片宽度为基准，上下边宽以原照片高度为基准
+- 需要固定整体比例的模板可使用 `frame.fixedAspectRatio`，宽度仍由 `frame.sides` 或对应表单百分比字段定义；runtime 会先按百分比计算原始四边像素宽度，再扩展不足的宽或高，让添加相框后的整张图满足目标比例，例如 `fixedAspectRatio = '1:1'`
+- `buildFrameSideFields(frame)` 默认生成上下联动、左右联动字段；也可以传入 `['bottom']` 等单边控制
+- runtime 会生成 `metrics.photoArea`、`metrics.textRegions`、`metrics.textContentRegions` 和四边九宫格 `metrics.anchors`
+- `textGroups` 用声明式方式把一组文字放到 `top/right/bottom/left` 的 9 个锚点上；每个 group 通过 `texts` 定义一条或多条文字，每条文字都可独立设置内容来源、字体、字号、颜色、显隐和最大宽度
 
 新增模板的一般步骤：
 
 1. 新建 `js/templates/<your-template>/`
-2. 按现有模板拆分 `schema / resolve-data / render / index`
+2. 在 `schema.js` 中声明 `frame.sides`、`textGroups`、`fields` 和 `defaultConfig`
 3. 在 `js/templates.js` 中注册模板
 4. 为模板补充 `thumbnails/<template-id>_thumbnail.(png|jpg)`
 
