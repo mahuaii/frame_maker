@@ -1,0 +1,70 @@
+/* === Design Tokens === */
+:root {
+    --color-bg-primary: #f5f5f5;
+    --color-bg-secondary: #f5f5f5;
+    --color-bg-preview: #f5f5f5;
+    --color-bg-elevated: rgba(255, 255, 255, 0.78);
+    --color-bg-field: rgba(255, 255, 255, 0.72);
+    --color-bg-field-hover: rgba(255, 255, 255, 0.94);
+    --color-toolbar-control: rgba(236, 236, 236, 0.88);
+    --color-toolbar-control-hover: rgba(242, 242, 242, 0.96);
+    --select-arrow-icon: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6'%3E%3Cpath fill='%231f1f1f' fill-opacity='0.52' d='M5 6 0 0h10z'/%3E%3C/svg%3E");
+
+    --color-text-primary: #1f1f1f;
+    --color-text-secondary: #666666;
+    --color-text-placeholder: #9a9a9a;
+
+    --color-divider: rgba(31, 31, 31, 0.1);
+    --color-divider-strong: rgba(31, 31, 31, 0.16);
+    --color-control-border: rgba(31, 31, 31, 0.12);
+    --color-template-border: transparent;
+    --color-template-border-hover: color-mix(in srgb, var(--color-accent) 24%, transparent);
+
+    --color-accent: #f4b925;
+    --color-accent-hover: color-mix(in srgb, var(--color-accent) 82%, #000000);
+    --color-border-focus: color-mix(in srgb, var(--color-accent) 68%, #4a3510);
+    --color-shadow-soft: 0 18px 40px rgba(15, 15, 15, 0.05);
+
+    --radius-sm: 6px;
+    --radius-md: var(--radius-sm);
+    --radius-lg: var(--radius-sm);
+    --radius-pill: var(--radius-sm);
+    --toolbar-control-height: 34px;
+
+    /* 间距 */
+    --spacing-1: 4px;
+    --spacing-2: 8px;
+    --spacing-3: 12px;
+    --spacing-4: 16px;
+    --spacing-6: 24px;
+    --spacing-8: 32px;
+    --spacing-12: 48px;
+
+    /* 字体 */
+    --font-ui: 'MiSans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+}
+
+/* === Reset & Base === */
+*,
+*::before,
+*::after {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+html,
+body {
+    height: 100%;
+    font-family: var(--font-ui);
+    color: var(--color-text-primary);
+    background: var(--color-bg-primary);
+    -webkit-font-smoothing: antialiased;
+}
+
+button,
+input,
+textarea,
+select {
+    font: inherit;
+}

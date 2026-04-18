@@ -112,7 +112,12 @@ http://localhost:8001
 frame_maker/
 ├── index.html                  # 应用入口
 ├── css/
-│   └── style.css               # 主界面样式
+│   ├── style.css               # 样式入口，按顺序加载模块
+│   ├── base.css                # 设计变量、reset、基础元素
+│   ├── layout.css              # 页面骨架、工具栏、主布局
+│   ├── components.css          # 按钮、表单、选项、开关等通用控件
+│   ├── features.css            # 导出区、预览区、模板选择器、编辑面板
+│   └── fonts-local.css         # 本地 UI 字体声明
 ├── js/
 │   ├── app.js                  # 页面主流程
 │   ├── renderer.js             # 渲染入口
