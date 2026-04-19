@@ -1,7 +1,7 @@
 import { buildDefaultConfig } from '../../core/templates/fields.js';
 import { buildAppearanceField } from '../../core/templates/appearance.js';
 import { createSolidAppearanceThemes } from '../appearance-presets.js';
-import { buildFontSelectField } from '../shared.js';
+import { buildFontSelectField, buildFrameSideFields } from '../shared.js';
 
 export const galleryCaptionMatAppearanceThemes = createSolidAppearanceThemes({
     white: {
@@ -42,6 +42,7 @@ export const galleryCaptionMatFrame = {
 
 export const galleryCaptionMatTemplateFields = [
     buildAppearanceField(galleryCaptionMatAppearanceThemes),
+    ...buildFrameSideFields(galleryCaptionMatFrame, []),
     {
         key: 'showThinBorder',
         label: '内边框',

@@ -38,26 +38,34 @@ function normalizeNonNegativeNumber(value, fallbackValue = 0) {
 
 function normalizeFrameSides(template, config = {}) {
     const templateSides = template?.frame?.sides ?? {};
+    const visibleFieldKeys = new Set((template?.fields ?? [])
+        .filter((field) => !field.hidden)
+        .map((field) => field.key));
     const sides = FRAME_SIDE_KEYS.reduce((result, side) => {
         result[side] = normalizeNonNegativeNumber(templateSides[side], 0);
         return result;
     }, {});
 
     const verticalValue = config[FRAME_SIDE_FIELD_KEYS.vertical];
-    if (Number.isFinite(Number(verticalValue))) {
+    if (visibleFieldKeys.has(FRAME_SIDE_FIELD_KEYS.vertical) && Number.isFinite(Number(verticalValue))) {
         const value = normalizeNonNegativeNumber(verticalValue, 0);
         sides.top = value;
         sides.bottom = value;
     }
 
     const horizontalValue = config[FRAME_SIDE_FIELD_KEYS.horizontal];
-    if (Number.isFinite(Number(horizontalValue))) {
+    if (visibleFieldKeys.has(FRAME_SIDE_FIELD_KEYS.horizontal) && Number.isFinite(Number(horizontalValue))) {
         const value = normalizeNonNegativeNumber(horizontalValue, 0);
         sides.left = value;
         sides.right = value;
     }
 
     FRAME_SIDE_KEYS.forEach((side) => {
+        const fieldKey = FRAME_SIDE_FIELD_KEYS[side];
+        if (!visibleFieldKeys.has(fieldKey)) {
+            return;
+        }
+
         const value = config[FRAME_SIDE_FIELD_KEYS[side]];
         if (Number.isFinite(Number(value))) {
             sides[side] = normalizeNonNegativeNumber(value, 0);

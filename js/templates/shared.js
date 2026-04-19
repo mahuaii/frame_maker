@@ -6,6 +6,15 @@ export const defaultFrameFont = {
     min: 12,
 };
 
+const frameSideControlOrder = [
+    'verticalSides',
+    'horizontalSides',
+    'top',
+    'right',
+    'bottom',
+    'left',
+];
+
 const sideFieldDefinitions = {
     top: { key: 'frameTop', label: '上边宽度 (%)' },
     right: { key: 'frameRight', label: '右边宽度 (%)' },
@@ -33,12 +42,18 @@ function getFrameSideDefault(frame = {}, control) {
     }
 }
 
-export function buildFrameSideFields(frame = {}, controls = ['verticalSides', 'horizontalSides']) {
-    return controls.map((control) => {
+export function buildFrameSideFields(frame = {}, visibleControls = ['verticalSides', 'horizontalSides']) {
+    const visibleControlSet = new Set(visibleControls);
+
+    visibleControls.forEach((control) => {
         const definition = sideFieldDefinitions[control];
         if (!definition) {
             throw new Error(`Unknown frame side control "${control}".`);
         }
+    });
+
+    return frameSideControlOrder.map((control) => {
+        const definition = sideFieldDefinitions[control];
 
         return {
             key: definition.key,
@@ -48,6 +63,7 @@ export function buildFrameSideFields(frame = {}, controls = ['verticalSides', 'h
             max: 80,
             step: 0.1,
             defaultValue: getFrameSideDefault(frame, control),
+            hidden: !visibleControlSet.has(control),
         };
     });
 }
