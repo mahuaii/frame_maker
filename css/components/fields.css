@@ -1,0 +1,316 @@
+/* === Field Controls === */
+.field-group {
+    --field-height: 24px;
+    --field-inline-padding: 8px;
+    --field-font-size: 12px;
+    --field-radius: 5px;
+    --field-textarea-min-height: 60px;
+    --field-textarea-line-height: 1.35;
+    --field-select-arrow-offset: 8px;
+    --field-select-arrow-width: 9px;
+    --field-select-arrow-height: 5px;
+    --field-color-width: 40px;
+
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 4px;
+    min-inline-size: 0;
+    padding: 0 var(--inspector-inline-padding, 16px);
+    margin: 0;
+    border: 0;
+}
+
+/* 白框：有可见边线的标准输入框；灰框：无视觉边线、边线与背景同色的紧凑输入框。 */
+.field-group,
+.field-frame-white {
+    --field-frame-background: var(--color-field-background);
+    --field-frame-background-hover: var(--color-field-background-hover);
+    --field-frame-background-focus: var(--color-field-background-focus);
+    --field-frame-border: var(--color-field-border);
+    --field-frame-border-hover: var(--color-field-border-hover);
+    --field-frame-border-focus: var(--color-field-border-focus);
+    --field-frame-focus-ring: var(--color-field-focus-ring);
+    --field-frame-divider: var(--color-divider);
+}
+
+.field-frame-gray,
+.field-group-compact {
+    --field-frame-background: var(--color-control-background-muted);
+    --field-frame-background-hover: var(--color-control-background-hover);
+    --field-frame-background-focus: var(--color-control-background-muted);
+    --field-frame-border: var(--field-frame-background);
+    --field-frame-border-hover: var(--color-field-border-hover);
+    --field-frame-border-focus: var(--color-field-border-focus);
+    --field-frame-focus-ring: transparent;
+    --field-frame-divider: var(--color-white);
+}
+
+.field-group input,
+.field-group textarea,
+.field-group select {
+    width: 100%;
+    height: var(--field-height);
+    min-height: var(--field-height);
+    padding: 0 var(--field-inline-padding);
+    border: 1px solid transparent;
+    border-radius: var(--field-radius);
+    font-size: var(--field-font-size);
+    font-weight: 400;
+    line-height: 1.2;
+    letter-spacing: 0;
+    color: var(--color-text-primary);
+    background-color: var(--color-control-background-muted);
+    outline: none;
+    transition: border-color 0.18s ease, box-shadow 0.18s ease, background-color 0.18s ease, color 0.18s ease;
+}
+
+.field-group input:hover,
+.field-group textarea:hover,
+.field-group select:hover {
+    background-color: var(--color-control-background-hover);
+}
+
+.field-group input:not([type="checkbox"]):not([type="range"]):not([type="color"]),
+.field-group textarea,
+.field-group select {
+    border-color: var(--field-frame-border);
+    background-color: var(--field-frame-background);
+}
+
+.field-group input:not([type="checkbox"]):not([type="range"]):not([type="color"]):hover,
+.field-group textarea:hover,
+.field-group select:hover {
+    border-color: var(--field-frame-border-hover);
+    background-color: var(--field-frame-background-hover);
+}
+
+.field-group textarea {
+    height: auto;
+    min-height: var(--field-height);
+    line-height: var(--field-textarea-line-height);
+    padding-top: 3px;
+    padding-bottom: 3px;
+    overflow: hidden;
+    resize: none;
+}
+
+.field-group textarea[rows="1"] {
+    height: var(--field-height);
+    min-height: var(--field-height);
+}
+
+.field-group textarea:not([rows="1"]) {
+    min-height: var(--field-textarea-min-height);
+}
+
+.field-group select {
+    height: var(--field-height);
+    min-height: var(--field-height);
+    padding-right: 24px;
+    appearance: none;
+    background-image: var(--select-arrow-icon);
+    background-position: calc(100% - var(--field-select-arrow-offset)) 50%;
+    background-size: var(--field-select-arrow-width) var(--field-select-arrow-height);
+    background-repeat: no-repeat;
+    background-color: var(--field-frame-background);
+    border-color: var(--field-frame-border);
+    color: var(--color-text-primary);
+    outline: none;
+    transition: background-color 0.18s ease, border-color 0.18s ease, box-shadow 0.18s ease, transform 0.18s ease;
+}
+
+.field-group select:hover {
+    background-color: var(--field-frame-background-hover);
+    border-color: var(--field-frame-border-hover);
+}
+
+.field-frame-gray input,
+.field-frame-gray textarea,
+.field-frame-gray select,
+.field-frame-gray.field-prefix-control,
+.field-frame-gray .option-input-control,
+.field-frame-gray .option-input-toggle,
+.field-group-compact input,
+.field-group-compact textarea,
+.field-group-compact select,
+.field-group-compact .field-prefix-control,
+.field-group-compact .option-input-control,
+.field-group-compact .option-input-toggle {
+    transition: none;
+}
+
+.field-group input[type="color"] {
+    width: var(--field-color-width);
+    height: var(--field-height);
+    min-height: var(--field-height);
+    padding: 0;
+    cursor: pointer;
+    align-self: flex-start;
+    border-bottom: none;
+    background: transparent;
+}
+
+.field-group input:not([type="checkbox"]):not([type="range"]):not([type="color"]):focus,
+.field-group textarea:focus,
+.field-group select:focus {
+    border-color: var(--field-frame-border-focus);
+    box-shadow: none;
+    background-color: var(--field-frame-background-focus);
+}
+
+.field-group input::placeholder,
+.field-group textarea::placeholder {
+    color: var(--color-text-placeholder);
+}
+
+.field-group:has(textarea) {
+    align-items: stretch;
+}
+
+.field-group-label {
+    padding: 0;
+    font-size: 9px;
+    font-weight: 500;
+    color: var(--color-text-secondary);
+    white-space: nowrap;
+    letter-spacing: 0;
+    text-transform: none;
+    line-height: 1;
+}
+
+.field-group-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+}
+
+.toggle-group {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    align-items: flex-start;
+}
+
+/* === Prefixed Field Control === */
+.field-prefix-control {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr);
+    align-items: center;
+    column-gap: 8px;
+    width: 100%;
+    height: var(--field-height);
+    min-height: var(--field-height);
+    padding: 0 var(--field-inline-padding);
+    border: 1px solid var(--field-frame-border);
+    border-radius: var(--field-radius);
+    color: var(--color-text-primary);
+    background-color: var(--field-frame-background);
+    transition: border-color 0.18s ease, box-shadow 0.18s ease, background-color 0.18s ease, color 0.18s ease;
+}
+
+.field-prefix-control:hover {
+    border-color: var(--field-frame-border-hover);
+    background-color: var(--field-frame-background-hover);
+}
+
+.field-prefix-control:focus-within {
+    border-color: var(--field-frame-border-focus);
+    box-shadow: none;
+    background-color: var(--field-frame-background-focus);
+}
+
+.field-prefix-control-label {
+    min-width: 10px;
+    font-size: var(--field-font-size);
+    font-weight: 400;
+    line-height: 1;
+    color: var(--color-text-secondary);
+    white-space: nowrap;
+}
+
+.field-prefix-control input,
+.field-prefix-control select {
+    min-width: 0;
+    height: calc(var(--field-height) - 2px);
+    min-height: calc(var(--field-height) - 2px);
+    padding: 0;
+    border: 0;
+    border-radius: 0;
+    box-shadow: none;
+    background: transparent;
+}
+
+.field-prefix-control input:not([type="checkbox"]):not([type="range"]):not([type="color"]),
+.field-prefix-control select,
+.field-prefix-control input:not([type="checkbox"]):not([type="range"]):not([type="color"]):hover,
+.field-prefix-control select:hover,
+.field-prefix-control input:not([type="checkbox"]):not([type="range"]):not([type="color"]):focus,
+.field-prefix-control select:focus {
+    border: 0;
+    box-shadow: none;
+    background: transparent;
+}
+
+.checkbox-field {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--spacing-2);
+    width: fit-content;
+    min-height: var(--field-height, 24px);
+    color: var(--color-text-primary);
+    font-size: var(--field-font-size, 12px);
+    font-weight: 400;
+    line-height: 1.2;
+    cursor: pointer;
+}
+
+.checkbox-field input[type="checkbox"] {
+    position: relative;
+    flex: 0 0 auto;
+    align-self: center;
+    width: 16px;
+    min-width: 16px;
+    height: 16px;
+    min-height: 16px;
+    padding: 0;
+    margin: 0;
+    appearance: none;
+    border: 1px solid var(--color-field-border);
+    border-radius: var(--field-radius);
+    background: var(--color-control-background-muted);
+    cursor: pointer;
+    outline: none;
+    transition: background-color 0.18s ease, border-color 0.18s ease, box-shadow 0.18s ease;
+}
+
+.checkbox-field input[type="checkbox"]:hover {
+    background: var(--color-control-background-hover);
+}
+
+.checkbox-field input[type="checkbox"]:checked {
+    background: var(--color-control-background-muted);
+    border-color: var(--color-field-border);
+}
+
+.checkbox-field input[type="checkbox"]:checked::after {
+    content: '';
+    position: absolute;
+    left: 5px;
+    top: 2px;
+    width: 4px;
+    height: 8px;
+    border-right: 1.5px solid var(--color-control-foreground);
+    border-bottom: 1.5px solid var(--color-control-foreground);
+    transform: rotate(40deg);
+}
+
+.checkbox-field input[type="checkbox"]:focus-visible {
+    border-color: var(--color-field-border-focus);
+    box-shadow: none;
+}
+
+.checkbox-field input[type="checkbox"]:focus {
+    background: var(--color-control-background-muted);
+}

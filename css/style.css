@@ -1,4 +1,10 @@
 @import url("./base.css");
 @import url("./layout.css");
-@import url("./components.css");
-@import url("./features.css");
+@import url("./components/buttons.css");
+@import url("./components/fields.css");
+@import url("./components/option-input.css");
+@import url("./components/option-buttons.css");
+@import url("./features/export.css");
+@import url("./features/preview.css");
+@import url("./features/template-selector.css");
+@import url("./features/inspector.css");

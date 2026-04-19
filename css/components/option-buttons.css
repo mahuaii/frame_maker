@@ -1,0 +1,91 @@
+/* === Option Buttons === */
+.option-button-group {
+    display: flex;
+    flex-direction: column;
+    flex-wrap: nowrap;
+    min-height: 0;
+    gap: var(--field-inline-padding);
+    align-items: flex-start;
+    width: 100%;
+    padding: 0;
+    border-radius: 0;
+    background: transparent;
+}
+
+.option-button {
+    padding: 0;
+    border: 1px solid transparent;
+    border-radius: var(--field-radius);
+    background: var(--color-control-background-muted);
+    cursor: pointer;
+    transition: border-color 0.15s ease, background-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.option-button:hover {
+    background: var(--color-control-background-hover);
+}
+
+.option-button.selected {
+    border-color: var(--color-field-border-hover);
+    box-shadow: none;
+}
+
+.option-button:focus-visible {
+    border-color: var(--color-field-border-focus);
+    box-shadow: none;
+    outline: none;
+}
+
+.color-option-list {
+    align-items: stretch;
+}
+
+.color-option-list.color-option-grid {
+    display: flex;
+    flex-direction: column;
+    row-gap: var(--field-inline-padding);
+}
+
+.color-option-grid-row {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    column-gap: 8px;
+    width: 100%;
+}
+
+.color-option-row {
+    display: grid;
+    grid-template-columns: 18px minmax(0, 1fr);
+    align-items: center;
+    gap: var(--field-inline-padding);
+    width: 100%;
+    height: var(--field-height);
+    min-height: var(--field-height);
+    padding: 0 var(--field-inline-padding);
+    border-radius: var(--field-radius);
+    color: var(--color-text-primary);
+    text-align: left;
+}
+
+.color-option-row:hover {
+    background: var(--color-control-background-hover);
+}
+
+.color-option-swatch {
+    width: 18px;
+    height: 18px;
+    border: 1px solid var(--color-field-border);
+    border-radius: calc(var(--field-radius) - 1px);
+    background: var(--option-swatch);
+}
+
+.color-option-value {
+    overflow: hidden;
+    color: var(--color-text-primary);
+    font-size: var(--field-font-size);
+    font-weight: 400;
+    letter-spacing: 0;
+    line-height: 1;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
