@@ -20,7 +20,6 @@ const EXIF_TAGS = {
     0x829a: 'exposureTime',
     0x8827: 'iso',
     0x920a: 'focalLength',
-    0xa405: 'focalLengthIn35mm',
     0xa434: 'lensModel',
 };
 
@@ -29,10 +28,9 @@ export const EDITABLE_EXIF_FIELDS = Object.freeze([
     { key: 'model', label: '相机型号' },
     { key: 'dateTimeOriginal', label: '拍摄时间' },
     { key: 'fNumber', label: '光圈' },
-    { key: 'exposureTime', label: '快门时间' },
+    { key: 'exposureTime', label: '快门速度' },
     { key: 'iso', label: 'ISO' },
     { key: 'focalLength', label: '焦距' },
-    { key: 'focalLengthIn35mm', label: '等效焦距' },
     { key: 'lensModel', label: '镜头型号' },
 ]);
 
@@ -269,7 +267,6 @@ function normalizeExifData(rawExif) {
         exposureTime: typeof rawExif.exposureTime === 'number' ? rawExif.exposureTime : null,
         iso: typeof rawExif.iso === 'number' ? rawExif.iso : null,
         focalLength: typeof rawExif.focalLength === 'number' ? rawExif.focalLength : null,
-        focalLengthIn35mm: typeof rawExif.focalLengthIn35mm === 'number' ? rawExif.focalLengthIn35mm : null,
         formatted: {
             camera: [rawExif.make, rawExif.model].filter(Boolean).join(' ').trim() || null,
             lens: rawExif.lensModel ?? null,
@@ -277,7 +274,6 @@ function normalizeExifData(rawExif) {
             shutter: formatExposureTime(rawExif.exposureTime),
             iso: rawExif.iso ? String(rawExif.iso) : null,
             focalLength: formatFocalLength(rawExif.focalLength),
-            focalLengthIn35mm: formatFocalLength(rawExif.focalLengthIn35mm),
         },
     };
 }
@@ -301,7 +297,6 @@ export function createEditableExifOverrideValues(exif) {
         exposureTime: exif.formatted?.shutter ?? '',
         iso: exif.formatted?.iso ?? '',
         focalLength: exif.formatted?.focalLength ?? '',
-        focalLengthIn35mm: exif.formatted?.focalLengthIn35mm ?? '',
     };
 }
 
@@ -322,7 +317,6 @@ export function resolveEditableExif(overrides = {}) {
     const shutter = normalizeEditableExifText(overrides.exposureTime);
     const iso = normalizeEditableExifText(overrides.iso);
     const focalLength = normalizeEditableExifText(overrides.focalLength);
-    const focalLengthIn35mm = normalizeEditableExifText(overrides.focalLengthIn35mm);
 
     return {
         make,
@@ -333,7 +327,6 @@ export function resolveEditableExif(overrides = {}) {
         exposureTime: null,
         iso: null,
         focalLength: null,
-        focalLengthIn35mm: null,
         formatted: {
             camera: [make, model].filter(Boolean).join(' ').trim() || null,
             lens: lensModel,
@@ -341,7 +334,6 @@ export function resolveEditableExif(overrides = {}) {
             shutter,
             iso,
             focalLength,
-            focalLengthIn35mm,
         },
     };
 }
