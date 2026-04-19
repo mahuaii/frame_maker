@@ -44,7 +44,11 @@ let exifOverrideValues = {};       // Record<string, string>
 let initialExifOverrideValues = {}; // 上传后预填写到表单中的 EXIF 快照
 const THUMBNAIL_MAX_WIDTH = 180;
 const THUMBNAIL_MAX_HEIGHT = 135;
-const ASSET_VERSION = '20260405-181900';
+const ASSET_VERSION = '20260419-000000';
+const DEFAULT_INSPECTOR_WIDTH = 276;
+const MIN_INSPECTOR_WIDTH = 220;
+const MAX_INSPECTOR_WIDTH = 520;
+const MIN_WORKSPACE_WIDTH = 320;
 const DEFAULT_EXPORT_SETTINGS = {
     format: 'image/jpeg',
     sizePreset: 'original',
@@ -66,8 +70,11 @@ const fileInput = document.getElementById('file-input');
 const btnUpload = document.getElementById('btn-upload');
 const selectorList = document.getElementById('selector-list');
 const textEditor = document.getElementById('text-editor');
+const inspectorResizer = document.getElementById('inspector-resizer');
+const mainContent = document.querySelector('.main-content');
 let exportControlsRoot = null;
 let exportCustomSize = null;
+let pendingPreviewResize = 0;
 
 function clampJpegQuality(value) {
     const quality = Number(value);
@@ -80,6 +87,42 @@ function clampJpegQuality(value) {
 
 function formatJpegQualityLabel(quality) {
     return `${Math.round(clampJpegQuality(quality) * 100)}%`;
+}
+
+function clampInspectorWidth(width) {
+    const numericWidth = Number(width);
+    if (!Number.isFinite(numericWidth)) {
+        return DEFAULT_INSPECTOR_WIDTH;
+    }
+
+    const viewportLimitedMax = mainContent
+        ? Math.max(MIN_INSPECTOR_WIDTH, mainContent.clientWidth - MIN_WORKSPACE_WIDTH)
+        : MAX_INSPECTOR_WIDTH;
+    const maxWidth = Math.min(MAX_INSPECTOR_WIDTH, viewportLimitedMax);
+
+    return Math.min(Math.max(Math.round(numericWidth), MIN_INSPECTOR_WIDTH), maxWidth);
+}
+
+function setInspectorWidth(width) {
+    const nextWidth = clampInspectorWidth(width);
+    mainContent?.style.setProperty('--inspector-width', `${nextWidth}px`);
+    textEditor.style.setProperty('--inspector-width', `${nextWidth}px`);
+    inspectorResizer?.setAttribute('aria-valuemin', String(MIN_INSPECTOR_WIDTH));
+    inspectorResizer?.setAttribute('aria-valuemax', String(MAX_INSPECTOR_WIDTH));
+    inspectorResizer?.setAttribute('aria-valuenow', String(nextWidth));
+
+    return nextWidth;
+}
+
+function queuePreviewResize() {
+    if (pendingPreviewResize) {
+        return;
+    }
+
+    pendingPreviewResize = window.requestAnimationFrame(() => {
+        pendingPreviewResize = 0;
+        updatePreview();
+    });
 }
 
 const EXPORT_FIELDS = [
@@ -667,6 +710,66 @@ function bindSelectorEvents() {
     });
 }
 
+function bindInspectorResize() {
+    if (!inspectorResizer || !textEditor) {
+        return;
+    }
+
+    let startX = 0;
+    let startWidth = DEFAULT_INSPECTOR_WIDTH;
+    let activePointerId = null;
+
+    const stopResize = () => {
+        if (activePointerId === null) {
+            return;
+        }
+
+        activePointerId = null;
+        inspectorResizer.classList.remove('is-dragging');
+        document.body.classList.remove('is-resizing-inspector');
+    };
+
+    inspectorResizer.addEventListener('pointerdown', (e) => {
+        if (e.button !== 0) {
+            return;
+        }
+
+        e.preventDefault();
+        activePointerId = e.pointerId;
+        startX = e.clientX;
+        startWidth = textEditor.getBoundingClientRect().width;
+        inspectorResizer.setPointerCapture(e.pointerId);
+        inspectorResizer.classList.add('is-dragging');
+        document.body.classList.add('is-resizing-inspector');
+    });
+
+    inspectorResizer.addEventListener('pointermove', (e) => {
+        if (e.pointerId !== activePointerId) {
+            return;
+        }
+
+        const nextWidth = startWidth + startX - e.clientX;
+        setInspectorWidth(nextWidth);
+        queuePreviewResize();
+    });
+
+    inspectorResizer.addEventListener('pointerup', stopResize);
+    inspectorResizer.addEventListener('pointercancel', stopResize);
+
+    inspectorResizer.addEventListener('keydown', (e) => {
+        if (e.key !== 'ArrowLeft' && e.key !== 'ArrowRight') {
+            return;
+        }
+
+        e.preventDefault();
+        const direction = e.key === 'ArrowLeft' ? 1 : -1;
+        const step = e.shiftKey ? 32 : 12;
+        const nextWidth = textEditor.getBoundingClientRect().width + direction * step;
+        setInspectorWidth(nextWidth);
+        queuePreviewResize();
+    });
+}
+
 // ============================================
 // 实时预览
 // ============================================
@@ -791,9 +894,11 @@ function bindEvents() {
     // 设置拖拽上传
     setupDragDrop();
     bindSelectorEvents();
+    bindInspectorResize();
 
     // 窗口 resize
     window.addEventListener('resize', () => {
+        setInspectorWidth(textEditor.getBoundingClientRect().width);
         updatePreview();
     });
 }
@@ -802,6 +907,8 @@ function bindEvents() {
 // 初始化
 // ============================================
 function init() {
+    setInspectorWidth(DEFAULT_INSPECTOR_WIDTH);
+
     // 初始化 fieldValues 为默认模板的默认值
     const template = getTemplateById(selectedTemplateId);
     if (template) {

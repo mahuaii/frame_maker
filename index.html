@@ -10,7 +10,7 @@
     <title>Frame Maker</title>
     <script>
         (() => {
-            const assetVersion = '20260406-231500';
+            const assetVersion = '20260419-000000';
             const localFontHref = `css/fonts-local.css?v=${assetVersion}`;
             const cdnFontHrefs = [
                 'https://cdn.jsdelivr.net/npm/misans@4.1.0/lib/Normal/MiSans-Light.min.css',
@@ -45,7 +45,7 @@
             });
         })();
     </script>
-    <link rel="stylesheet" href="css/style.css?v=20260406-231500">
+    <link rel="stylesheet" href="css/style.css?v=20260419-000000">
 </head>
 
 <body>
@@ -92,6 +92,9 @@
             </section>
         </div>
 
+        <div class="inspector-resizer" id="inspector-resizer" role="separator" aria-orientation="vertical"
+            aria-label="调整右侧栏宽度" tabindex="0"></div>
+
         <!-- 右侧设置区 -->
         <aside class="text-editor" id="text-editor">
             <!-- 由 JS 动态生成输入字段 -->
@@ -101,7 +104,7 @@
     <!-- 隐藏的文件输入 -->
     <input type="file" id="file-input" accept="image/*" hidden>
 
-    <script type="module" src="js/app.js?v=20260406-231500"></script>
+    <script type="module" src="js/app.js?v=20260419-000000"></script>
 </body>
 
 </html>

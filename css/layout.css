@@ -39,6 +39,7 @@ body {
 
 /* === 主体区域 === */
 .main-content {
+    position: relative;
     display: flex;
     flex: 1;
     min-height: 0;
