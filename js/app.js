@@ -6,7 +6,6 @@
 import { templates, getTemplateById } from './templates.js';
 import { resolveTemplateAppearance } from './core/templates/registry.js';
 import { loadTemplateConfig, saveTemplateConfig } from './core/templates/config-store.js';
-import { isFieldVisible } from './core/templates/fields.js';
 import { resolveTemplateConfig } from './core/templates/registry.js';
 import { preloadRuntimeFontsInBackground } from './core/fonts/index.js';
 import {
@@ -17,6 +16,22 @@ import {
     extractExifData,
     EDITABLE_EXIF_FIELDS,
 } from './renderer.js';
+import { fitInside, resolveResizeDimensions } from './core/render/sizing.js';
+import {
+    RESET_ICON_PATHS,
+    createElement,
+    createFieldGroup,
+    createIcon,
+    createIconButton,
+    syncRangeProgress,
+} from './ui/controls.js';
+import {
+    appendInspectorFields,
+    createInspectorFieldGrid,
+    createInspectorFieldList,
+    createInspectorSection,
+    getInspectorSectionContent,
+} from './ui/inspector.js';
 
 // ============================================
 // 状态管理
@@ -51,13 +66,8 @@ const fileInput = document.getElementById('file-input');
 const btnUpload = document.getElementById('btn-upload');
 const selectorList = document.getElementById('selector-list');
 const textEditor = document.getElementById('text-editor');
-let btnExport = null;
-let exportSizePreset = null;
+let exportControlsRoot = null;
 let exportCustomSize = null;
-let exportWidthInput = null;
-let exportHeightInput = null;
-let exportQualityInput = null;
-let exportQualityValue = null;
 
 function clampJpegQuality(value) {
     const quality = Number(value);
@@ -68,22 +78,62 @@ function clampJpegQuality(value) {
     return Math.min(Math.max(quality, MIN_JPEG_QUALITY), MAX_JPEG_QUALITY);
 }
 
-function parsePositiveInteger(value) {
-    if (value === '' || value === null || value === undefined) {
-        return null;
-    }
-
-    const normalized = Number(value);
-    if (!Number.isInteger(normalized) || normalized <= 0) {
-        return null;
-    }
-
-    return normalized;
-}
-
 function formatJpegQualityLabel(quality) {
     return `${Math.round(clampJpegQuality(quality) * 100)}%`;
 }
+
+const EXPORT_FIELDS = [
+    {
+        key: 'sizePreset',
+        label: '尺寸',
+        type: 'select',
+        defaultValue: DEFAULT_EXPORT_SETTINGS.sizePreset,
+        groupClassName: 'export-field export-size-field',
+        options: [
+            { value: 'original', label: '原始尺寸' },
+            { value: '1080', label: '长边 1080px' },
+            { value: '2048', label: '长边 2048px' },
+            { value: 'custom', label: '自定义' },
+        ],
+    },
+    {
+        key: 'customWidth',
+        label: 'W',
+        type: 'number',
+        min: 1,
+        step: 1,
+        inputMode: 'numeric',
+        placeholder: '宽度',
+    },
+    {
+        key: 'customHeight',
+        label: 'H',
+        type: 'number',
+        min: 1,
+        step: 1,
+        inputMode: 'numeric',
+        placeholder: '高度',
+    },
+    {
+        key: 'jpegQuality',
+        label: 'JPEG 质量',
+        type: 'range',
+        min: MIN_JPEG_QUALITY,
+        max: MAX_JPEG_QUALITY,
+        step: 0.01,
+        defaultValue: DEFAULT_EXPORT_SETTINGS.jpegQuality,
+        groupClassName: 'export-field export-quality-field',
+        controlClassName: 'field-frame-gray export-quality-control',
+        valueClassName: 'export-quality-value',
+        formatValue: formatJpegQualityLabel,
+    },
+];
+
+const DOWNLOAD_ICON_PATHS = [
+    'M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4',
+    'm7 10 5 5 5-5',
+    'M12 15V3',
+];
 
 function getExtensionForMimeType(mimeType) {
     switch (mimeType) {
@@ -110,25 +160,30 @@ function buildExportFilename(photoName, mimeType) {
 }
 
 function syncJpegQualityTrack(quality) {
-    if (!exportQualityInput) return;
-
-    const normalizedQuality = clampJpegQuality(quality);
-    const progress = ((normalizedQuality - MIN_JPEG_QUALITY) / (MAX_JPEG_QUALITY - MIN_JPEG_QUALITY)) * 100;
-    exportQualityInput.style.setProperty('--range-progress', `${progress}%`);
+    const exportQualityInput = exportControlsRoot?.querySelector('[data-field-key="jpegQuality"]');
+    if (exportQualityInput instanceof HTMLInputElement) {
+        syncRangeProgress(exportQualityInput, clampJpegQuality(quality));
+    }
 }
 
 function syncExportControls() {
-    if (!exportSizePreset || !exportWidthInput || !exportHeightInput || !exportQualityInput || !exportQualityValue || !exportCustomSize) {
+    if (!exportControlsRoot) {
         return;
     }
 
-    exportSizePreset.value = exportSettings.sizePreset;
-    exportWidthInput.value = exportSettings.customWidth;
-    exportHeightInput.value = exportSettings.customHeight;
-    exportQualityInput.value = String(exportSettings.jpegQuality);
-    exportQualityValue.textContent = formatJpegQualityLabel(exportSettings.jpegQuality);
+    const exportSizePreset = exportControlsRoot.querySelector('[data-field-key="sizePreset"]');
+    const exportWidthInput = exportControlsRoot.querySelector('[data-field-key="customWidth"]');
+    const exportHeightInput = exportControlsRoot.querySelector('[data-field-key="customHeight"]');
+    const exportQualityInput = exportControlsRoot.querySelector('[data-field-key="jpegQuality"]');
+    const exportQualityValue = exportControlsRoot.querySelector('#export-jpegQuality-value');
+
+    if (exportSizePreset) exportSizePreset.value = exportSettings.sizePreset;
+    if (exportWidthInput) exportWidthInput.value = exportSettings.customWidth;
+    if (exportHeightInput) exportHeightInput.value = exportSettings.customHeight;
+    if (exportQualityInput) exportQualityInput.value = String(exportSettings.jpegQuality);
+    if (exportQualityValue) exportQualityValue.textContent = formatJpegQualityLabel(exportSettings.jpegQuality);
     syncJpegQualityTrack(exportSettings.jpegQuality);
-    exportCustomSize.classList.toggle('hidden', exportSettings.sizePreset !== 'custom');
+    exportCustomSize?.classList.toggle('hidden', exportSettings.sizePreset !== 'custom');
 }
 
 function setExportSizePreset(sizePreset) {
@@ -163,83 +218,13 @@ function getBaseExportDimensions(template) {
     };
 }
 
-function getPresetResizeDimensions(targetLongEdge, baseDimensions) {
-    const { width, height } = baseDimensions;
-    if (!targetLongEdge || !width || !height) {
-        return null;
-    }
-
-    if (width >= height) {
-        return {
-            width: targetLongEdge,
-            height: Math.max(Math.round((height / width) * targetLongEdge), 1),
-        };
-    }
-
-    return {
-        width: Math.max(Math.round((width / height) * targetLongEdge), 1),
-        height: targetLongEdge,
-    };
-}
-
 function resolveExportResize(template) {
-    const baseDimensions = getBaseExportDimensions(template);
-
-    if (exportSettings.sizePreset === 'original') {
-        return null;
-    }
-
-    if (exportSettings.sizePreset === 'custom') {
-        const customWidth = parsePositiveInteger(exportSettings.customWidth);
-        const customHeight = parsePositiveInteger(exportSettings.customHeight);
-        const widthProvided = exportSettings.customWidth !== '';
-        const heightProvided = exportSettings.customHeight !== '';
-
-        if (widthProvided && customWidth === null) {
-            throw new Error('自定义宽度必须是正整数');
-        }
-
-        if (heightProvided && customHeight === null) {
-            throw new Error('自定义高度必须是正整数');
-        }
-
-        if (!customWidth && !customHeight) {
-            return null;
-        }
-
-        if (customWidth && customHeight) {
-            return { width: customWidth, height: customHeight };
-        }
-
-        if (customWidth) {
-            return {
-                width: customWidth,
-                height: Math.max(Math.round((baseDimensions.height / baseDimensions.width) * customWidth), 1),
-            };
-        }
-
-        return {
-            width: Math.max(Math.round((baseDimensions.width / baseDimensions.height) * customHeight), 1),
-            height: customHeight,
-        };
-    }
-
-    return getPresetResizeDimensions(Number(exportSettings.sizePreset), baseDimensions);
-}
-
-function calculateContainedSize(sourceWidth, sourceHeight, containerWidth, containerHeight, padding = 0.9) {
-    if (!sourceWidth || !sourceHeight || !containerWidth || !containerHeight) {
-        return null;
-    }
-
-    const maxWidth = containerWidth * padding;
-    const maxHeight = containerHeight * padding;
-    const scale = Math.min(maxWidth / sourceWidth, maxHeight / sourceHeight, 1);
-
-    return {
-        width: Math.max(Math.round(sourceWidth * scale), 1),
-        height: Math.max(Math.round(sourceHeight * scale), 1),
-    };
+    return resolveResizeDimensions({
+        sizePreset: exportSettings.sizePreset,
+        customWidth: exportSettings.customWidth,
+        customHeight: exportSettings.customHeight,
+        baseDimensions: getBaseExportDimensions(template),
+    });
 }
 
 function createThumbnailElement(template) {
@@ -343,7 +328,7 @@ function renderTextEditor() {
     if (!template) return;
 
     textEditor.innerHTML = '';
-    const visibleFields = template.fields.filter((field) => !field.hidden && isFieldVisible(field, fieldValues, template));
+    const visibleFields = template.fields.filter((field) => !field.hidden);
     const fieldsBySection = groupFieldsByInspectorSection(visibleFields);
 
     INSPECTOR_SECTION_DEFINITIONS.forEach((definition) => {
@@ -351,7 +336,7 @@ function renderTextEditor() {
             definition.title,
             definition.key === 'exif' ? createExifEditorResetAllButton() : null
         );
-        const content = section.querySelector('.inspector-section-content');
+        const content = getInspectorSectionContent(section);
 
         switch (definition.key) {
             case 'exif':
@@ -392,84 +377,13 @@ function groupFieldsByInspectorSection(fields) {
     return groups;
 }
 
-function createInspectorSection(title, headerAction = null) {
-    const section = document.createElement('section');
-    section.className = 'inspector-section';
-
-    const header = document.createElement('div');
-    header.className = 'inspector-section-header';
-
-    const heading = document.createElement('h2');
-    heading.className = 'inspector-section-title';
-    heading.textContent = title;
-    header.appendChild(heading);
-
-    if (headerAction) {
-        header.appendChild(headerAction);
-    }
-
-    const content = document.createElement('div');
-    content.className = 'inspector-section-content';
-
-    section.appendChild(header);
-    section.appendChild(content);
-
-    return section;
-}
-
 function appendFieldSectionContent(content, fields, sectionKey) {
-    if (!fields || fields.length === 0) {
-        return;
-    }
-
-    if (sectionKey === 'layout') {
-        const grid = document.createElement('div');
-        grid.className = 'inspector-field-grid';
-        fields.forEach((field) => {
-            grid.appendChild(createFieldGroup(field, { compact: true }));
-        });
-        content.appendChild(grid);
-        return;
-    }
-
-    fields.forEach((field) => {
-        content.appendChild(createFieldGroup(field));
+    appendInspectorFields(content, fields, {
+        values: fieldValues,
+        onChange: commitFieldValue,
+        compact: sectionKey === 'layout',
+        getLabel: getCompactFieldLabel,
     });
-}
-
-function createFieldGroup(field, { compact = false } = {}) {
-    const fieldGroup = document.createElement('fieldset');
-    fieldGroup.className = `field-group${compact ? ' field-group-compact' : ''}`;
-
-    const input = createFieldInput(field);
-
-    if (field.type === 'toggle') {
-        const label = document.createElement('label');
-        label.className = 'checkbox-field';
-        label.appendChild(input);
-
-        if (field.label) {
-            const text = document.createElement('span');
-            text.textContent = field.label;
-            label.appendChild(text);
-        }
-
-        fieldGroup.appendChild(label);
-        return fieldGroup;
-    }
-
-    const labelText = compact ? getCompactFieldLabel(field) : field.label;
-    if (labelText) {
-        const label = document.createElement('label');
-        label.className = 'field-group-label';
-        label.textContent = labelText;
-        label.htmlFor = `field-${field.key}`;
-        fieldGroup.appendChild(label);
-    }
-
-    fieldGroup.appendChild(input);
-
-    return fieldGroup;
 }
 
 function getCompactFieldLabel(field) {
@@ -485,198 +399,15 @@ function getCompactFieldLabel(field) {
     return compactLabels[field.key] ?? field.label;
 }
 
-function getVisibleFieldKeys(template, values) {
-    return template.fields
-        .filter((field) => isFieldVisible(field, values, template))
-        .map((field) => field.key);
-}
-
 function commitFieldValue(field, nextValue) {
     const template = getTemplateById(selectedTemplateId);
     if (!template) return;
-
-    const previousVisibleFieldKeys = getVisibleFieldKeys(template, fieldValues);
 
     fieldValues[field.key] = nextValue;
     fieldValues = resolveTemplateConfig(template, fieldValues);
     saveTemplateConfig(template, fieldValues);
 
-    const nextVisibleFieldKeys = getVisibleFieldKeys(template, fieldValues);
-    const didVisibleFieldsChange =
-        previousVisibleFieldKeys.length !== nextVisibleFieldKeys.length
-        || previousVisibleFieldKeys.some((key, index) => key !== nextVisibleFieldKeys[index]);
-
-    if (didVisibleFieldsChange) {
-        renderTextEditor();
-    }
-
     updatePreview();
-}
-
-function syncTextareaHeight(textarea) {
-    if (!(textarea instanceof HTMLTextAreaElement)) return;
-
-    textarea.style.height = 'auto';
-    textarea.style.height = `${textarea.scrollHeight}px`;
-}
-
-function createAutoSizingTextarea(field, defaultRows = 1) {
-    const input = document.createElement('textarea');
-    input.rows = field.rows ?? defaultRows;
-    input.value = fieldValues[field.key] ?? field.defaultValue ?? '';
-    input.dataset.autoResize = 'true';
-
-    input.addEventListener('input', (e) => {
-        syncTextareaHeight(input);
-        commitFieldValue(field, e.target.value);
-    });
-
-    requestAnimationFrame(() => {
-        syncTextareaHeight(input);
-    });
-
-    return input;
-}
-
-function formatColorOptionValue(value) {
-    if (typeof value !== 'string') {
-        return '000000';
-    }
-
-    const hex = value.trim().match(/^#?([0-9a-f]{6})$/i);
-    if (hex) {
-        return hex[1].toUpperCase();
-    }
-
-    return value.trim().toUpperCase();
-}
-
-function createFieldInput(field) {
-    let input;
-
-    switch (field.type) {
-        case 'textarea': {
-            input = createAutoSizingTextarea(field, 3);
-            break;
-        }
-        case 'number': {
-            input = document.createElement('input');
-            input.type = 'number';
-            if (field.min !== undefined) input.min = String(field.min);
-            if (field.max !== undefined) input.max = String(field.max);
-            if (field.step !== undefined) input.step = String(field.step);
-            input.value = fieldValues[field.key] ?? field.defaultValue ?? 0;
-            input.addEventListener('input', (e) => {
-                commitFieldValue(field, e.target.value);
-            });
-            break;
-        }
-        case 'color': {
-            input = document.createElement('input');
-            input.type = 'color';
-            input.value = fieldValues[field.key] ?? field.defaultValue ?? '#000000';
-            input.addEventListener('input', (e) => {
-                commitFieldValue(field, e.target.value);
-            });
-            break;
-        }
-        case 'select': {
-            if (field.control === 'color-buttons') {
-                input = document.createElement('div');
-                input.className = 'option-button-group color-option-list';
-                input.setAttribute('role', 'radiogroup');
-
-                const selectedValue = fieldValues[field.key] ?? field.defaultValue ?? '';
-
-                (field.options ?? []).forEach((option) => {
-                    const swatch = option.swatch ?? '#111111';
-                    const button = document.createElement('button');
-                    button.type = 'button';
-                    button.className = 'option-button color-option-row' + (option.value === selectedValue ? ' selected' : '');
-                    button.dataset.value = option.value;
-                    button.setAttribute('role', 'radio');
-                    button.setAttribute('aria-checked', option.value === selectedValue ? 'true' : 'false');
-                    button.setAttribute('aria-label', option.label);
-                    button.style.setProperty('--option-swatch', swatch);
-
-                    const swatchElement = document.createElement('span');
-                    swatchElement.className = 'color-option-swatch';
-                    swatchElement.setAttribute('aria-hidden', 'true');
-
-                    const valueElement = document.createElement('span');
-                    valueElement.className = 'color-option-value';
-                    valueElement.textContent = option.displayValue ?? formatColorOptionValue(swatch);
-
-                    const dividerElement = document.createElement('span');
-                    dividerElement.className = 'color-option-divider';
-                    dividerElement.setAttribute('aria-hidden', 'true');
-
-                    const opacityElement = document.createElement('span');
-                    opacityElement.className = 'color-option-opacity';
-
-                    const opacityValueElement = document.createElement('span');
-                    opacityValueElement.className = 'color-option-opacity-value';
-                    opacityValueElement.textContent = option.opacity ?? '100';
-
-                    const opacityUnitElement = document.createElement('span');
-                    opacityUnitElement.className = 'color-option-opacity-unit';
-                    opacityUnitElement.textContent = '%';
-
-                    opacityElement.append(opacityValueElement, opacityUnitElement);
-                    button.append(swatchElement, valueElement, dividerElement, opacityElement);
-
-                    button.addEventListener('click', () => {
-                        const group = button.parentElement;
-                        group?.querySelectorAll('.option-button').forEach((item) => {
-                            const isSelected = item === button;
-                            item.classList.toggle('selected', isSelected);
-                            item.setAttribute('aria-checked', isSelected ? 'true' : 'false');
-                        });
-                        commitFieldValue(field, option.value);
-                    });
-
-                    input.appendChild(button);
-                });
-                break;
-            }
-
-            input = document.createElement('select');
-            (field.options ?? []).forEach((option) => {
-                const optionElement = document.createElement('option');
-                optionElement.value = option.value;
-                optionElement.textContent = option.label;
-                input.appendChild(optionElement);
-            });
-            input.value = fieldValues[field.key] ?? field.defaultValue ?? '';
-            input.addEventListener('change', (e) => {
-                commitFieldValue(field, e.target.value);
-            });
-            break;
-        }
-        case 'toggle': {
-            const currentValue = Boolean(fieldValues[field.key] ?? field.defaultValue);
-            input = document.createElement('input');
-            input.type = 'checkbox';
-            input.checked = currentValue;
-            input.addEventListener('change', () => {
-                commitFieldValue(field, input.checked);
-            });
-            break;
-        }
-        case 'text':
-        default: {
-            input = createAutoSizingTextarea(field, 1);
-            break;
-        }
-    }
-
-    input.id = `field-${field.key}`;
-    input.dataset.fieldKey = field.key;
-    if (field.placeholder && 'placeholder' in input) {
-        input.placeholder = field.placeholder;
-    }
-
-    return input;
 }
 
 function getExifEditorFieldValue(fieldKey) {
@@ -697,18 +428,6 @@ function commitExifFieldValue(fieldKey, nextValue) {
     updatePreview();
 }
 
-function createExifEditorInput(field) {
-    const input = document.createElement('input');
-    input.type = 'text';
-    input.value = getExifEditorFieldValue(field.key);
-    input.addEventListener('input', (e) => {
-        commitExifFieldValue(field.key, e.target.value);
-    });
-    input.id = `field-exif-${field.key}`;
-    input.dataset.fieldKey = `exif-${field.key}`;
-    return input;
-}
-
 function resetAllExifFieldValues() {
     const resetValues = {};
 
@@ -726,129 +445,143 @@ function resetAllExifFieldValues() {
 }
 
 function createExifEditorResetAllButton() {
-    const button = document.createElement('button');
-    button.type = 'button';
-    button.className = 'field-reset-button inspector-section-reset-button';
-    button.setAttribute('aria-label', '重置拍摄信息');
-    button.setAttribute('title', '重置拍摄信息');
-    button.innerHTML = `
-        <svg viewBox="0 0 16 16" aria-hidden="true" focusable="false">
-            <path d="M3.2 8a4.8 4.8 0 1 0 1.406-3.394" />
-            <path d="M3.2 3.6v2.4h2.4" />
-        </svg>
-    `;
-    button.addEventListener('click', () => {
-        resetAllExifFieldValues();
+    return createIconButton({
+        className: 'field-reset-button inspector-section-reset-button',
+        label: '重置拍摄信息',
+        iconPaths: RESET_ICON_PATHS,
+        onClick: () => {
+            resetAllExifFieldValues();
+        },
     });
-    return button;
 }
 
 function createExifEditorContent() {
-    const content = document.createElement('div');
-    content.className = 'editor-collapsible-content';
-
-    EDITABLE_EXIF_FIELDS.forEach((field) => {
-        const fieldGroup = document.createElement('fieldset');
-        fieldGroup.className = 'field-group';
-
-        const input = createExifEditorInput(field);
-        const header = document.createElement('div');
-        header.className = 'field-group-header';
-        const label = document.createElement('label');
-        label.className = 'field-group-label';
-        label.textContent = field.label;
-        label.htmlFor = `field-exif-${field.key}`;
-        header.appendChild(label);
-        fieldGroup.appendChild(header);
-        fieldGroup.appendChild(input);
-        content.appendChild(fieldGroup);
+    const fields = EDITABLE_EXIF_FIELDS.map((field) => ({
+        ...field,
+        type: field.type ?? 'input',
+        defaultValue: '',
+    }));
+    const primaryFieldKeys = ['focalLength', 'fNumber', 'exposureTime', 'iso'];
+    const exifFieldValues = fields.reduce((values, field) => {
+        values[field.key] = getExifEditorFieldValue(field.key);
+        return values;
+    }, {});
+    const fieldOptions = {
+        values: exifFieldValues,
+        idPrefix: 'field-exif',
+        onChange: (field, nextValue) => {
+            commitExifFieldValue(field.key, nextValue);
+        },
+    };
+    const primaryFields = primaryFieldKeys
+        .map((fieldKey) => fields.find((field) => field.key === fieldKey))
+        .filter(Boolean);
+    const remainingFields = fields.filter((field) => !primaryFieldKeys.includes(field.key));
+    const content = createElement('div', {
+        className: 'exif-editor-content',
     });
+
+    if (primaryFields.length > 0) {
+        content.appendChild(createInspectorFieldGrid(primaryFields, {
+            ...fieldOptions,
+            compact: false,
+        }));
+    }
+
+    if (remainingFields.length > 0) {
+        content.appendChild(createInspectorFieldList(remainingFields, fieldOptions));
+    }
 
     return content;
 }
 
-function createExportControls() {
-    const controls = document.createElement('div');
-    controls.className = 'export-controls';
-    controls.innerHTML = `
-        <fieldset class="field-group export-field export-size-field">
-            <label class="field-group-label" for="export-size-preset">尺寸</label>
-            <select id="export-size-preset">
-                <option value="original">原始尺寸</option>
-                <option value="1080">长边 1080px</option>
-                <option value="2048">长边 2048px</option>
-                <option value="custom">自定义</option>
-            </select>
-        </fieldset>
-        <div class="export-custom-size hidden" id="export-custom-size">
-            <fieldset class="field-group">
-                <label class="field-group-label" for="export-width">W</label>
-                <input type="number" id="export-width" min="1" step="1" inputmode="numeric" placeholder="宽度">
-            </fieldset>
-            <fieldset class="field-group">
-                <label class="field-group-label" for="export-height">H</label>
-                <input type="number" id="export-height" min="1" step="1" inputmode="numeric" placeholder="高度">
-            </fieldset>
-        </div>
-        <fieldset class="field-group export-field export-quality-field">
-            <label class="field-group-label" for="export-quality">JPEG 质量</label>
-            <div class="export-quality-control">
-                <input type="range" id="export-quality" min="0.1" max="1" step="0.01" value="1">
-                <span class="export-quality-value" id="export-quality-value">100%</span>
-            </div>
-        </fieldset>
-        <button class="btn btn-primary btn-export-panel" id="btn-export">
-            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none"
-                stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
-                <polyline points="7 10 12 15 17 10" />
-                <line x1="12" y1="15" x2="12" y2="3" />
-            </svg>
-            导出 JPG
-        </button>
-    `;
-
-    cacheExportControlRefs(controls);
-    bindExportControlEvents();
-    syncExportControls();
-
-    return controls;
-}
-
-function cacheExportControlRefs(root = document) {
-    btnExport = root.querySelector('#btn-export');
-    exportSizePreset = root.querySelector('#export-size-preset');
-    exportCustomSize = root.querySelector('#export-custom-size');
-    exportWidthInput = root.querySelector('#export-width');
-    exportHeightInput = root.querySelector('#export-height');
-    exportQualityInput = root.querySelector('#export-quality');
-    exportQualityValue = root.querySelector('#export-quality-value');
-}
-
-function bindExportControlEvents() {
-    if (!btnExport || !exportSizePreset || !exportWidthInput || !exportHeightInput || !exportQualityInput) {
-        return;
+function commitExportFieldValue(field, nextValue) {
+    switch (field.key) {
+        case 'sizePreset':
+            setExportSizePreset(nextValue);
+            break;
+        case 'customWidth':
+            setCustomExportDimension('customWidth', String(nextValue).trim());
+            break;
+        case 'customHeight':
+            setCustomExportDimension('customHeight', String(nextValue).trim());
+            break;
+        case 'jpegQuality':
+            setJpegQuality(nextValue);
+            break;
+        default:
+            break;
     }
+}
 
-    btnExport.addEventListener('click', () => {
+function createExportButton() {
+    const icon = createIcon(DOWNLOAD_ICON_PATHS, {
+        viewBox: '0 0 24 24',
+        attributes: {
+            fill: 'none',
+            stroke: 'currentColor',
+            'stroke-width': '2',
+            'stroke-linecap': 'round',
+            'stroke-linejoin': 'round',
+        },
+    });
+
+    const button = createElement('button', {
+        className: 'btn btn-primary btn-export-panel',
+        attributes: {
+            type: 'button',
+            id: 'btn-export',
+        },
+        children: [
+            icon,
+            createElement('span', {
+                textContent: '导出 JPG',
+            }),
+        ],
+    });
+
+    button.addEventListener('click', () => {
         handleExport();
     });
 
-    exportSizePreset.addEventListener('change', (e) => {
-        setExportSizePreset(e.target.value);
+    return button;
+}
+
+function createExportControls() {
+    const controls = createElement('div', {
+        className: 'export-controls',
+    });
+    const fieldOptions = {
+        values: exportSettings,
+        idPrefix: 'export',
+        onChange: commitExportFieldValue,
+    };
+    const sizePresetField = EXPORT_FIELDS.find((field) => field.key === 'sizePreset');
+    const customWidthField = EXPORT_FIELDS.find((field) => field.key === 'customWidth');
+    const customHeightField = EXPORT_FIELDS.find((field) => field.key === 'customHeight');
+    const jpegQualityField = EXPORT_FIELDS.find((field) => field.key === 'jpegQuality');
+
+    exportControlsRoot = controls;
+    exportCustomSize = createElement('div', {
+        className: 'export-custom-size inspector-field-grid inspector-field-grid-contained',
+        attributes: {
+            id: 'export-custom-size',
+        },
+        children: [
+            createFieldGroup(customWidthField, fieldOptions),
+            createFieldGroup(customHeightField, fieldOptions),
+        ],
     });
 
-    exportWidthInput.addEventListener('input', (e) => {
-        setCustomExportDimension('customWidth', e.target.value.trim());
-    });
+    controls.append(
+        createFieldGroup(sizePresetField, fieldOptions),
+        exportCustomSize,
+        createFieldGroup(jpegQualityField, fieldOptions),
+        createExportButton()
+    );
+    syncExportControls();
 
-    exportHeightInput.addEventListener('input', (e) => {
-        setCustomExportDimension('customHeight', e.target.value.trim());
-    });
-
-    exportQualityInput.addEventListener('input', (e) => {
-        setJpegQuality(e.target.value);
-    });
+    return controls;
 }
 
 // ============================================
@@ -954,7 +687,7 @@ async function updatePreview() {
         exifOverrides: exifOverrideValues,
     });
 
-    const previewSize = calculateContainedSize(
+    const previewSize = fitInside(
         canvas.width,
         canvas.height,
         containerWidth,

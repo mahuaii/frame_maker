@@ -72,8 +72,8 @@
 }
 
 .field-reset-button svg {
-    width: 14px;
-    height: 14px;
+    width: 12px;
+    height: 12px;
     stroke: currentColor;
     stroke-width: 1.35;
     fill: none;
@@ -81,16 +81,53 @@
     stroke-linejoin: round;
 }
 
+.field-group {
+    --field-height: 24px;
+    --field-inline-padding: 8px;
+    --field-font-size: 12px;
+    --field-radius: 5px;
+    --field-textarea-min-height: 60px;
+    --field-textarea-line-height: 1.35;
+    --field-select-arrow-offset: 8px;
+    --field-select-arrow-width: 9px;
+    --field-select-arrow-height: 5px;
+    --field-color-width: 40px;
+    --range-width: 112px;
+}
+
+/* 白框：有可见边线的标准输入框；灰框：无视觉边线、边线与背景同色的紧凑输入框。 */
+.field-group,
+.field-frame-white {
+    --field-frame-background: var(--color-field-background);
+    --field-frame-background-hover: var(--color-field-background-hover);
+    --field-frame-background-focus: var(--color-field-background-focus);
+    --field-frame-border: var(--color-field-border);
+    --field-frame-border-hover: var(--color-field-border-hover);
+    --field-frame-border-focus: var(--color-field-border-focus);
+    --field-frame-focus-ring: var(--color-field-focus-ring);
+}
+
+.field-frame-gray,
+.field-group-compact {
+    --field-frame-background: var(--color-control-background-muted);
+    --field-frame-background-hover: var(--color-control-background-hover);
+    --field-frame-background-focus: var(--color-control-background-muted);
+    --field-frame-border: var(--field-frame-background);
+    --field-frame-border-hover: var(--field-frame-background-hover);
+    --field-frame-border-focus: var(--field-frame-background-focus);
+    --field-frame-focus-ring: var(--field-frame-background-focus);
+}
+
 .field-group input,
 .field-group textarea,
 .field-group select {
     width: 100%;
-    height: 24px;
-    min-height: 24px;
-    padding: 0 10px;
+    height: var(--field-height);
+    min-height: var(--field-height);
+    padding: 0 var(--field-inline-padding);
     border: 1px solid transparent;
-    border-radius: 6px;
-    font-size: 14px;
+    border-radius: var(--field-radius);
+    font-size: var(--field-font-size);
     font-weight: 400;
     line-height: 1.2;
     letter-spacing: 0;
@@ -109,21 +146,21 @@
 .field-group input:not([type="checkbox"]):not([type="range"]):not([type="color"]),
 .field-group textarea,
 .field-group select {
-    border-color: var(--color-field-border);
-    background-color: var(--color-field-background);
+    border-color: var(--field-frame-border);
+    background-color: var(--field-frame-background);
 }
 
 .field-group input:not([type="checkbox"]):not([type="range"]):not([type="color"]):hover,
 .field-group textarea:hover,
 .field-group select:hover {
-    border-color: var(--color-field-border-hover);
-    background-color: var(--color-field-background-hover);
+    border-color: var(--field-frame-border-hover);
+    background-color: var(--field-frame-background-hover);
 }
 
 .field-group textarea {
     height: auto;
-    min-height: 24px;
-    line-height: 1.45;
+    min-height: var(--field-height);
+    line-height: var(--field-textarea-line-height);
     padding-top: 3px;
     padding-bottom: 3px;
     overflow: hidden;
@@ -131,44 +168,43 @@
 }
 
 .field-group textarea[rows="1"] {
-    height: 24px;
-    min-height: 24px;
+    height: var(--field-height);
+    min-height: var(--field-height);
 }
 
 .field-group textarea:not([rows="1"]) {
-    min-height: 76px;
+    min-height: var(--field-textarea-min-height);
 }
 
 .field-group select {
-    height: 24px;
-    min-height: 24px;
-    padding-right: 28px;
+    height: var(--field-height);
+    min-height: var(--field-height);
+    padding-right: 24px;
 }
 
 /* === Selects === */
-.export-field select,
 .field-group select {
     appearance: none;
     background-image: var(--select-arrow-icon);
-    background-position: calc(100% - 10px) 50%;
-    background-size: 10px 6px;
+    background-position: calc(100% - var(--field-select-arrow-offset)) 50%;
+    background-size: var(--field-select-arrow-width) var(--field-select-arrow-height);
     background-repeat: no-repeat;
-    background-color: var(--color-field-background);
-    border-color: var(--color-field-border);
+    background-color: var(--field-frame-background);
+    border-color: var(--field-frame-border);
     color: var(--color-text-primary);
     outline: none;
     transition: background-color 0.18s ease, border-color 0.18s ease, box-shadow 0.18s ease, transform 0.18s ease;
 }
 
 .field-group select:hover {
-    background-color: var(--color-field-background-hover);
-    border-color: var(--color-field-border-hover);
+    background-color: var(--field-frame-background-hover);
+    border-color: var(--field-frame-border-hover);
 }
 
 .field-group input[type="color"] {
-    width: 48px;
-    height: 24px;
-    min-height: 24px;
+    width: var(--field-color-width);
+    height: var(--field-height);
+    min-height: var(--field-height);
     padding: 0;
     cursor: pointer;
     align-self: flex-start;
@@ -176,27 +212,12 @@
     background: transparent;
 }
 
-.field-group input[type="checkbox"] {
-    width: 16px;
-    min-width: 16px;
-    height: 16px;
-    min-height: 16px;
-    padding: 0;
-    align-self: flex-start;
-}
-
 .field-group input:not([type="checkbox"]):not([type="range"]):not([type="color"]):focus,
 .field-group textarea:focus,
 .field-group select:focus {
-    border-color: var(--color-field-border-focus);
-    box-shadow: 0 0 0 1px var(--color-field-focus-ring);
-    background-color: var(--color-field-background-focus);
-}
-
-.field-group select:focus {
-    border-color: var(--color-field-border-focus);
-    box-shadow: 0 0 0 1px var(--color-field-focus-ring);
-    background-color: var(--color-field-background-focus);
+    border-color: var(--field-frame-border-focus);
+    box-shadow: 0 0 0 1px var(--field-frame-focus-ring);
+    background-color: var(--field-frame-background-focus);
 }
 
 .field-group input::placeholder,
@@ -204,97 +225,199 @@
     color: var(--color-text-placeholder);
 }
 
-/* === Option Buttons === */
-.option-button-group {
-    display: flex;
-    flex-wrap: wrap;
-    min-height: 32px;
-    gap: 6px;
-    align-items: flex-start;
-    padding: 4px;
-    border-radius: 6px;
+/* === Prefixed Field Control === */
+.field-prefix-control {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr);
+    align-items: center;
+    column-gap: 8px;
+    width: 100%;
+    height: var(--field-height);
+    min-height: var(--field-height);
+    padding: 0 var(--field-inline-padding);
+    border: 1px solid var(--field-frame-border);
+    border-radius: var(--field-radius);
+    color: var(--color-text-primary);
+    background-color: var(--field-frame-background);
+    transition: border-color 0.18s ease, box-shadow 0.18s ease, background-color 0.18s ease, color 0.18s ease;
+}
+
+.field-prefix-control:hover {
+    border-color: var(--field-frame-border-hover);
+    background-color: var(--field-frame-background-hover);
+}
+
+.field-prefix-control:focus-within {
+    border-color: var(--field-frame-border-focus);
+    box-shadow: 0 0 0 1px var(--field-frame-focus-ring);
+    background-color: var(--field-frame-background-focus);
+}
+
+.field-prefix-control-label {
+    min-width: 10px;
+    font-size: var(--field-font-size);
+    font-weight: 400;
+    line-height: 1;
+    color: var(--color-text-secondary);
+    white-space: nowrap;
+}
+
+.field-prefix-control input,
+.field-prefix-control select {
+    min-width: 0;
+    height: calc(var(--field-height) - 2px);
+    min-height: calc(var(--field-height) - 2px);
+    padding: 0;
+    border: 0;
+    border-radius: 0;
+    box-shadow: none;
+    background: transparent;
+}
+
+.field-prefix-control input:not([type="checkbox"]):not([type="range"]):not([type="color"]),
+.field-prefix-control select,
+.field-prefix-control input:not([type="checkbox"]):not([type="range"]):not([type="color"]):hover,
+.field-prefix-control select:hover,
+.field-prefix-control input:not([type="checkbox"]):not([type="range"]):not([type="color"]):focus,
+.field-prefix-control select:focus {
+    border: 0;
+    box-shadow: none;
+    background: transparent;
+}
+
+.checkbox-field {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--spacing-2);
+    width: fit-content;
+    min-height: var(--field-height, 24px);
+    color: var(--color-text-primary);
+    font-size: var(--field-font-size, 12px);
+    font-weight: 400;
+    line-height: 1.2;
+    cursor: pointer;
+}
+
+.checkbox-field input[type="checkbox"] {
+    position: relative;
+    flex: 0 0 auto;
+    align-self: center;
+    width: 16px;
+    min-width: 16px;
+    height: 16px;
+    min-height: 16px;
+    padding: 0;
+    margin: 0;
+    appearance: none;
+    border: 1px solid var(--color-field-border);
+    border-radius: var(--field-radius);
+    background: var(--color-control-background-muted);
+    cursor: pointer;
+    outline: none;
+    transition: background-color 0.18s ease, border-color 0.18s ease, box-shadow 0.18s ease;
+}
+
+.checkbox-field input[type="checkbox"]:hover {
+    background: var(--color-control-background-hover);
+}
+
+.checkbox-field input[type="checkbox"]:checked {
+    background: var(--color-control-background-muted);
+    border-color: var(--color-field-border);
+}
+
+.checkbox-field input[type="checkbox"]:checked::after {
+    content: '';
+    position: absolute;
+    left: 5px;
+    top: 2px;
+    width: 4px;
+    height: 8px;
+    border-right: 1.5px solid var(--color-control-foreground);
+    border-bottom: 1.5px solid var(--color-control-foreground);
+    transform: rotate(40deg);
+}
+
+.checkbox-field input[type="checkbox"]:focus-visible {
+    border-color: var(--color-field-border-focus);
+    box-shadow: 0 0 0 1px var(--color-field-focus-ring);
+}
+
+.checkbox-field input[type="checkbox"]:focus {
     background: var(--color-control-background-muted);
 }
 
-.option-button {
-    width: 26px;
-    height: 24px;
-    padding: 0;
-    border: 1px solid var(--color-control-border);
-    border-radius: 5px;
-    background: var(--option-swatch);
-    cursor: pointer;
-    transition: border-color 0.15s ease, transform 0.15s ease, box-shadow 0.15s ease;
-}
-
-.option-button:hover {
-    transform: translateY(-1px);
-}
-
-.option-button.selected {
-    border-color: var(--color-control-accent);
-    box-shadow: 0 0 0 1px var(--color-control-accent);
-}
-
-.option-button:focus-visible {
-    border-color: var(--color-control-accent);
-    box-shadow: 0 0 0 2px color-mix(in srgb, var(--color-control-accent) 24%, transparent);
-}
-
-.color-option-list {
+/* === Option Buttons === */
+.option-button-group {
     display: flex;
     flex-direction: column;
     flex-wrap: nowrap;
-    gap: 8px;
-    width: 100%;
     min-height: 0;
+    gap: var(--field-inline-padding);
+    align-items: flex-start;
+    width: 100%;
     padding: 0;
+    border-radius: 0;
     background: transparent;
+}
+
+.option-button {
+    padding: 0;
+    border: 1px solid transparent;
+    border-radius: var(--field-radius);
+    background: var(--color-control-background-muted);
+    cursor: pointer;
+    transition: border-color 0.15s ease, background-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.option-button:hover {
+    background: var(--color-control-background-hover);
+}
+
+.option-button.selected {
+    border-color: var(--color-field-border-hover);
+    box-shadow: none;
+}
+
+.option-button:focus-visible {
+    border-color: var(--color-field-border-focus);
+    box-shadow: 0 0 0 1px var(--color-field-focus-ring);
+    outline: none;
+}
+
+.color-option-list {
+    align-items: stretch;
 }
 
 .color-option-row {
     display: grid;
     grid-template-columns: 18px minmax(0, 1fr) 1px 56px;
     align-items: center;
-    gap: 8px;
+    gap: var(--field-inline-padding);
     width: 100%;
-    height: 24px;
-    min-height: 24px;
-    padding: 0 8px;
-    border: 1px solid transparent;
-    border-radius: 6px;
-    background: var(--color-control-background-muted);
+    height: var(--field-height);
+    min-height: var(--field-height);
+    padding: 0 var(--field-inline-padding);
+    border-radius: var(--field-radius);
     color: var(--color-text-primary);
     text-align: left;
 }
 
 .color-option-row:hover {
-    transform: none;
     background: var(--color-control-background-hover);
-}
-
-.color-option-row.selected {
-    border-color: var(--color-field-border-hover);
-    box-shadow: none;
-}
-
-.color-option-row:focus-visible {
-    border-color: var(--color-field-border-focus);
-    box-shadow: 0 0 0 1px var(--color-field-focus-ring);
-    outline: none;
 }
 
 .color-option-swatch {
     width: 18px;
     height: 18px;
     border: 1px solid var(--color-field-border);
-    border-radius: 4px;
+    border-radius: calc(var(--field-radius) - 1px);
     background: var(--option-swatch);
 }
 
 .color-option-value,
 .color-option-opacity {
-    font-size: 12px;
+    font-size: var(--field-font-size);
     font-weight: 400;
     line-height: 1;
     letter-spacing: 0;
@@ -317,7 +440,7 @@
     display: inline-flex;
     align-items: baseline;
     justify-content: flex-end;
-    gap: 8px;
+    gap: var(--field-inline-padding);
 }
 
 .color-option-opacity-unit {
@@ -325,9 +448,16 @@
 }
 
 /* === Range Inputs === */
-.export-quality-control input[type="range"] {
+.range-value {
+    min-width: 36px;
+    font-size: 11px;
+    color: var(--color-text-secondary);
+    font-variant-numeric: tabular-nums;
+}
+
+.range-control input[type="range"] {
     --range-progress: 100%;
-    width: 132px;
+    width: var(--range-width, 112px);
     height: 14px;
     min-height: 0;
     padding: 0;
@@ -338,14 +468,14 @@
     outline: none;
 }
 
-.export-quality-control input[type="range"]:focus {
+.range-control input[type="range"]:focus {
     border: none;
     box-shadow: none;
     background: transparent;
     outline: none;
 }
 
-.export-quality-control input[type="range"]::-webkit-slider-runnable-track {
+.range-control input[type="range"]::-webkit-slider-runnable-track {
     height: 4px;
     border-radius: var(--radius-sm);
     background: linear-gradient(90deg,
@@ -355,7 +485,7 @@
             var(--color-divider-strong) 100%);
 }
 
-.export-quality-control input[type="range"]::-webkit-slider-thumb {
+.range-control input[type="range"]::-webkit-slider-thumb {
     -webkit-appearance: none;
     width: 10px;
     height: 14px;
@@ -365,20 +495,20 @@
     background: var(--color-accent);
 }
 
-.export-quality-control input[type="range"]::-moz-range-track {
+.range-control input[type="range"]::-moz-range-track {
     height: 4px;
     border: none;
     border-radius: var(--radius-sm);
     background: var(--color-divider-strong);
 }
 
-.export-quality-control input[type="range"]::-moz-range-progress {
+.range-control input[type="range"]::-moz-range-progress {
     height: 4px;
     border-radius: var(--radius-sm);
     background: var(--color-accent);
 }
 
-.export-quality-control input[type="range"]::-moz-range-thumb {
+.range-control input[type="range"]::-moz-range-thumb {
     width: 10px;
     height: 14px;
     border: none;
