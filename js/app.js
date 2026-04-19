@@ -55,7 +55,7 @@ const DEFAULT_EXPORT_SETTINGS = {
     customHeight: '',
     jpegQuality: 1,
 };
-const MIN_JPEG_QUALITY = 0.7;
+const MIN_JPEG_QUALITY = 0.01;
 const MAX_JPEG_QUALITY = 1;
 let exportSettings = { ...DEFAULT_EXPORT_SETTINGS };
 
@@ -75,11 +75,7 @@ let exportCustomSize = null;
 let pendingPreviewResize = 0;
 
 function clampJpegQuality(value) {
-    const rawValue = typeof value === 'string' ? value.trim() : value;
-    const numericValue = typeof rawValue === 'string' && rawValue.endsWith('%')
-        ? Number(rawValue.slice(0, -1)) / 100
-        : Number(rawValue);
-    const quality = numericValue > 1 ? numericValue / 100 : numericValue;
+    const quality = Number(value);
 
     if (!Number.isFinite(quality)) {
         return DEFAULT_EXPORT_SETTINGS.jpegQuality;
@@ -88,8 +84,34 @@ function clampJpegQuality(value) {
     return Math.min(Math.max(quality, MIN_JPEG_QUALITY), MAX_JPEG_QUALITY);
 }
 
+function parseJpegQualityInput(value) {
+    const rawValue = typeof value === 'string' ? value.trim() : value;
+
+    if (typeof rawValue === 'number') {
+        return Number.isFinite(rawValue) ? clampJpegQuality(rawValue) : null;
+    }
+
+    if (typeof rawValue !== 'string') {
+        return null;
+    }
+
+    const matchedValue = rawValue.match(/^(\d+(?:\.\d+)?)(%)?$/);
+
+    if (!matchedValue) {
+        return null;
+    }
+
+    const percentage = Number(matchedValue[1]);
+
+    if (!Number.isFinite(percentage) || percentage < 1 || percentage > 100) {
+        return null;
+    }
+
+    return percentage / 100;
+}
+
 function formatJpegQualityLabel(quality) {
-    return `${Math.round(clampJpegQuality(quality) * 100)}%`;
+    return `${Number((clampJpegQuality(quality) * 100).toFixed(2))}%`;
 }
 
 function buildJpegQualityOptions() {
@@ -181,6 +203,7 @@ const EXPORT_FIELDS = [
         defaultValue: DEFAULT_EXPORT_SETTINGS.jpegQuality,
         groupClassName: 'export-field export-quality-field field-frame-gray',
         formatValue: formatJpegQualityLabel,
+        parseValue: parseJpegQualityInput,
         options: buildJpegQualityOptions(),
     },
 ];
@@ -248,9 +271,18 @@ function setCustomExportDimension(key, rawValue) {
 }
 
 function setJpegQuality(rawValue) {
+    const jpegQuality = typeof rawValue === 'string'
+        ? parseJpegQualityInput(rawValue)
+        : clampJpegQuality(rawValue);
+
+    if (jpegQuality === null) {
+        syncExportControls();
+        return;
+    }
+
     exportSettings = {
         ...exportSettings,
-        jpegQuality: clampJpegQuality(rawValue),
+        jpegQuality,
     };
     syncExportControls();
 }

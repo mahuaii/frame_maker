@@ -143,6 +143,29 @@ function syncTextareaHeight(textarea) {
     textarea.style.height = `${textarea.scrollHeight}px`;
 }
 
+const pendingBlurTimers = new WeakMap();
+
+function blurControlAfterChange(target, delay = 0) {
+    if (!(target instanceof HTMLElement)) return;
+
+    const pendingTimer = pendingBlurTimers.get(target);
+    if (pendingTimer) {
+        window.clearTimeout(pendingTimer);
+    }
+
+    const blurTarget = () => {
+        pendingBlurTimers.delete(target);
+        target.blur();
+    };
+
+    if (delay > 0) {
+        pendingBlurTimers.set(target, window.setTimeout(blurTarget, delay));
+        return;
+    }
+
+    requestAnimationFrame(blurTarget);
+}
+
 function getFieldValue(field, values = {}) {
     return values[field.key] ?? field.defaultValue ?? '';
 }
@@ -173,6 +196,13 @@ function createAutoSizingTextarea(field, value, onChange, defaultRows = 1) {
     input.addEventListener('input', (event) => {
         syncTextareaHeight(input);
         onChange?.(field, event.target.value, event);
+        blurControlAfterChange(input, 700);
+    });
+    input.addEventListener('keydown', (event) => {
+        if ((event.metaKey || event.ctrlKey) && event.key === 'Enter') {
+            event.preventDefault();
+            blurControlAfterChange(input);
+        }
     });
 
     requestAnimationFrame(() => {
@@ -192,6 +222,7 @@ function createNumberInput(field, value, onChange) {
     input.value = value ?? 0;
     input.addEventListener('change', (event) => {
         onChange?.(field, event.target.value, event);
+        blurControlAfterChange(input);
     });
     return input;
 }
@@ -203,6 +234,9 @@ function createColorInput(field, value, onChange) {
     input.addEventListener('input', (event) => {
         onChange?.(field, event.target.value, event);
     });
+    input.addEventListener('change', () => {
+        blurControlAfterChange(input);
+    });
     return input;
 }
 
@@ -212,6 +246,12 @@ function createTextInput(field, value, onChange) {
     input.value = value ?? '';
     input.addEventListener('input', (event) => {
         onChange?.(field, event.target.value, event);
+        blurControlAfterChange(input, 700);
+    });
+    input.addEventListener('keydown', (event) => {
+        if (event.key === 'Enter') {
+            blurControlAfterChange(input);
+        }
     });
     return input;
 }
@@ -229,6 +269,7 @@ function createSelectInput(field, value, onChange) {
     input.value = value ?? '';
     input.addEventListener('change', (event) => {
         onChange?.(field, event.target.value, event);
+        blurControlAfterChange(input);
     });
     return input;
 }
@@ -243,10 +284,19 @@ function getOptionInputDisplayValue(field, value) {
     return field.formatValue ? field.formatValue(value) : value ?? '';
 }
 
+function parseOptionInputValue(field, rawValue, currentValue) {
+    if (typeof field.parseValue === 'function') {
+        return field.parseValue(rawValue, currentValue);
+    }
+
+    return rawValue;
+}
+
 function createOptionInput(field, value, onChange) {
     const wrapper = createElement('div', {
         className: ['option-input-control', field.controlClassName].filter(Boolean).join(' '),
     });
+    let currentValue = value;
     const input = document.createElement('input');
     const button = createElement('button', {
         className: 'option-input-toggle',
@@ -265,11 +315,44 @@ function createOptionInput(field, value, onChange) {
     });
 
     input.type = field.inputType ?? 'text';
-    input.value = getOptionInputDisplayValue(field, value);
+    input.value = getOptionInputDisplayValue(field, currentValue);
     input.setAttribute('autocomplete', 'off');
     applyCommonInputAttributes(input, field, {
         idPrefix: field.idPrefix ?? 'field',
     });
+
+    function syncOptionSelection() {
+        menu.querySelectorAll('.option-input-option').forEach((item) => {
+            item.setAttribute('aria-selected', String(item.dataset.value) === String(currentValue) ? 'true' : 'false');
+        });
+    }
+
+    function syncInputDisplayValue() {
+        input.value = getOptionInputDisplayValue(field, currentValue);
+        syncOptionSelection();
+    }
+
+    function commitValue(nextValue, event) {
+        if (Object.is(currentValue, nextValue)) {
+            syncInputDisplayValue();
+            return;
+        }
+
+        currentValue = nextValue;
+        syncInputDisplayValue();
+        onChange?.(field, nextValue, event);
+    }
+
+    function commitTextValue(event) {
+        const parsedValue = parseOptionInputValue(field, input.value, currentValue);
+
+        if (parsedValue === null || parsedValue === undefined) {
+            syncInputDisplayValue();
+            return;
+        }
+
+        commitValue(parsedValue, event);
+    }
 
     function closeMenu() {
         menu.hidden = true;
@@ -306,23 +389,30 @@ function createOptionInput(field, value, onChange) {
             },
         });
 
-        optionButton.addEventListener('click', () => {
-            input.value = option.label ?? option.value;
-            menu.querySelectorAll('.option-input-option').forEach((item) => {
-                item.setAttribute('aria-selected', item === optionButton ? 'true' : 'false');
-            });
+        optionButton.addEventListener('click', (event) => {
+            commitValue(option.value, event);
             closeMenu();
-            onChange?.(field, option.value);
-            input.focus();
+            blurControlAfterChange(optionButton);
         });
 
         menu.appendChild(optionButton);
     });
 
-    input.addEventListener('input', (event) => {
-        onChange?.(field, event.target.value, event);
+    input.addEventListener('focus', () => {
+        input.select();
+    });
+    input.addEventListener('change', (event) => {
+        commitTextValue(event);
+        blurControlAfterChange(input);
     });
     input.addEventListener('keydown', (event) => {
+        if (event.key === 'Enter') {
+            event.preventDefault();
+            commitTextValue(event);
+            closeMenu();
+            blurControlAfterChange(input);
+        }
+
         if (event.key === 'ArrowDown' && !menu.hidden) {
             event.preventDefault();
             menu.querySelector('.option-input-option')?.focus();
@@ -339,6 +429,7 @@ function createOptionInput(field, value, onChange) {
     wrapper.addEventListener('focusout', () => {
         window.setTimeout(() => {
             if (!wrapper.contains(document.activeElement)) {
+                commitTextValue();
                 closeMenu();
             }
         }, 0);
@@ -355,6 +446,7 @@ function createToggleInput(field, value, onChange) {
     input.checked = Boolean(value);
     input.addEventListener('change', () => {
         onChange?.(field, input.checked);
+        blurControlAfterChange(input);
     });
     return input;
 }
@@ -407,6 +499,7 @@ function createColorOptionGroup(field, value, onChange) {
                 item.setAttribute('aria-checked', itemSelected ? 'true' : 'false');
             });
             onChange?.(field, option.value);
+            blurControlAfterChange(button);
         });
 
         input.appendChild(createElement('div', {
@@ -451,6 +544,9 @@ function createRangeInput(field, value, onChange) {
         syncRangeProgress(input, event.target.value);
         valueLabel.textContent = field.formatValue ? field.formatValue(event.target.value) : event.target.value;
         onChange?.(field, event.target.value, event);
+    });
+    input.addEventListener('change', () => {
+        blurControlAfterChange(input);
     });
 
     wrapper.append(input, valueLabel);
