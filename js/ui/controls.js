@@ -245,7 +245,7 @@ function createToggleInput(field, value, onChange) {
 
 function createColorOptionGroup(field, value, onChange) {
     const input = createElement('div', {
-        className: 'option-button-group color-option-list',
+        className: 'option-button-group color-option-list color-option-grid',
         attributes: {
             role: 'radiogroup',
         },
@@ -282,26 +282,8 @@ function createColorOptionGroup(field, value, onChange) {
             className: 'color-option-value',
             textContent: option.displayValue ?? formatColorOptionValue(swatch),
         });
-        const dividerElement = createElement('span', {
-            className: 'color-option-divider',
-            attributes: {
-                'aria-hidden': 'true',
-            },
-        });
-        const opacityValueElement = createElement('span', {
-            className: 'color-option-opacity-value',
-            textContent: option.opacity ?? '100',
-        });
-        const opacityUnitElement = createElement('span', {
-            className: 'color-option-opacity-unit',
-            textContent: '%',
-        });
-        const opacityElement = createElement('span', {
-            className: 'color-option-opacity',
-            children: [opacityValueElement, opacityUnitElement],
-        });
 
-        button.append(swatchElement, valueElement, dividerElement, opacityElement);
+        button.append(swatchElement, valueElement);
         button.addEventListener('click', () => {
             input.querySelectorAll('.option-button').forEach((item) => {
                 const itemSelected = item === button;
@@ -311,7 +293,10 @@ function createColorOptionGroup(field, value, onChange) {
             onChange?.(field, option.value);
         });
 
-        input.appendChild(button);
+        input.appendChild(createElement('div', {
+            className: 'color-option-grid-row',
+            children: [button],
+        }));
     });
 
     return input;

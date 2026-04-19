@@ -389,9 +389,22 @@
     align-items: stretch;
 }
 
+.color-option-list.color-option-grid {
+    display: flex;
+    flex-direction: column;
+    row-gap: var(--field-inline-padding);
+}
+
+.color-option-grid-row {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    column-gap: 8px;
+    width: 100%;
+}
+
 .color-option-row {
     display: grid;
-    grid-template-columns: 18px minmax(0, 1fr) 1px 56px;
+    grid-template-columns: 18px minmax(0, 1fr);
     align-items: center;
     gap: var(--field-inline-padding);
     width: 100%;
@@ -415,8 +428,7 @@
     background: var(--option-swatch);
 }
 
-.color-option-value,
-.color-option-opacity {
+.color-option-value {
     font-size: var(--field-font-size);
     font-weight: 400;
     line-height: 1;
@@ -428,23 +440,6 @@
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
-}
-
-.color-option-divider {
-    width: 1px;
-    height: 100%;
-    background: var(--color-white);
-}
-
-.color-option-opacity {
-    display: inline-flex;
-    align-items: baseline;
-    justify-content: flex-end;
-    gap: var(--field-inline-padding);
-}
-
-.color-option-opacity-unit {
-    color: var(--color-text-secondary);
 }
 
 /* === Range Inputs === */
