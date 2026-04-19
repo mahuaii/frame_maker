@@ -23,7 +23,6 @@ import {
     createFieldGroup,
     createIcon,
     createIconButton,
-    syncRangeProgress,
 } from './ui/controls.js';
 import {
     appendInspectorFields,
@@ -56,7 +55,7 @@ const DEFAULT_EXPORT_SETTINGS = {
     customHeight: '',
     jpegQuality: 1,
 };
-const MIN_JPEG_QUALITY = 0.1;
+const MIN_JPEG_QUALITY = 0.7;
 const MAX_JPEG_QUALITY = 1;
 let exportSettings = { ...DEFAULT_EXPORT_SETTINGS };
 
@@ -67,7 +66,6 @@ const canvas = document.getElementById('preview-canvas');
 const previewArea = document.getElementById('preview-area');
 const uploadGuide = document.getElementById('upload-guide');
 const fileInput = document.getElementById('file-input');
-const btnUpload = document.getElementById('btn-upload');
 const selectorList = document.getElementById('selector-list');
 const textEditor = document.getElementById('text-editor');
 const inspectorResizer = document.getElementById('inspector-resizer');
@@ -77,7 +75,12 @@ let exportCustomSize = null;
 let pendingPreviewResize = 0;
 
 function clampJpegQuality(value) {
-    const quality = Number(value);
+    const rawValue = typeof value === 'string' ? value.trim() : value;
+    const numericValue = typeof rawValue === 'string' && rawValue.endsWith('%')
+        ? Number(rawValue.slice(0, -1)) / 100
+        : Number(rawValue);
+    const quality = numericValue > 1 ? numericValue / 100 : numericValue;
+
     if (!Number.isFinite(quality)) {
         return DEFAULT_EXPORT_SETTINGS.jpegQuality;
     }
@@ -87,6 +90,19 @@ function clampJpegQuality(value) {
 
 function formatJpegQualityLabel(quality) {
     return `${Math.round(clampJpegQuality(quality) * 100)}%`;
+}
+
+function buildJpegQualityOptions() {
+    const options = [];
+
+    for (let quality = 100; quality >= 70; quality -= 5) {
+        options.push({
+            value: quality / 100,
+            label: `${quality}%`,
+        });
+    }
+
+    return options;
 }
 
 function clampInspectorWidth(width) {
@@ -131,7 +147,7 @@ const EXPORT_FIELDS = [
         label: '尺寸',
         type: 'select',
         defaultValue: DEFAULT_EXPORT_SETTINGS.sizePreset,
-        groupClassName: 'export-field export-size-field',
+        groupClassName: 'export-field export-size-field field-frame-gray',
         options: [
             { value: 'original', label: '原始尺寸' },
             { value: '1080', label: '长边 1080px' },
@@ -160,22 +176,18 @@ const EXPORT_FIELDS = [
     {
         key: 'jpegQuality',
         label: 'JPEG 质量',
-        type: 'range',
-        min: MIN_JPEG_QUALITY,
-        max: MAX_JPEG_QUALITY,
-        step: 0.01,
+        type: 'option-input',
+        inputMode: 'numeric',
         defaultValue: DEFAULT_EXPORT_SETTINGS.jpegQuality,
-        groupClassName: 'export-field export-quality-field',
-        controlClassName: 'field-frame-gray export-quality-control',
-        valueClassName: 'export-quality-value',
+        groupClassName: 'export-field export-quality-field field-frame-gray',
         formatValue: formatJpegQualityLabel,
+        options: buildJpegQualityOptions(),
     },
 ];
 
-const DOWNLOAD_ICON_PATHS = [
-    'M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4',
-    'm7 10 5 5 5-5',
-    'M12 15V3',
+const UPLOAD_ICON_PATHS = [
+    'M6 3h8l4 4v14H6z',
+    'M14 3v4h4',
 ];
 
 function getExtensionForMimeType(mimeType) {
@@ -202,13 +214,6 @@ function buildExportFilename(photoName, mimeType) {
     return `${normalizedBaseName}_framed.${extension}`;
 }
 
-function syncJpegQualityTrack(quality) {
-    const exportQualityInput = exportControlsRoot?.querySelector('[data-field-key="jpegQuality"]');
-    if (exportQualityInput instanceof HTMLInputElement) {
-        syncRangeProgress(exportQualityInput, clampJpegQuality(quality));
-    }
-}
-
 function syncExportControls() {
     if (!exportControlsRoot) {
         return;
@@ -218,14 +223,11 @@ function syncExportControls() {
     const exportWidthInput = exportControlsRoot.querySelector('[data-field-key="customWidth"]');
     const exportHeightInput = exportControlsRoot.querySelector('[data-field-key="customHeight"]');
     const exportQualityInput = exportControlsRoot.querySelector('[data-field-key="jpegQuality"]');
-    const exportQualityValue = exportControlsRoot.querySelector('#export-jpegQuality-value');
 
     if (exportSizePreset) exportSizePreset.value = exportSettings.sizePreset;
     if (exportWidthInput) exportWidthInput.value = exportSettings.customWidth;
     if (exportHeightInput) exportHeightInput.value = exportSettings.customHeight;
-    if (exportQualityInput) exportQualityInput.value = String(exportSettings.jpegQuality);
-    if (exportQualityValue) exportQualityValue.textContent = formatJpegQualityLabel(exportSettings.jpegQuality);
-    syncJpegQualityTrack(exportSettings.jpegQuality);
+    if (exportQualityInput) exportQualityInput.value = formatJpegQualityLabel(exportSettings.jpegQuality);
     exportCustomSize?.classList.toggle('hidden', exportSettings.sizePreset !== 'custom');
 }
 
@@ -351,7 +353,6 @@ const INSPECTOR_SECTION_DEFINITIONS = [
     { key: 'appearance', title: '外观' },
     { key: 'text', title: '文本' },
     { key: 'exif', title: '拍摄信息' },
-    { key: 'export', title: '导出' },
 ];
 const LAYOUT_FIELD_KEYS = new Set([
     'frameTop',
@@ -371,6 +372,8 @@ function renderTextEditor() {
     if (!template) return;
 
     textEditor.innerHTML = '';
+    textEditor.appendChild(createInspectorActionArea());
+
     const visibleFields = template.fields.filter((field) => !field.hidden);
     const fieldsBySection = groupFieldsByInspectorSection(visibleFields);
 
@@ -384,9 +387,6 @@ function renderTextEditor() {
         switch (definition.key) {
             case 'exif':
                 content.appendChild(createExifEditorContent());
-                break;
-            case 'export':
-                content.appendChild(createExportControls());
                 break;
             default:
                 appendFieldSectionContent(content, fieldsBySection[definition.key], definition.key);
@@ -557,8 +557,8 @@ function commitExportFieldValue(field, nextValue) {
     }
 }
 
-function createExportButton() {
-    const icon = createIcon(DOWNLOAD_ICON_PATHS, {
+function createUploadButton() {
+    const icon = createIcon(UPLOAD_ICON_PATHS, {
         viewBox: '0 0 24 24',
         attributes: {
             fill: 'none',
@@ -568,7 +568,24 @@ function createExportButton() {
             'stroke-linejoin': 'round',
         },
     });
+    const button = createElement('button', {
+        className: 'btn inspector-upload-button',
+        attributes: {
+            type: 'button',
+            'aria-label': '上传照片',
+            title: '上传照片',
+        },
+        children: [icon],
+    });
 
+    button.addEventListener('click', () => {
+        fileInput.click();
+    });
+
+    return button;
+}
+
+function createExportButton() {
     const button = createElement('button', {
         className: 'btn btn-primary btn-export-panel',
         attributes: {
@@ -576,9 +593,8 @@ function createExportButton() {
             id: 'btn-export',
         },
         children: [
-            icon,
             createElement('span', {
-                textContent: '导出 JPG',
+                textContent: '导出',
             }),
         ],
     });
@@ -615,16 +631,41 @@ function createExportControls() {
             createFieldGroup(customHeightField, fieldOptions),
         ],
     });
+    const primaryFields = createElement('div', {
+        className: 'export-primary-fields',
+        children: [
+            createFieldGroup(sizePresetField, fieldOptions),
+            createFieldGroup(jpegQualityField, fieldOptions),
+        ],
+    });
 
     controls.append(
-        createFieldGroup(sizePresetField, fieldOptions),
+        primaryFields,
         exportCustomSize,
-        createFieldGroup(jpegQualityField, fieldOptions),
-        createExportButton()
     );
     syncExportControls();
 
     return controls;
+}
+
+function createInspectorActionArea() {
+    const actionArea = createElement('div', {
+        className: 'inspector-action-area',
+    });
+    const primaryActions = createElement('div', {
+        className: 'inspector-action-row',
+        children: [
+            createUploadButton(),
+            createExportButton(),
+        ],
+    });
+
+    actionArea.append(
+        primaryActions,
+        createExportControls()
+    );
+
+    return actionArea;
 }
 
 // ============================================
@@ -876,11 +917,6 @@ async function handleExport() {
 // 事件绑定
 // ============================================
 function bindEvents() {
-    // 上传按钮点击
-    btnUpload.addEventListener('click', () => {
-        fileInput.click();
-    });
-
     // 文件选择变化
     fileInput.addEventListener('change', (e) => {
         const file = e.target.files?.[0];

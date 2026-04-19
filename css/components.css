@@ -92,7 +92,6 @@
     --field-select-arrow-width: 9px;
     --field-select-arrow-height: 5px;
     --field-color-width: 40px;
-    --range-width: 112px;
 }
 
 /* 白框：有可见边线的标准输入框；灰框：无视觉边线、边线与背景同色的紧凑输入框。 */
@@ -105,6 +104,7 @@
     --field-frame-border-hover: var(--color-field-border-hover);
     --field-frame-border-focus: var(--color-field-border-focus);
     --field-frame-focus-ring: var(--color-field-focus-ring);
+    --field-frame-divider: var(--color-divider);
 }
 
 .field-frame-gray,
@@ -113,9 +113,10 @@
     --field-frame-background-hover: var(--color-control-background-hover);
     --field-frame-background-focus: var(--color-control-background-muted);
     --field-frame-border: var(--field-frame-background);
-    --field-frame-border-hover: var(--field-frame-background-hover);
+    --field-frame-border-hover: var(--color-field-border-hover);
     --field-frame-border-focus: var(--field-frame-background-focus);
     --field-frame-focus-ring: var(--field-frame-background-focus);
+    --field-frame-divider: var(--color-white);
 }
 
 .field-group input,
@@ -199,6 +200,156 @@
 .field-group select:hover {
     background-color: var(--field-frame-background-hover);
     border-color: var(--field-frame-border-hover);
+}
+
+.field-frame-gray input,
+.field-frame-gray textarea,
+.field-frame-gray select,
+.field-frame-gray.field-prefix-control,
+.field-frame-gray .option-input-control,
+.field-frame-gray .option-input-toggle,
+.field-group-compact input,
+.field-group-compact textarea,
+.field-group-compact select,
+.field-group-compact .field-prefix-control,
+.field-group-compact .option-input-control,
+.field-group-compact .option-input-toggle {
+    transition: none;
+}
+
+/* === Option Inputs === */
+.option-input-control {
+    --option-input-toggle-width: 24px;
+    --option-input-border-hover: var(--field-frame-border-hover);
+    --option-input-toggle-hover-background: color-mix(in srgb, var(--color-gray-dark) 12%, var(--color-gray-light));
+
+    position: relative;
+    display: flex;
+    align-items: stretch;
+    width: 100%;
+    height: var(--field-height);
+    min-height: var(--field-height);
+    border: 1px solid var(--field-frame-border);
+    border-radius: var(--field-radius);
+    background: var(--field-frame-background);
+    transition: border-color 0.18s ease, box-shadow 0.18s ease, background-color 0.18s ease;
+}
+
+.option-input-control::after {
+    content: '';
+    position: absolute;
+    inset: -1px;
+    z-index: 2;
+    border: 1px solid var(--option-input-border-hover);
+    border-radius: var(--field-radius);
+    opacity: 0;
+    pointer-events: none;
+}
+
+.option-input-control:hover,
+.option-input-control:focus-within {
+    border-color: var(--field-frame-border);
+    background: var(--field-frame-background-hover);
+}
+
+.option-input-control:hover::after,
+.option-input-control:focus-within::after,
+.option-input-control.is-open::after {
+    opacity: 1;
+}
+
+.field-group .option-input-control input {
+    height: 100%;
+    min-height: 0;
+    border: 0;
+    border-radius: 0;
+    padding-right: calc(var(--option-input-toggle-width) + var(--field-inline-padding));
+    background: transparent;
+}
+
+.field-group .option-input-control input:not([type="checkbox"]):not([type="range"]):not([type="color"]):hover,
+.field-group .option-input-control input:not([type="checkbox"]):not([type="range"]):not([type="color"]):focus {
+    border: 0;
+    background: transparent;
+    box-shadow: none;
+}
+
+.option-input-toggle {
+    position: absolute;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    width: var(--option-input-toggle-width);
+    border: 0;
+    border-left: 1px solid var(--field-frame-divider);
+    border-radius: 0 calc(var(--field-radius) - 1px) calc(var(--field-radius) - 1px) 0;
+    padding: 0;
+    background: transparent;
+    color: var(--color-text-secondary);
+    cursor: pointer;
+    transition: background-color 0.18s ease, border-color 0.18s ease, color 0.18s ease;
+}
+
+.option-input-toggle::before {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: var(--field-select-arrow-width);
+    height: var(--field-select-arrow-height);
+    transform: translate(-50%, -50%);
+    background-color: currentColor;
+    mask: var(--select-arrow-icon) center / contain no-repeat;
+    -webkit-mask: var(--select-arrow-icon) center / contain no-repeat;
+}
+
+.option-input-toggle:hover,
+.option-input-toggle:active,
+.option-input-control.is-open .option-input-toggle {
+    border-left-color: var(--field-frame-divider);
+    background: var(--option-input-toggle-hover-background);
+    color: var(--color-text-primary);
+}
+
+.option-input-menu {
+    position: absolute;
+    top: calc(100% + 4px);
+    left: 0;
+    right: 0;
+    z-index: 20;
+    display: flex;
+    flex-direction: column;
+    max-height: 168px;
+    padding: 4px;
+    overflow-y: auto;
+    border: 1px solid var(--field-frame-border);
+    border-radius: var(--field-radius);
+    background: var(--color-white);
+    box-shadow: 0 10px 22px color-mix(in srgb, var(--color-gray-dark) 14%, transparent);
+}
+
+.option-input-menu[hidden] {
+    display: none;
+}
+
+.option-input-option {
+    min-height: var(--field-height);
+    border: 0;
+    border-radius: calc(var(--field-radius) - 1px);
+    padding: 0 var(--field-inline-padding);
+    background: transparent;
+    color: var(--color-text-primary);
+    font-size: var(--field-font-size);
+    line-height: 1.2;
+    text-align: left;
+    cursor: pointer;
+}
+
+.option-input-option:hover,
+.option-input-option:focus,
+.option-input-option[aria-selected="true"] {
+    background: var(--color-control-background-hover);
+    outline: none;
 }
 
 .field-group input[type="color"] {
@@ -440,73 +591,4 @@
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
-}
-
-/* === Range Inputs === */
-.range-value {
-    min-width: 36px;
-    font-size: 11px;
-    color: var(--color-text-secondary);
-    font-variant-numeric: tabular-nums;
-}
-
-.range-control input[type="range"] {
-    --range-progress: 100%;
-    width: var(--range-width, 112px);
-    height: 14px;
-    min-height: 0;
-    padding: 0;
-    border: none;
-    margin: 0;
-    appearance: none;
-    background: transparent;
-    outline: none;
-}
-
-.range-control input[type="range"]:focus {
-    border: none;
-    box-shadow: none;
-    background: transparent;
-    outline: none;
-}
-
-.range-control input[type="range"]::-webkit-slider-runnable-track {
-    height: 4px;
-    border-radius: var(--radius-sm);
-    background: linear-gradient(90deg,
-            var(--color-accent) 0%,
-            var(--color-accent) var(--range-progress),
-            var(--color-divider-strong) var(--range-progress),
-            var(--color-divider-strong) 100%);
-}
-
-.range-control input[type="range"]::-webkit-slider-thumb {
-    -webkit-appearance: none;
-    width: 10px;
-    height: 14px;
-    margin-top: -5px;
-    border: none;
-    border-radius: var(--radius-sm);
-    background: var(--color-accent);
-}
-
-.range-control input[type="range"]::-moz-range-track {
-    height: 4px;
-    border: none;
-    border-radius: var(--radius-sm);
-    background: var(--color-divider-strong);
-}
-
-.range-control input[type="range"]::-moz-range-progress {
-    height: 4px;
-    border-radius: var(--radius-sm);
-    background: var(--color-accent);
-}
-
-.range-control input[type="range"]::-moz-range-thumb {
-    width: 10px;
-    height: 14px;
-    border: none;
-    border-radius: var(--radius-sm);
-    background: var(--color-accent);
 }

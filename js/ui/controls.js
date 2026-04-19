@@ -190,7 +190,7 @@ function createNumberInput(field, value, onChange) {
     if (field.step !== undefined) input.step = String(field.step);
     if (field.inputMode) input.inputMode = field.inputMode;
     input.value = value ?? 0;
-    input.addEventListener('input', (event) => {
+    input.addEventListener('change', (event) => {
         onChange?.(field, event.target.value, event);
     });
     return input;
@@ -231,6 +231,122 @@ function createSelectInput(field, value, onChange) {
         onChange?.(field, event.target.value, event);
     });
     return input;
+}
+
+function getOptionInputDisplayValue(field, value) {
+    const matchedOption = (field.options ?? []).find((option) => String(option.value) === String(value));
+
+    if (matchedOption) {
+        return matchedOption.label ?? matchedOption.value;
+    }
+
+    return field.formatValue ? field.formatValue(value) : value ?? '';
+}
+
+function createOptionInput(field, value, onChange) {
+    const wrapper = createElement('div', {
+        className: ['option-input-control', field.controlClassName].filter(Boolean).join(' '),
+    });
+    const input = document.createElement('input');
+    const button = createElement('button', {
+        className: 'option-input-toggle',
+        attributes: {
+            type: 'button',
+            'aria-label': field.dropdownLabel ?? '展开选项',
+            'aria-expanded': 'false',
+        },
+    });
+    const menu = createElement('div', {
+        className: 'option-input-menu',
+        attributes: {
+            role: 'listbox',
+            hidden: true,
+        },
+    });
+
+    input.type = field.inputType ?? 'text';
+    input.value = getOptionInputDisplayValue(field, value);
+    input.setAttribute('autocomplete', 'off');
+    applyCommonInputAttributes(input, field, {
+        idPrefix: field.idPrefix ?? 'field',
+    });
+
+    function closeMenu() {
+        menu.hidden = true;
+        wrapper.classList.remove('is-open');
+        button.setAttribute('aria-expanded', 'false');
+    }
+
+    function openMenu() {
+        menu.hidden = false;
+        wrapper.classList.add('is-open');
+        button.setAttribute('aria-expanded', 'true');
+    }
+
+    function toggleMenu() {
+        if (menu.hidden) {
+            openMenu();
+            return;
+        }
+
+        closeMenu();
+    }
+
+    (field.options ?? []).forEach((option) => {
+        const optionButton = createElement('button', {
+            className: 'option-input-option',
+            textContent: option.label,
+            attributes: {
+                type: 'button',
+                role: 'option',
+                'aria-selected': String(option.value) === String(value) ? 'true' : 'false',
+            },
+            dataset: {
+                value: option.value,
+            },
+        });
+
+        optionButton.addEventListener('click', () => {
+            input.value = option.label ?? option.value;
+            menu.querySelectorAll('.option-input-option').forEach((item) => {
+                item.setAttribute('aria-selected', item === optionButton ? 'true' : 'false');
+            });
+            closeMenu();
+            onChange?.(field, option.value);
+            input.focus();
+        });
+
+        menu.appendChild(optionButton);
+    });
+
+    input.addEventListener('input', (event) => {
+        onChange?.(field, event.target.value, event);
+    });
+    input.addEventListener('keydown', (event) => {
+        if (event.key === 'ArrowDown' && !menu.hidden) {
+            event.preventDefault();
+            menu.querySelector('.option-input-option')?.focus();
+        }
+
+        if (event.key === 'Escape') {
+            closeMenu();
+        }
+    });
+    button.addEventListener('click', () => {
+        toggleMenu();
+        input.focus();
+    });
+    wrapper.addEventListener('focusout', () => {
+        window.setTimeout(() => {
+            if (!wrapper.contains(document.activeElement)) {
+                closeMenu();
+            }
+        }, 0);
+    });
+
+    wrapper.append(input, button, menu);
+
+    return wrapper;
 }
 
 function createToggleInput(field, value, onChange) {
@@ -386,6 +502,11 @@ export function createFieldInput(field, {
         case 'input':
             input = createTextInput(field, value, onChange);
             break;
+        case 'option-input':
+            return createOptionInput({
+                ...field,
+                idPrefix,
+            }, value, onChange);
         case 'select':
             input = field.control === 'color-buttons'
                 ? createColorOptionGroup(field, value, onChange)
