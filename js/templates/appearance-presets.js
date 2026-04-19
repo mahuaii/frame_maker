@@ -1,3 +1,5 @@
+import { createAppearanceThemes } from '../core/templates/appearance.js';
+
 export const sharedAppearanceThemes = {
     white: {
         label: '白色',
@@ -40,3 +42,35 @@ export const sharedAppearanceThemes = {
         },
     },
 };
+
+export function createSolidAppearanceThemes({
+    white = {},
+    black = {},
+    includeCanvasBackground = true,
+} = {}) {
+    const baseThemes = {
+        white: {
+            label: '白色',
+            ...(includeCanvasBackground ? {
+                canvasBackground: {
+                    type: 'solid',
+                    color: '#FFFFFF',
+                },
+            } : {}),
+        },
+        black: {
+            label: '黑色',
+            ...(includeCanvasBackground ? {
+                canvasBackground: {
+                    type: 'solid',
+                    color: '#000000',
+                },
+            } : {}),
+        },
+    };
+
+    return createAppearanceThemes(baseThemes, {
+        white,
+        black,
+    });
+}

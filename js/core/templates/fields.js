@@ -35,25 +35,6 @@ function normalizeSelectValue(value, field, fallbackValue) {
     return fallbackValue;
 }
 
-function matchesAppearanceVisibility(visibility, values = {}, template = null) {
-    if (!visibility || typeof visibility !== 'object') {
-        return true;
-    }
-
-    const appearanceFieldKey = template?.appearanceFieldKey ?? 'colorScheme';
-    const currentAppearanceKey = values[appearanceFieldKey];
-
-    if (Array.isArray(visibility.showOn)) {
-        return visibility.showOn.includes(currentAppearanceKey);
-    }
-
-    if (Array.isArray(visibility.hideOn)) {
-        return !visibility.hideOn.includes(currentAppearanceKey);
-    }
-
-    return true;
-}
-
 export function getFieldDefaultValue(field) {
     if (field.defaultValue !== undefined) {
         return field.defaultValue;
@@ -101,12 +82,4 @@ export function normalizeTemplateConfig(fields, rawConfig = {}) {
         config[field.key] = normalizeFieldValue(field, rawConfig[field.key]);
         return config;
     }, {});
-}
-
-export function isFieldVisible(field, values = {}, template = null) {
-    if (!field?.appearanceVisibility) {
-        return true;
-    }
-
-    return matchesAppearanceVisibility(field.appearanceVisibility, values, template);
 }

@@ -1,14 +1,11 @@
 import { buildDefaultConfig } from '../../core/templates/fields.js';
 import { buildAppearanceField } from '../../core/templates/appearance.js';
+import { createSolidAppearanceThemes } from '../appearance-presets.js';
 import { buildFontSelectField } from '../shared.js';
 
-export const galleryCaptionMatAppearanceThemes = {
+export const galleryCaptionMatAppearanceThemes = createSolidAppearanceThemes({
     white: {
         label: '白底',
-        canvasBackground: {
-            type: 'solid',
-            color: '#FFFFFF',
-        },
         colors: {
             title: '#1A1A1A',
             subtitle: '#222222',
@@ -18,7 +15,6 @@ export const galleryCaptionMatAppearanceThemes = {
     black: {
         label: '黑底',
         canvasBackground: {
-            type: 'solid',
             color: '#050505',
         },
         colors: {
@@ -27,7 +23,7 @@ export const galleryCaptionMatAppearanceThemes = {
             photoBorder: '#FFFFFF',
         },
     },
-};
+});
 
 export const galleryCaptionMatFrame = {
     fixedAspectRatio: '1:1',

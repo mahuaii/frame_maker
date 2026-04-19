@@ -18,6 +18,8 @@ export function buildAppearanceField(
         options: themeEntries.map(([value, theme]) => ({
             value,
             label: theme.label ?? value,
+            displayValue: getAppearanceOptionDisplayValue(theme),
+            opacity: theme.opacity,
             swatch: theme.canvasBackground?.color
                 ?? theme.colors?.barBackground
                 ?? theme.barBackground?.overlayColor
@@ -25,6 +27,22 @@ export function buildAppearanceField(
                 ?? '#111111',
         })),
     };
+}
+
+function isBlurSurface(surface) {
+    return typeof surface?.type === 'string' && surface.type.toLowerCase().includes('blur');
+}
+
+function getAppearanceOptionDisplayValue(theme = {}) {
+    if (theme.displayValue !== undefined) {
+        return theme.displayValue;
+    }
+
+    if (isBlurSurface(theme.canvasBackground) || isBlurSurface(theme.barBackground)) {
+        return theme.label;
+    }
+
+    return undefined;
 }
 
 function mergeAppearanceTheme(baseTheme = {}, overrideTheme = {}) {

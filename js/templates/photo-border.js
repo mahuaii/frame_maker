@@ -33,14 +33,13 @@ export function drawBeveledPhotoBorder(ctx, rect, borderWidth, color) {
 }
 
 export function drawOptionalThinPhotoBorder(ctx, {
-    appearanceKey,
     enabled,
     rect,
     canvasWidth,
     color = '#000000',
     widthRatio = 0.0022,
 }) {
-    if (appearanceKey !== 'white' || !enabled || !rect) {
+    if (!enabled || !rect) {
         return;
     }
 

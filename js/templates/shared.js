@@ -187,7 +187,7 @@ export function buildFontSelectField({
     };
 }
 
-export function buildWhiteAppearanceToggleField({
+export function buildThinBorderToggleField({
     key,
     label,
     defaultValue = false,
@@ -197,8 +197,5 @@ export function buildWhiteAppearanceToggleField({
         label,
         type: 'toggle',
         defaultValue,
-        appearanceVisibility: {
-            showOn: ['white'],
-        },
     };
 }

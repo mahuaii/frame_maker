@@ -1,24 +1,19 @@
 import { buildDefaultConfig } from '../../core/templates/fields.js';
 import { buildAppearanceField } from '../../core/templates/appearance.js';
-import { buildFrameSideFields, buildWhiteAppearanceToggleField, defaultFrameFont } from '../shared.js';
+import { createSolidAppearanceThemes } from '../appearance-presets.js';
+import { buildFrameSideFields, buildThinBorderToggleField, defaultFrameFont } from '../shared.js';
 
 export const simpleMatAppearanceThemes = {
-    white: {
-        label: '白色',
-        canvasBackground: {
-            type: 'solid',
-            color: '#FFFFFF',
+    ...createSolidAppearanceThemes({
+        black: {
+            canvasBackground: {
+                color: '#030303',
+            },
         },
-    },
-    black: {
-        label: '黑色',
-        canvasBackground: {
-            type: 'solid',
-            color: '#030303',
-        },
-    },
+    }),
     edgeBlur: {
         label: '边缘氛围',
+        displayValue: '模糊',
         canvasBackground: {
             type: 'edgeExtendBlur',
             color: '#2B2F37',
@@ -49,7 +44,7 @@ export const simpleMatFrame = {
 export const simpleMatTemplateFields = [
     buildAppearanceField(simpleMatAppearanceThemes),
     ...buildFrameSideFields(simpleMatFrame, ['top', 'bottom', 'horizontalSides']),
-    buildWhiteAppearanceToggleField({
+    buildThinBorderToggleField({
         key: 'showThinBorder',
         label: '内边框',
         defaultValue: false,

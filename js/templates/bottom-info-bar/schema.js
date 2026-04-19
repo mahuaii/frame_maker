@@ -1,11 +1,11 @@
 import { buildDefaultConfig } from '../../core/templates/fields.js';
 import { buildAppearanceField } from '../../core/templates/appearance.js';
-import { createAppearanceThemes } from '../../core/templates/registry.js';
+import { createSolidAppearanceThemes } from '../appearance-presets.js';
 import { buildFontSelectField, buildFrameSideFields } from '../shared.js';
 
-export const bottomInfoBarAppearanceThemes = createAppearanceThemes({}, {
+export const bottomInfoBarAppearanceThemes = createSolidAppearanceThemes({
+    includeCanvasBackground: false,
     white: {
-        label: '白色',
         colors: {
             barBackground: '#FFFFFF',
             textPrimary: '#111111',
@@ -13,7 +13,6 @@ export const bottomInfoBarAppearanceThemes = createAppearanceThemes({}, {
         },
     },
     black: {
-        label: '黑色',
         colors: {
             barBackground: '#111111',
             textPrimary: '#F8FAFC',
