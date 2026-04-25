@@ -40,6 +40,7 @@ let currentImage = null;           // HTMLImageElement | null
 let currentPhoto = null;           // Normalized photo source | null
 let selectedTemplateId = 'gallery-caption-mat';  // 默认选第一个模板
 let fieldValues = {};              // Record<string, string>
+const templateFieldValuesById = new Map(); // Map<string, Record<string, string>>
 let exifOverrideValues = {};       // Record<string, string>
 let initialExifOverrideValues = {}; // 上传后预填写到表单中的 EXIF 快照
 const THUMBNAIL_MAX_WIDTH = 180;
@@ -59,6 +60,26 @@ const DEFAULT_EXPORT_SETTINGS = {
 const MIN_JPEG_QUALITY = 0.01;
 const MAX_JPEG_QUALITY = 1;
 let exportSettings = { ...DEFAULT_EXPORT_SETTINGS };
+
+function getTemplateFieldValues(template) {
+    if (!template) {
+        return {};
+    }
+
+    if (!templateFieldValuesById.has(template.id)) {
+        templateFieldValuesById.set(template.id, loadTemplateConfig(template));
+    }
+
+    return resolveTemplateConfig(template, templateFieldValuesById.get(template.id));
+}
+
+function saveTemplateFieldValues(template, values) {
+    if (!template) {
+        return;
+    }
+
+    templateFieldValuesById.set(template.id, resolveTemplateConfig(template, values));
+}
 
 // ============================================
 // DOM 引用
@@ -362,12 +383,14 @@ function renderSelectorList() {
 async function handleTemplateSelect(templateId) {
     if (templateId === selectedTemplateId) return;
 
+    const previousTemplate = getTemplateById(selectedTemplateId);
+    saveTemplateFieldValues(previousTemplate, fieldValues);
+
     selectedTemplateId = templateId;
 
-    // 重置 fieldValues 为新模板的默认值
     const template = getTemplateById(templateId);
     if (template) {
-        fieldValues = loadTemplateConfig(template);
+        fieldValues = getTemplateFieldValues(template);
     }
 
     // 重新渲染选择器和编辑区
@@ -551,6 +574,7 @@ function commitFieldValue(field, nextValue) {
 
     fieldValues[field.key] = nextValue;
     fieldValues = resolveTemplateConfig(template, fieldValues);
+    saveTemplateFieldValues(template, fieldValues);
     saveTemplateConfig(template, fieldValues);
 
     if (field.key === 'frameAspectRatio') {
@@ -577,6 +601,7 @@ function resetAllLayoutFieldValues() {
         ...fieldValues,
         ...resetValues,
     });
+    saveTemplateFieldValues(template, fieldValues);
     saveTemplateConfig(template, fieldValues);
 
     renderTextEditor();
@@ -830,14 +855,19 @@ function handleFileSelect(file) {
         currentImage = image;
         currentPhoto = createPhotoSource({ file, image });
         const extractedExif = await extractExifData(currentPhoto);
-        exifOverrideValues = createEditableExifOverrideValues(extractedExif);
-        initialExifOverrideValues = { ...exifOverrideValues };
+        const nextInitialExifOverrideValues = createEditableExifOverrideValues(extractedExif);
+        const shouldInitializeExifOverrides = Object.keys(exifOverrideValues).length === 0;
+        initialExifOverrideValues = { ...nextInitialExifOverrideValues };
+
+        if (shouldInitializeExifOverrides) {
+            exifOverrideValues = { ...nextInitialExifOverrideValues };
+        }
 
         // 初始化 fieldValues（如果还没有值）
         const template = getTemplateById(selectedTemplateId);
         if (template) {
             if (Object.keys(fieldValues).length === 0) {
-                fieldValues = loadTemplateConfig(template);
+                fieldValues = getTemplateFieldValues(template);
             }
             renderTextEditor();
         }
@@ -1089,7 +1119,7 @@ function init() {
     // 初始化 fieldValues 为默认模板的默认值
     const template = getTemplateById(selectedTemplateId);
     if (template) {
-        fieldValues = loadTemplateConfig(template);
+        fieldValues = getTemplateFieldValues(template);
     }
 
     // 渲染模板选择器
