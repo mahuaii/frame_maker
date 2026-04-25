@@ -45,7 +45,7 @@ let exifOverrideValues = {};       // Record<string, string>
 let initialExifOverrideValues = {}; // 上传后预填写到表单中的 EXIF 快照
 const THUMBNAIL_MAX_WIDTH = 180;
 const THUMBNAIL_MAX_HEIGHT = 135;
-const ASSET_VERSION = '20260419-000000';
+const ASSET_VERSION = '20260425-000000';
 const DEFAULT_INSPECTOR_WIDTH = 276;
 const MIN_INSPECTOR_WIDTH = 220;
 const MAX_INSPECTOR_WIDTH = 520;
@@ -94,6 +94,7 @@ const inspectorResizer = document.getElementById('inspector-resizer');
 const mainContent = document.querySelector('.main-content');
 let exportControlsRoot = null;
 let exportCustomSize = null;
+let closeActiveExportMenu = null;
 let pendingPreviewResize = 0;
 
 function clampJpegQuality(value) {
@@ -433,6 +434,7 @@ function renderTextEditor() {
     const template = getTemplateById(selectedTemplateId);
     if (!template) return;
 
+    closeActiveExportMenu?.();
     textEditor.innerHTML = '';
     textEditor.appendChild(createInspectorActionArea());
 
@@ -752,8 +754,12 @@ function createUploadButton() {
 }
 
 function createExportButton() {
-    const button = createElement('button', {
-        className: 'btn btn-primary btn-export-panel',
+    const menuId = 'export-settings-menu';
+    const wrapper = createElement('div', {
+        className: 'export-split-button',
+    });
+    const actionButton = createElement('button', {
+        className: 'export-split-action',
         attributes: {
             type: 'button',
             id: 'btn-export',
@@ -764,12 +770,105 @@ function createExportButton() {
             }),
         ],
     });
-
-    button.addEventListener('click', () => {
-        handleExport();
+    const toggleButton = createElement('button', {
+        className: 'export-menu-toggle',
+        attributes: {
+            type: 'button',
+            'aria-label': '展开导出设置',
+            'aria-controls': menuId,
+            'aria-expanded': 'false',
+            title: '导出设置',
+        },
+    });
+    const menu = createElement('div', {
+        className: 'export-settings-menu',
+        attributes: {
+            id: menuId,
+            hidden: true,
+        },
+        children: [
+            createExportControls(),
+        ],
     });
 
-    return button;
+    function removeMenuListeners() {
+        document.removeEventListener('pointerdown', handleDocumentPointerDown, true);
+        document.removeEventListener('keydown', handleDocumentKeyDown);
+    }
+
+    function closeMenu({ restoreFocus = false } = {}) {
+        if (menu.hidden) {
+            return;
+        }
+
+        menu.hidden = true;
+        wrapper.classList.remove('is-open');
+        toggleButton.setAttribute('aria-expanded', 'false');
+        removeMenuListeners();
+
+        if (closeActiveExportMenu === closeMenu) {
+            closeActiveExportMenu = null;
+        }
+
+        if (restoreFocus) {
+            toggleButton.focus();
+        }
+    }
+
+    function openMenu() {
+        if (typeof closeActiveExportMenu === 'function' && closeActiveExportMenu !== closeMenu) {
+            closeActiveExportMenu();
+        }
+
+        syncExportControls();
+        menu.hidden = false;
+        wrapper.classList.add('is-open');
+        toggleButton.setAttribute('aria-expanded', 'true');
+        closeActiveExportMenu = closeMenu;
+        document.addEventListener('pointerdown', handleDocumentPointerDown, true);
+        document.addEventListener('keydown', handleDocumentKeyDown);
+    }
+
+    function toggleMenu() {
+        if (menu.hidden) {
+            openMenu();
+            return;
+        }
+
+        closeMenu();
+    }
+
+    function handleDocumentPointerDown(event) {
+        if (!wrapper.contains(event.target)) {
+            closeMenu();
+        }
+    }
+
+    function handleDocumentKeyDown(event) {
+        if (event.key === 'Escape') {
+            closeMenu({ restoreFocus: true });
+            return;
+        }
+
+        if (event.key === 'Tab') {
+            window.setTimeout(() => {
+                if (!wrapper.contains(document.activeElement)) {
+                    closeMenu();
+                }
+            }, 0);
+        }
+    }
+
+    actionButton.addEventListener('click', () => {
+        handleExport();
+    });
+    toggleButton.addEventListener('click', () => {
+        toggleMenu();
+    });
+
+    wrapper.append(actionButton, toggleButton, menu);
+
+    return wrapper;
 }
 
 function createExportControls() {
@@ -827,8 +926,7 @@ function createInspectorActionArea() {
     });
 
     actionArea.append(
-        primaryActions,
-        createExportControls()
+        primaryActions
     );
 
     return actionArea;

@@ -42,12 +42,8 @@
     background: var(--color-control-background-active);
 }
 
-.inspector-action-area .btn-export-panel {
-    width: 72px;
-    min-height: 34px;
-    margin: 0;
-    border-radius: var(--radius-sm);
-    padding-inline: 12px;
+.inspector-action-area .export-split-button {
+    align-self: stretch;
 }
 
 .inspector-action-area .export-controls {
@@ -207,10 +203,6 @@ body.is-resizing-inspector {
 .text-editor .inspector-upload-button svg {
     width: 20px;
     height: 20px;
-}
-
-.text-editor .inspector-action-area .btn-export-panel {
-    min-height: 34px;
 }
 
 .editor-collapsible-section {
