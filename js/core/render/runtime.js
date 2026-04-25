@@ -1,5 +1,6 @@
 import { buildCanvasFont, loadRuntimeFonts, ensureRuntimeFont } from '../fonts/index.js';
 import { buildTemplateResolveInput, createGlobalRenderSettings } from './input.js';
+import { parseFrameAspectRatio } from '../templates/frame-layout.js';
 import { getAppearanceColor, resolveTemplateAppearance, resolveTemplateConfig } from '../templates/registry.js';
 
 const FRAME_SIDE_KEYS = ['top', 'right', 'bottom', 'left'];
@@ -8,8 +9,6 @@ const FRAME_SIDE_FIELD_KEYS = {
     right: 'frameRight',
     bottom: 'frameBottom',
     left: 'frameLeft',
-    vertical: 'frameVerticalSides',
-    horizontal: 'frameHorizontalSides',
 };
 const ANCHOR_COLUMNS = ['left', 'center', 'right'];
 const ANCHOR_ROWS = ['top', 'middle', 'bottom'];
@@ -38,35 +37,14 @@ function normalizeNonNegativeNumber(value, fallbackValue = 0) {
 
 function normalizeFrameSides(template, config = {}) {
     const templateSides = template?.frame?.sides ?? {};
-    const visibleFieldKeys = new Set((template?.fields ?? [])
-        .filter((field) => !field.hidden)
-        .map((field) => field.key));
     const sides = FRAME_SIDE_KEYS.reduce((result, side) => {
         result[side] = normalizeNonNegativeNumber(templateSides[side], 0);
         return result;
     }, {});
 
-    const verticalValue = config[FRAME_SIDE_FIELD_KEYS.vertical];
-    if (visibleFieldKeys.has(FRAME_SIDE_FIELD_KEYS.vertical) && Number.isFinite(Number(verticalValue))) {
-        const value = normalizeNonNegativeNumber(verticalValue, 0);
-        sides.top = value;
-        sides.bottom = value;
-    }
-
-    const horizontalValue = config[FRAME_SIDE_FIELD_KEYS.horizontal];
-    if (visibleFieldKeys.has(FRAME_SIDE_FIELD_KEYS.horizontal) && Number.isFinite(Number(horizontalValue))) {
-        const value = normalizeNonNegativeNumber(horizontalValue, 0);
-        sides.left = value;
-        sides.right = value;
-    }
-
     FRAME_SIDE_KEYS.forEach((side) => {
         const fieldKey = FRAME_SIDE_FIELD_KEYS[side];
-        if (!visibleFieldKeys.has(fieldKey)) {
-            return;
-        }
-
-        const value = config[FRAME_SIDE_FIELD_KEYS[side]];
+        const value = config[fieldKey];
         if (Number.isFinite(Number(value))) {
             sides[side] = normalizeNonNegativeNumber(value, 0);
         }
@@ -245,62 +223,40 @@ function buildDefaultFourSideFrame({ imageWidth, imageHeight, template, config }
     };
 }
 
-function buildFrameSidesPxFromPercent(imageWidth, imageHeight, sidesPercent) {
-    return {
-        top: Math.round(imageHeight * (sidesPercent.top / 100)),
-        right: Math.round(imageWidth * (sidesPercent.right / 100)),
-        bottom: Math.round(imageHeight * (sidesPercent.bottom / 100)),
-        left: Math.round(imageWidth * (sidesPercent.left / 100)),
-    };
+function splitEvenly(total) {
+    const first = Math.round(total / 2);
+    return [first, Math.round(total - first)];
 }
 
-function parseAspectRatio(value) {
-    if (typeof value !== 'string') {
-        const numericValue = Number(value);
-        return Number.isFinite(numericValue) && numericValue > 0 ? numericValue : null;
+function getControlledBorderAxis(photoRatio, targetRatio) {
+    if (targetRatio > photoRatio) {
+        return 'vertical';
     }
 
-    const parts = value.split(':').map((part) => Number(part.trim()));
-    if (parts.length !== 2 || parts.some((part) => !Number.isFinite(part) || part <= 0)) {
-        return null;
-    }
-
-    return parts[0] / parts[1];
+    return 'horizontal';
 }
 
-function splitAdditionalSpace(firstSidePx, secondSidePx, additionalSpace) {
-    if (additionalSpace <= 0) {
-        return [firstSidePx, secondSidePx];
+function buildFixedAspectRatioFrame({ imageWidth, imageHeight, config }) {
+    const photoRatio = imageWidth / imageHeight;
+    const aspectRatio = parseFrameAspectRatio(config.frameAspectRatio);
+    const borderWidth = normalizeNonNegativeNumber(config.frameBorderWidth, 0);
+    const borderTotal = Math.min(imageWidth, imageHeight) * (borderWidth / 100);
+    const controlledAxis = getControlledBorderAxis(photoRatio, aspectRatio);
+    let horizontalTotal;
+    let verticalTotal;
+
+    if (controlledAxis === 'vertical') {
+        verticalTotal = borderTotal;
+        horizontalTotal = (imageHeight + verticalTotal) * aspectRatio - imageWidth;
+    } else {
+        horizontalTotal = borderTotal;
+        verticalTotal = (imageWidth + horizontalTotal) / aspectRatio - imageHeight;
     }
 
-    const total = firstSidePx + secondSidePx;
-    const firstShare = total > 0 ? firstSidePx / total : 0.5;
-    const firstAddition = Math.round(additionalSpace * firstShare);
-
-    return [
-        firstSidePx + firstAddition,
-        secondSidePx + additionalSpace - firstAddition,
-    ];
-}
-
-function buildFixedAspectRatioFrame({ imageWidth, imageHeight, template, config }) {
-    const sidesPercent = normalizeFrameSides(template, config);
-    const sidesPx = buildFrameSidesPxFromPercent(imageWidth, imageHeight, sidesPercent);
-    const aspectRatio = parseAspectRatio(template?.frame?.fixedAspectRatio);
-    const rawFullWidth = sidesPx.left + imageWidth + sidesPx.right;
-    const rawFullHeight = sidesPx.top + imageHeight + sidesPx.bottom;
-    const targetWidthFromHeight = Math.ceil(rawFullHeight * aspectRatio);
-    const targetHeightFromWidth = Math.ceil(rawFullWidth / aspectRatio);
-
-    if (aspectRatio && targetWidthFromHeight > rawFullWidth) {
-        const additionalWidth = targetWidthFromHeight - rawFullWidth;
-        [sidesPx.left, sidesPx.right] = splitAdditionalSpace(sidesPx.left, sidesPx.right, additionalWidth);
-    } else if (aspectRatio && targetHeightFromWidth > rawFullHeight) {
-        const additionalHeight = targetHeightFromWidth - rawFullHeight;
-        [sidesPx.top, sidesPx.bottom] = splitAdditionalSpace(sidesPx.top, sidesPx.bottom, additionalHeight);
-    }
-
-    const adjustedSidesPercent = {
+    const [top, bottom] = splitEvenly(verticalTotal);
+    const [left, right] = splitEvenly(horizontalTotal);
+    const sidesPx = { top, right, bottom, left };
+    const sidesPercent = {
         top: imageHeight > 0 ? (sidesPx.top / imageHeight) * 100 : 0,
         right: imageWidth > 0 ? (sidesPx.right / imageWidth) * 100 : 0,
         bottom: imageHeight > 0 ? (sidesPx.bottom / imageHeight) * 100 : 0,
@@ -308,7 +264,7 @@ function buildFixedAspectRatioFrame({ imageWidth, imageHeight, template, config 
     };
 
     return {
-        sidesPercent: adjustedSidesPercent,
+        sidesPercent,
         sidesPx,
         fullWidth: sidesPx.left + imageWidth + sidesPx.right,
         fullHeight: sidesPx.top + imageHeight + sidesPx.bottom,
@@ -319,8 +275,8 @@ export function calculateFrameMetrics(image, template, scale = 1, rawConfig = {}
     const config = resolveTemplateConfig(template, rawConfig);
     const imageWidth = image.naturalWidth;
     const imageHeight = image.naturalHeight;
-    const frameGeometry = template?.frame?.fixedAspectRatio
-        ? buildFixedAspectRatioFrame({ imageWidth, imageHeight, template, config })
+    const frameGeometry = parseFrameAspectRatio(config.frameAspectRatio)
+        ? buildFixedAspectRatioFrame({ imageWidth, imageHeight, config })
         : buildDefaultFourSideFrame({ imageWidth, imageHeight, template, config });
     const { sidesPercent, sidesPx, fullWidth, fullHeight } = frameGeometry;
     const photoArea = {

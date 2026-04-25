@@ -1,7 +1,7 @@
 import { buildDefaultConfig } from '../../core/templates/fields.js';
 import { buildAppearanceField } from '../../core/templates/appearance.js';
 import { createSolidAppearanceThemes } from '../appearance-presets.js';
-import { buildFontSelectField, buildFrameSideFields } from '../shared.js';
+import { buildFontSelectField, buildFrameLayoutFields } from '../shared.js';
 
 export const galleryCaptionMatAppearanceThemes = createSolidAppearanceThemes({
     white: {
@@ -9,24 +9,18 @@ export const galleryCaptionMatAppearanceThemes = createSolidAppearanceThemes({
         colors: {
             title: '#1A1A1A',
             subtitle: '#222222',
-            photoBorder: '#000000',
         },
     },
     black: {
         label: '黑底',
-        canvasBackground: {
-            color: '#050505',
-        },
         colors: {
             title: '#F5F5F5',
             subtitle: '#FFFFFF',
-            photoBorder: '#FFFFFF',
         },
     },
 });
 
 export const galleryCaptionMatFrame = {
-    fixedAspectRatio: '1:1',
     sides: {
         top: 7.75,
         right: 7.75,
@@ -42,7 +36,10 @@ export const galleryCaptionMatFrame = {
 
 export const galleryCaptionMatTemplateFields = [
     buildAppearanceField(galleryCaptionMatAppearanceThemes),
-    ...buildFrameSideFields(galleryCaptionMatFrame, []),
+    ...buildFrameLayoutFields(galleryCaptionMatFrame, {
+        aspectRatio: '1:1',
+        borderWidth: 24,
+    }),
     {
         key: 'showThinBorder',
         label: '内边框',

@@ -528,28 +528,98 @@ function createRangeInput(field, value, onChange) {
         idPrefix: field.idPrefix ?? 'field',
     });
 
-    const valueClassName = ['range-value', field.valueClassName]
-        .filter(Boolean)
-        .join(' ');
-    const valueLabel = createElement('span', {
-        className: valueClassName,
-        textContent: field.formatValue ? field.formatValue(input.value) : input.value,
-        attributes: {
-            id: field.valueId ?? `${input.id}-value`,
-        },
-    });
+    let valueControl;
+
+    function formatRangeValue(nextValue) {
+        return field.formatValue ? field.formatValue(nextValue) : nextValue;
+    }
+
+    function normalizeRangeValue(nextValue) {
+        const numericValue = Number(nextValue);
+        if (!Number.isFinite(numericValue)) {
+            return input.value;
+        }
+
+        const min = Number(input.min || 0);
+        const max = Number(input.max || 100);
+        const clampedValue = Math.min(Math.max(numericValue, min), max);
+
+        return String(Number(clampedValue.toFixed(4)));
+    }
+
+    function syncValueControl(nextValue) {
+        if (!valueControl) {
+            return;
+        }
+
+        if (valueControl instanceof HTMLInputElement) {
+            valueControl.value = String(nextValue);
+            return;
+        }
+
+        valueControl.textContent = formatRangeValue(nextValue);
+    }
+
+    function commitRangeValue(nextValue, event) {
+        const normalizedValue = normalizeRangeValue(nextValue);
+
+        input.value = normalizedValue;
+        syncRangeProgress(input, normalizedValue);
+        syncValueControl(normalizedValue);
+        onChange?.(field, normalizedValue, event);
+    }
+
+    if (field.valueInput) {
+        valueControl = document.createElement('input');
+        valueControl.type = 'number';
+        valueControl.className = ['range-value-input', field.valueClassName]
+            .filter(Boolean)
+            .join(' ');
+        valueControl.min = input.min;
+        valueControl.max = input.max;
+        valueControl.step = input.step;
+        valueControl.value = input.value;
+        if (field.inputMode) valueControl.inputMode = field.inputMode;
+        valueControl.setAttribute('aria-label', `${field.label ?? '数值'}数值`);
+        valueControl.addEventListener('change', (event) => {
+            commitRangeValue(event.target.value, event);
+            blurControlAfterChange(valueControl);
+        });
+        valueControl.addEventListener('keydown', (event) => {
+            if (event.key === 'Enter') {
+                commitRangeValue(event.currentTarget.value, event);
+                blurControlAfterChange(valueControl);
+            }
+        });
+    } else {
+        const valueClassName = ['range-value', field.valueClassName]
+            .filter(Boolean)
+            .join(' ');
+        valueControl = createElement('span', {
+            className: valueClassName,
+            textContent: formatRangeValue(input.value),
+            attributes: {
+                id: field.valueId ?? `${input.id}-value`,
+            },
+        });
+    }
 
     syncRangeProgress(input, input.value);
     input.addEventListener('input', (event) => {
-        syncRangeProgress(input, event.target.value);
-        valueLabel.textContent = field.formatValue ? field.formatValue(event.target.value) : event.target.value;
-        onChange?.(field, event.target.value, event);
+        commitRangeValue(event.target.value, event);
     });
     input.addEventListener('change', () => {
         blurControlAfterChange(input);
     });
 
-    wrapper.append(input, valueLabel);
+    wrapper.append(input, valueControl);
+
+    if (field.valueUnit) {
+        wrapper.appendChild(createElement('span', {
+            className: 'range-value-unit',
+            textContent: field.valueUnit,
+        }));
+    }
 
     return wrapper;
 }

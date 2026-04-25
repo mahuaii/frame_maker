@@ -1,4 +1,10 @@
 import { DEFAULT_FONT_IDS, FONT_FAMILIES, getFontFieldOptions } from '../core/fonts/index.js';
+import {
+    FRAME_ASPECT_RATIO_OPTIONS,
+    FREE_FRAME_ASPECT_RATIO,
+    normalizeFrameAspectRatioValue,
+    normalizeFrameBorderWidth,
+} from '../core/templates/frame-layout.js';
 
 export const defaultFrameFont = {
     basis: 'height',
@@ -6,66 +12,64 @@ export const defaultFrameFont = {
     min: 12,
 };
 
-const frameSideControlOrder = [
-    'verticalSides',
-    'horizontalSides',
-    'top',
-    'right',
-    'bottom',
-    'left',
-];
-
 const sideFieldDefinitions = {
     top: { key: 'frameTop', label: '上边宽度 (%)' },
     right: { key: 'frameRight', label: '右边宽度 (%)' },
     bottom: { key: 'frameBottom', label: '下边宽度 (%)' },
     left: { key: 'frameLeft', label: '左边宽度 (%)' },
-    verticalSides: { key: 'frameVerticalSides', label: '上下边宽度 (%)' },
-    horizontalSides: { key: 'frameHorizontalSides', label: '左右边宽度 (%)' },
 };
+
+const frameSideControlOrder = ['top', 'right', 'bottom', 'left'];
 
 function getFrameSideDefault(frame = {}, control) {
     const sides = frame.sides ?? {};
-
-    switch (control) {
-        case 'verticalSides':
-            return sides.top ?? sides.bottom ?? 0;
-        case 'horizontalSides':
-            return sides.left ?? sides.right ?? 0;
-        case 'top':
-        case 'right':
-        case 'bottom':
-        case 'left':
-            return sides[control] ?? 0;
-        default:
-            return 0;
-    }
+    return sides[control] ?? 0;
 }
 
-export function buildFrameSideFields(frame = {}, visibleControls = ['verticalSides', 'horizontalSides']) {
-    const visibleControlSet = new Set(visibleControls);
-
-    visibleControls.forEach((control) => {
-        const definition = sideFieldDefinitions[control];
-        if (!definition) {
-            throw new Error(`Unknown frame side control "${control}".`);
-        }
-    });
-
-    return frameSideControlOrder.map((control) => {
-        const definition = sideFieldDefinitions[control];
-
-        return {
-            key: definition.key,
-            label: definition.label,
-            type: 'number',
+export function buildFrameLayoutFields(frame = {}, {
+    aspectRatio = FREE_FRAME_ASPECT_RATIO,
+    borderWidth = 0,
+} = {}) {
+    return [
+        {
+            key: 'frameAspectRatio',
+            label: '画幅',
+            type: 'option-input',
+            defaultValue: aspectRatio,
+            groupClassName: 'field-frame-gray',
+            normalizeValue: normalizeFrameAspectRatioValue,
+            parseValue: normalizeFrameAspectRatioValue,
+            options: FRAME_ASPECT_RATIO_OPTIONS,
+        },
+        {
+            key: 'frameBorderWidth',
+            label: '边界宽度',
+            type: 'range',
+            groupClassName: 'field-frame-gray',
             min: 0,
-            max: 80,
+            max: 200,
             step: 0.1,
-            defaultValue: getFrameSideDefault(frame, control),
-            hidden: !visibleControlSet.has(control),
-        };
-    });
+            inputMode: 'decimal',
+            defaultValue: borderWidth,
+            valueInput: true,
+            valueUnit: '%',
+            normalizeValue: normalizeFrameBorderWidth,
+            formatValue: (value) => `${Number(value).toFixed(1).replace(/\.0$/, '')}%`,
+        },
+        ...frameSideControlOrder.map((control) => {
+            const definition = sideFieldDefinitions[control];
+
+            return {
+                key: definition.key,
+                label: definition.label,
+                type: 'number',
+                min: 0,
+                max: 80,
+                step: 0.1,
+                defaultValue: getFrameSideDefault(frame, control),
+            };
+        }),
+    ];
 }
 
 export const defaultTextStyleDefaults = {

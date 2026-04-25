@@ -1,7 +1,7 @@
 import { buildDefaultConfig } from '../../core/templates/fields.js';
 import { buildAppearanceField } from '../../core/templates/appearance.js';
 import { createSolidAppearanceThemes } from '../appearance-presets.js';
-import { buildFontSelectField, buildFrameSideFields } from '../shared.js';
+import { buildFontSelectField, buildFrameLayoutFields } from '../shared.js';
 
 export const storyExifAppearanceThemes = createSolidAppearanceThemes({
     white: {
@@ -15,9 +15,6 @@ export const storyExifAppearanceThemes = createSolidAppearanceThemes({
     },
     black: {
         label: '黑色',
-        canvasBackground: {
-            color: '#111111',
-        },
         colors: {
             title: '#F8FAFC',
             subtitle: '#CBD5E1',
@@ -44,7 +41,7 @@ export const storyExifFrame = {
 
 export const storyExifTemplateFields = [
     buildAppearanceField(storyExifAppearanceThemes),
-    ...buildFrameSideFields(storyExifFrame, ['bottom']),
+    ...buildFrameLayoutFields(storyExifFrame),
     {
         key: 'title',
         label: '标题',
@@ -98,7 +95,7 @@ export const storyExifTemplateFields = [
 
 export const storyExifTemplateSchema = {
     id: 'story-exif',
-    backgroundColor: '#111111',
+    backgroundColor: '#121212',
     appearanceFieldKey: 'colorScheme',
     appearanceDefaultKey: 'black',
     appearanceThemes: storyExifAppearanceThemes,

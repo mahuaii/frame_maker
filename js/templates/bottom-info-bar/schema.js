@@ -1,7 +1,7 @@
 import { buildDefaultConfig } from '../../core/templates/fields.js';
 import { buildAppearanceField } from '../../core/templates/appearance.js';
 import { createSolidAppearanceThemes } from '../appearance-presets.js';
-import { buildFontSelectField, buildFrameSideFields } from '../shared.js';
+import { buildFontSelectField, buildFrameLayoutFields } from '../shared.js';
 
 export const bottomInfoBarAppearanceThemes = createSolidAppearanceThemes({
     includeCanvasBackground: false,
@@ -37,7 +37,7 @@ export const bottomInfoBarFrame = {
 
 export const bottomInfoBarTemplateFields = [
     buildAppearanceField(bottomInfoBarAppearanceThemes),
-    ...buildFrameSideFields(bottomInfoBarFrame, ['bottom']),
+    ...buildFrameLayoutFields(bottomInfoBarFrame),
     buildFontSelectField({
         key: 'leftFontId',
         label: '左侧字体',
@@ -52,7 +52,7 @@ export const bottomInfoBarTemplateFields = [
 
 export const bottomInfoBarTemplateSchema = {
     id: 'bottom-info-bar',
-    backgroundColor: '#000000',
+    backgroundColor: '#121212',
     appearanceFieldKey: 'colorScheme',
     appearanceDefaultKey: 'white',
     appearanceThemes: bottomInfoBarAppearanceThemes,

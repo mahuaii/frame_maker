@@ -55,6 +55,10 @@ export function getFieldDefaultValue(field) {
 export function normalizeFieldValue(field, rawValue) {
     const fallbackValue = getFieldDefaultValue(field);
 
+    if (typeof field.normalizeValue === 'function') {
+        return field.normalizeValue(rawValue, fallbackValue, field);
+    }
+
     switch (field.type) {
         case 'number':
             return normalizeNumberValue(rawValue, fallbackValue);

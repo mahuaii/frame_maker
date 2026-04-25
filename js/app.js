@@ -4,6 +4,7 @@
  */
 
 import { templates, getTemplateById } from './templates.js';
+import { FREE_FRAME_ASPECT_RATIO } from './core/templates/frame-layout.js';
 import { resolveTemplateAppearance } from './core/templates/registry.js';
 import { loadTemplateConfig, saveTemplateConfig } from './core/templates/config-store.js';
 import { resolveTemplateConfig } from './core/templates/registry.js';
@@ -387,12 +388,18 @@ const INSPECTOR_SECTION_DEFINITIONS = [
     { key: 'exif', title: '拍摄信息' },
 ];
 const LAYOUT_FIELD_KEYS = new Set([
+    'frameAspectRatio',
+    'frameBorderWidth',
     'frameTop',
     'frameRight',
     'frameBottom',
     'frameLeft',
-    'frameVerticalSides',
-    'frameHorizontalSides',
+]);
+const FRAME_SIDE_FIELD_KEYS = new Set([
+    'frameTop',
+    'frameRight',
+    'frameBottom',
+    'frameLeft',
 ]);
 const APPEARANCE_FIELD_KEYS = new Set([
     'colorScheme',
@@ -406,13 +413,13 @@ function renderTextEditor() {
     textEditor.innerHTML = '';
     textEditor.appendChild(createInspectorActionArea());
 
-    const visibleFields = template.fields.filter((field) => !field.hidden);
+    const visibleFields = template.fields.filter((field) => shouldShowTemplateField(field));
     const fieldsBySection = groupFieldsByInspectorSection(visibleFields);
 
     INSPECTOR_SECTION_DEFINITIONS.forEach((definition) => {
         const section = createInspectorSection(
             definition.title,
-            definition.key === 'exif' ? createExifEditorResetAllButton() : null
+            getInspectorSectionHeaderAction(definition.key)
         );
         const content = getInspectorSectionContent(section);
 
@@ -426,6 +433,17 @@ function renderTextEditor() {
 
         textEditor.appendChild(section);
     });
+}
+
+function getInspectorSectionHeaderAction(sectionKey) {
+    switch (sectionKey) {
+        case 'layout':
+            return createLayoutEditorResetAllButton();
+        case 'exif':
+            return createExifEditorResetAllButton();
+        default:
+            return null;
+    }
 }
 
 function groupFieldsByInspectorSection(fields) {
@@ -453,6 +471,11 @@ function groupFieldsByInspectorSection(fields) {
 }
 
 function appendFieldSectionContent(content, fields, sectionKey) {
+    if (sectionKey === 'layout') {
+        appendLayoutSectionContent(content, fields);
+        return;
+    }
+
     appendInspectorFields(content, fields, {
         values: fieldValues,
         onChange: commitFieldValue,
@@ -461,14 +484,62 @@ function appendFieldSectionContent(content, fields, sectionKey) {
     });
 }
 
+function isFreeFrameLayout() {
+    return (fieldValues.frameAspectRatio ?? FREE_FRAME_ASPECT_RATIO) === FREE_FRAME_ASPECT_RATIO;
+}
+
+function shouldShowTemplateField(field) {
+    if (field.hidden) {
+        return false;
+    }
+
+    if (field.key === 'frameBorderWidth') {
+        return !isFreeFrameLayout();
+    }
+
+    if (FRAME_SIDE_FIELD_KEYS.has(field.key)) {
+        return isFreeFrameLayout();
+    }
+
+    return true;
+}
+
+function appendLayoutSectionContent(content, fields) {
+    const aspectField = fields.find((field) => field.key === 'frameAspectRatio');
+    const borderField = fields.find((field) => field.key === 'frameBorderWidth');
+    const sideFields = fields.filter((field) => FRAME_SIDE_FIELD_KEYS.has(field.key));
+
+    if (aspectField) {
+        appendInspectorFields(content, [aspectField], {
+            values: fieldValues,
+            onChange: commitFieldValue,
+        });
+    }
+
+    if (isFreeFrameLayout()) {
+        appendInspectorFields(content, sideFields, {
+            values: fieldValues,
+            onChange: commitFieldValue,
+            compact: true,
+            getLabel: getCompactFieldLabel,
+        });
+        return;
+    }
+
+    if (borderField) {
+        appendInspectorFields(content, [borderField], {
+            values: fieldValues,
+            onChange: commitFieldValue,
+        });
+    }
+}
+
 function getCompactFieldLabel(field) {
     const compactLabels = {
         frameTop: 'T',
         frameRight: 'R',
         frameBottom: 'B',
         frameLeft: 'L',
-        frameVerticalSides: 'Y',
-        frameHorizontalSides: 'X',
     };
 
     return compactLabels[field.key] ?? field.label;
@@ -482,7 +553,45 @@ function commitFieldValue(field, nextValue) {
     fieldValues = resolveTemplateConfig(template, fieldValues);
     saveTemplateConfig(template, fieldValues);
 
+    if (field.key === 'frameAspectRatio') {
+        renderTextEditor();
+    }
+
     updatePreview();
+}
+
+function resetAllLayoutFieldValues() {
+    const template = getTemplateById(selectedTemplateId);
+    if (!template) return;
+
+    const defaultConfig = resolveTemplateConfig(template);
+    const resetValues = {};
+
+    LAYOUT_FIELD_KEYS.forEach((fieldKey) => {
+        if (defaultConfig[fieldKey] !== undefined) {
+            resetValues[fieldKey] = defaultConfig[fieldKey];
+        }
+    });
+
+    fieldValues = resolveTemplateConfig(template, {
+        ...fieldValues,
+        ...resetValues,
+    });
+    saveTemplateConfig(template, fieldValues);
+
+    renderTextEditor();
+    updatePreview();
+}
+
+function createLayoutEditorResetAllButton() {
+    return createIconButton({
+        className: 'field-reset-button inspector-section-reset-button',
+        label: '重置版式',
+        iconPaths: RESET_ICON_PATHS,
+        onClick: () => {
+            resetAllLayoutFieldValues();
+        },
+    });
 }
 
 function getExifEditorFieldValue(fieldKey) {
