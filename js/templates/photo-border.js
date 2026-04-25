@@ -36,10 +36,10 @@ export function drawOptionalThinPhotoBorder(ctx, {
     enabled,
     rect,
     canvasWidth,
-    color = '#000000',
+    color,
     widthRatio = 0.0022,
 }) {
-    if (!enabled || !rect) {
+    if (!enabled || !rect || !color) {
         return;
     }
 

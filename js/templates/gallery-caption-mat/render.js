@@ -3,9 +3,9 @@ import { drawBeveledPhotoBorder } from '../photo-border.js';
 
 export function renderGalleryCaptionMatTemplate(ctx, args) {
     const { appearance, config, metrics, canvasSize } = args;
-    const borderColor = getAppearanceColor(appearance, 'photoBorder', '#000000');
+    const borderColor = getAppearanceColor(appearance, 'photoBorder');
 
-    if (!config.showThinBorder || !metrics.scaledPhotoArea) {
+    if (!config.showThinBorder || !metrics.scaledPhotoArea || !borderColor) {
         return;
     }
 

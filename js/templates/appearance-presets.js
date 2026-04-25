@@ -9,16 +9,18 @@ export const sharedAppearanceThemes = {
         },
         colors: {
             textPrimary: '#111111',
+            photoBorder: '#000000',
         },
     },
     black: {
         label: '黑色',
         canvasBackground: {
             type: 'solid',
-            color: '#000000',
+            color: '#121212',
         },
         colors: {
             textPrimary: '#F8FAFC',
+            photoBorder: '#FFFFFF',
         },
     },
     blur: {
@@ -57,15 +59,21 @@ export function createSolidAppearanceThemes({
                     color: '#FFFFFF',
                 },
             } : {}),
+            colors: {
+                photoBorder: '#000000',
+            },
         },
         black: {
             label: '黑色',
             ...(includeCanvasBackground ? {
                 canvasBackground: {
                     type: 'solid',
-                    color: '#000000',
+                    color: '#121212',
                 },
             } : {}),
+            colors: {
+                photoBorder: '#FFFFFF',
+            },
         },
     };
 
