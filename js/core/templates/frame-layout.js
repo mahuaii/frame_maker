@@ -1,7 +1,9 @@
 export const FREE_FRAME_ASPECT_RATIO = 'free';
+export const ORIGINAL_FRAME_ASPECT_RATIO = 'original';
 
 export const FRAME_ASPECT_RATIO_OPTIONS = [
     { value: FREE_FRAME_ASPECT_RATIO, label: '自由' },
+    { value: ORIGINAL_FRAME_ASPECT_RATIO, label: '原照比例' },
     { value: '1:1', label: '1:1' },
     { value: '5:4', label: '5:4' },
     { value: '4:3', label: '4:3' },
@@ -16,6 +18,11 @@ export const FRAME_ASPECT_RATIO_OPTIONS = [
 const FREE_FRAME_ASPECT_RATIO_LABELS = new Set([
     FREE_FRAME_ASPECT_RATIO,
     '自由',
+]);
+
+const ORIGINAL_FRAME_ASPECT_RATIO_LABELS = new Set([
+    ORIGINAL_FRAME_ASPECT_RATIO,
+    '原照比例',
 ]);
 
 export function parseFrameAspectRatio(value) {
@@ -47,6 +54,10 @@ export function normalizeFrameAspectRatioValue(value, fallbackValue = FREE_FRAME
         return FREE_FRAME_ASPECT_RATIO;
     }
 
+    if (ORIGINAL_FRAME_ASPECT_RATIO_LABELS.has(rawValue)) {
+        return ORIGINAL_FRAME_ASPECT_RATIO;
+    }
+
     return parseFrameAspectRatio(rawValue) ? rawValue : fallbackValue;
 }
 
@@ -56,5 +67,5 @@ export function normalizeFrameBorderWidth(value, fallbackValue = 0) {
         return fallbackValue;
     }
 
-    return Math.min(Math.max(numericValue, 0), 200);
+    return Math.min(Math.max(numericValue, 0), 100);
 }

@@ -28,7 +28,7 @@ function getFrameSideDefault(frame = {}, control) {
 
 export function buildFrameLayoutFields(frame = {}, {
     aspectRatio = FREE_FRAME_ASPECT_RATIO,
-    borderWidth = 0,
+    borderWidth = 10,
 } = {}) {
     return [
         {
@@ -47,7 +47,7 @@ export function buildFrameLayoutFields(frame = {}, {
             type: 'range',
             groupClassName: 'field-frame-gray',
             min: 0,
-            max: 200,
+            max: 100,
             step: 0.1,
             inputMode: 'decimal',
             defaultValue: borderWidth,

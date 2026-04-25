@@ -1,6 +1,6 @@
 import { buildCanvasFont, loadRuntimeFonts, ensureRuntimeFont } from '../fonts/index.js';
 import { buildTemplateResolveInput, createGlobalRenderSettings } from './input.js';
-import { parseFrameAspectRatio } from '../templates/frame-layout.js';
+import { ORIGINAL_FRAME_ASPECT_RATIO, parseFrameAspectRatio } from '../templates/frame-layout.js';
 import { getAppearanceColor, resolveTemplateAppearance, resolveTemplateConfig } from '../templates/registry.js';
 
 const FRAME_SIDE_KEYS = ['top', 'right', 'bottom', 'left'];
@@ -236,9 +236,15 @@ function getControlledBorderAxis(photoRatio, targetRatio) {
     return 'horizontal';
 }
 
+function resolveFrameAspectRatio(config, photoRatio) {
+    return config.frameAspectRatio === ORIGINAL_FRAME_ASPECT_RATIO
+        ? photoRatio
+        : parseFrameAspectRatio(config.frameAspectRatio);
+}
+
 function buildFixedAspectRatioFrame({ imageWidth, imageHeight, config }) {
     const photoRatio = imageWidth / imageHeight;
-    const aspectRatio = parseFrameAspectRatio(config.frameAspectRatio);
+    const aspectRatio = resolveFrameAspectRatio(config, photoRatio);
     const borderWidth = normalizeNonNegativeNumber(config.frameBorderWidth, 0);
     const borderTotal = Math.min(imageWidth, imageHeight) * (borderWidth / 100);
     const controlledAxis = getControlledBorderAxis(photoRatio, aspectRatio);
@@ -275,7 +281,8 @@ export function calculateFrameMetrics(image, template, scale = 1, rawConfig = {}
     const config = resolveTemplateConfig(template, rawConfig);
     const imageWidth = image.naturalWidth;
     const imageHeight = image.naturalHeight;
-    const frameGeometry = parseFrameAspectRatio(config.frameAspectRatio)
+    const photoRatio = imageWidth / imageHeight;
+    const frameGeometry = resolveFrameAspectRatio(config, photoRatio)
         ? buildFixedAspectRatioFrame({ imageWidth, imageHeight, config })
         : buildDefaultFourSideFrame({ imageWidth, imageHeight, template, config });
     const { sidesPercent, sidesPx, fullWidth, fullHeight } = frameGeometry;
