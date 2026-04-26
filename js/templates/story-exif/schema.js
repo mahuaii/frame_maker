@@ -79,7 +79,6 @@ export const storyExifTemplateSchema = {
                     type: 'text',
                     label: '标题',
                     content: 'A small headline for the frame',
-                    emptyBehavior: 'hide',
                     visible: true,
                     style: {
                         fontId: 'angieSansStd',
@@ -93,7 +92,6 @@ export const storyExifTemplateSchema = {
                     type: 'text',
                     label: '副标题',
                     content: 'Description goes here',
-                    emptyBehavior: 'hide',
                     visible: true,
                     style: {
                         fontId: 'angieSansStd',
@@ -131,8 +129,6 @@ export const storyExifTemplateSchema = {
                     type: 'text',
                     label: '主参数',
                     content: '{{metaPrimary}}',
-                    fallbackContent: 'EXIF unavailable',
-                    emptyBehavior: 'fallback',
                     visible: true,
                     style: {
                         colorToken: 'metaPrimary',
@@ -143,7 +139,6 @@ export const storyExifTemplateSchema = {
                     type: 'text',
                     label: '次参数',
                     content: '{{metaSecondary}}',
-                    emptyBehavior: 'hide',
                     visible: true,
                     style: {
                         colorToken: 'metaSecondary',

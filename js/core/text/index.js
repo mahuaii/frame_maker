@@ -11,7 +11,6 @@ export {
     FRAME_REGIONS,
     TEXT_ALIGNS,
     TEXT_DIRECTIONS,
-    TEXT_EMPTY_BEHAVIORS,
     TEXT_ITEM_TYPES,
     cloneTextModel,
     createDefaultTextGroup,

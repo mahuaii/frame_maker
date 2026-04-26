@@ -16,12 +16,6 @@ export const TEXT_ALIGNS = Object.freeze({
     end: 'end',
 });
 
-export const TEXT_EMPTY_BEHAVIORS = Object.freeze({
-    hide: 'hide',
-    fallback: 'fallback',
-    show: 'show',
-});
-
 export const FRAME_REGIONS = Object.freeze(['top', 'right', 'bottom', 'left']);
 
 export const ANCHOR_KEYS = Object.freeze([
@@ -62,8 +56,6 @@ export const DEFAULT_TEXT_ITEM = Object.freeze({
     type: TEXT_ITEM_TYPES.text,
     label: '文字',
     content: '',
-    fallbackContent: '',
-    emptyBehavior: TEXT_EMPTY_BEHAVIORS.hide,
     visible: true,
 });
 
@@ -171,20 +163,10 @@ function normalizeId(value, fallbackId) {
 function normalizeTextItem(item, fallbackId) {
     return {
         ...DEFAULT_TEXT_ITEM,
-        ...item,
         id: normalizeId(item.id, fallbackId),
         type: TEXT_ITEM_TYPES.text,
         label: normalizeString(item.label, DEFAULT_TEXT_ITEM.label),
         content: normalizeString(item.content ?? item.text, DEFAULT_TEXT_ITEM.content),
-        fallbackContent: normalizeString(
-            item.fallbackContent ?? item.fallbackText,
-            DEFAULT_TEXT_ITEM.fallbackContent
-        ),
-        emptyBehavior: normalizeEnumValue(
-            item.emptyBehavior,
-            Object.values(TEXT_EMPTY_BEHAVIORS),
-            DEFAULT_TEXT_ITEM.emptyBehavior
-        ),
         visible: normalizeBoolean(item.visible, DEFAULT_TEXT_ITEM.visible),
         style: normalizeStyle(item.style, item),
     };
@@ -232,8 +214,7 @@ function normalizeLegacyTexts(group) {
         id: text.id,
         type: TEXT_ITEM_TYPES.text,
         label: text.label,
-        content: text.text ?? text.fallbackText ?? '',
-        fallbackContent: text.fallbackText ?? '',
+        content: text.text ?? '',
         visible: text.visible,
         style: normalizeStyle(text, text),
         _legacyIndex: index,

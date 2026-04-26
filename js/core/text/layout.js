@@ -2,14 +2,15 @@ import {
     DEFAULT_TEXT_STYLE,
     TEXT_ALIGNS,
     TEXT_DIRECTIONS,
-    TEXT_EMPTY_BEHAVIORS,
     TEXT_ITEM_TYPES,
     getTextBaseUnit,
     mergeTextStyles,
     normalizeTextModel,
 } from './schema.js';
 import { measureImageItem, measureSeparatorItem, measureTextItem } from './measure.js';
-import { resolveTextTokenResult, resolveTextTokens } from './tokens.js';
+import { resolveTextTokenResult } from './tokens.js';
+
+const EMPTY_TEXT_FALLBACK = 'Text';
 
 function hasSize(item) {
     return item && item.width >= 0 && item.height >= 0;
@@ -29,16 +30,7 @@ function resolveTextContent(item, context) {
         return resolvedContent;
     }
 
-    if (item.emptyBehavior === TEXT_EMPTY_BEHAVIORS.show) {
-        return resolvedContent;
-    }
-
-    if (item.emptyBehavior === TEXT_EMPTY_BEHAVIORS.fallback) {
-        const fallbackContent = resolveTextTokens(item.fallbackContent, context);
-        return fallbackContent.trim() ? fallbackContent : null;
-    }
-
-    return null;
+    return EMPTY_TEXT_FALLBACK;
 }
 
 function filterSeparators(items) {

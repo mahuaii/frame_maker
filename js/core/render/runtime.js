@@ -83,8 +83,8 @@ function insetRegion(region, insets) {
 
 function getFrameMarginConfig(template) {
     return {
-        edgeRatio: normalizeNonNegativeNumber(template?.frame?.margin?.edgeRatio, 0.24),
-        crossRatio: normalizeNonNegativeNumber(template?.frame?.margin?.crossRatio, 0.025),
+        edgeRatio: normalizeNonNegativeNumber(template?.frame?.margin?.edgeRatio, 0.015),
+        crossRatio: normalizeNonNegativeNumber(template?.frame?.margin?.crossRatio, 0),
         min: normalizeNonNegativeNumber(template?.frame?.margin?.min, 12),
     };
 }
@@ -95,33 +95,33 @@ function clampInset(value, maxValue) {
 
 function buildTextInsets({ imageWidth, imageHeight, textRegions, template }) {
     const margin = getFrameMarginConfig(template);
-    const crossBasis = Math.min(imageWidth, imageHeight);
-    const crossInset = Math.max(crossBasis * margin.crossRatio, margin.min);
+    const edgeBasis = Math.min(imageWidth, imageHeight);
+    const edgeInset = Math.max(edgeBasis * margin.edgeRatio, margin.min);
 
     return {
         top: {
-            top: clampInset(Math.max(textRegions.top.height * margin.edgeRatio, margin.min), textRegions.top.height / 2),
-            right: clampInset(crossInset, textRegions.top.width / 2),
-            bottom: clampInset(Math.max(textRegions.top.height * margin.edgeRatio, margin.min), textRegions.top.height / 2),
-            left: clampInset(crossInset, textRegions.top.width / 2),
+            top: clampInset(edgeInset, textRegions.top.height / 2),
+            right: 0,
+            bottom: clampInset(edgeInset, textRegions.top.height / 2),
+            left: 0,
         },
         right: {
-            top: clampInset(crossInset, textRegions.right.height / 2),
-            right: clampInset(Math.max(textRegions.right.width * margin.edgeRatio, margin.min), textRegions.right.width / 2),
-            bottom: clampInset(crossInset, textRegions.right.height / 2),
-            left: clampInset(Math.max(textRegions.right.width * margin.edgeRatio, margin.min), textRegions.right.width / 2),
+            top: 0,
+            right: clampInset(edgeInset, textRegions.right.width / 2),
+            bottom: 0,
+            left: clampInset(edgeInset, textRegions.right.width / 2),
         },
         bottom: {
-            top: clampInset(Math.max(textRegions.bottom.height * margin.edgeRatio, margin.min), textRegions.bottom.height / 2),
-            right: clampInset(crossInset, textRegions.bottom.width / 2),
-            bottom: clampInset(Math.max(textRegions.bottom.height * margin.edgeRatio, margin.min), textRegions.bottom.height / 2),
-            left: clampInset(crossInset, textRegions.bottom.width / 2),
+            top: clampInset(edgeInset, textRegions.bottom.height / 2),
+            right: 0,
+            bottom: clampInset(edgeInset, textRegions.bottom.height / 2),
+            left: 0,
         },
         left: {
-            top: clampInset(crossInset, textRegions.left.height / 2),
-            right: clampInset(Math.max(textRegions.left.width * margin.edgeRatio, margin.min), textRegions.left.width / 2),
-            bottom: clampInset(crossInset, textRegions.left.height / 2),
-            left: clampInset(Math.max(textRegions.left.width * margin.edgeRatio, margin.min), textRegions.left.width / 2),
+            top: 0,
+            right: clampInset(edgeInset, textRegions.left.width / 2),
+            bottom: 0,
+            left: clampInset(edgeInset, textRegions.left.width / 2),
         },
     };
 }

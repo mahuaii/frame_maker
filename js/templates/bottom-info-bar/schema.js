@@ -82,8 +82,6 @@ export const bottomInfoBarTemplateSchema = {
                     type: 'text',
                     label: '相机',
                     content: '{{camera}}',
-                    fallbackContent: 'Unknown Camera',
-                    emptyBehavior: 'fallback',
                     visible: true,
                 },
             ],
@@ -115,7 +113,6 @@ export const bottomInfoBarTemplateSchema = {
                     type: 'text',
                     label: '焦距',
                     content: '{{focalLength}}',
-                    emptyBehavior: 'hide',
                     visible: true,
                 },
                 {
@@ -133,7 +130,6 @@ export const bottomInfoBarTemplateSchema = {
                     type: 'text',
                     label: '光圈',
                     content: '{{aperture}}',
-                    emptyBehavior: 'hide',
                     visible: true,
                 },
                 {
@@ -151,7 +147,6 @@ export const bottomInfoBarTemplateSchema = {
                     type: 'text',
                     label: '快门',
                     content: '{{shutter}}',
-                    emptyBehavior: 'hide',
                     visible: true,
                 },
                 {
@@ -169,7 +164,6 @@ export const bottomInfoBarTemplateSchema = {
                     type: 'text',
                     label: 'ISO',
                     content: 'ISO {{iso}}',
-                    emptyBehavior: 'hide',
                     visible: true,
                 },
             ],

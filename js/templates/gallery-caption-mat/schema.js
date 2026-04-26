@@ -83,8 +83,6 @@ export const galleryCaptionMatTemplateSchema = {
                     type: 'text',
                     label: '主标题',
                     content: 'Sample Location / City',
-                    fallbackContent: 'Untitled',
-                    emptyBehavior: 'fallback',
                     visible: true,
                     style: {
                         fontId: 'miSans',
@@ -98,8 +96,6 @@ export const galleryCaptionMatTemplateSchema = {
                     type: 'text',
                     label: '副标题',
                     content: 'Camera Model / Notes',
-                    fallbackContent: '',
-                    emptyBehavior: 'hide',
                     visible: true,
                     style: {
                         fontId: 'angieSansStd',
