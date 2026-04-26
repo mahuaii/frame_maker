@@ -56,7 +56,7 @@ const textModelsByTemplateId = new Map();
 const objectUrlRegistry = new Set();
 const THUMBNAIL_MAX_WIDTH = 180;
 const THUMBNAIL_MAX_HEIGHT = 135;
-const ASSET_VERSION = '20260425-000000';
+const ASSET_VERSION = '20260426-000000';
 const DEFAULT_INSPECTOR_WIDTH = 276;
 const MIN_INSPECTOR_WIDTH = 220;
 const MAX_INSPECTOR_WIDTH = 520;
@@ -1042,6 +1042,52 @@ function getTextObjectTypeLabel(item) {
     return labels[item?.type] ?? '?';
 }
 
+function summarizeTextObjectContent(value) {
+    const text = String(value ?? '').replace(/\s+/g, ' ').trim();
+    return text.length > 48 ? `${text.slice(0, 48)}...` : text;
+}
+
+function getFirstTextObjectContent(item) {
+    if (!item) {
+        return '';
+    }
+
+    if (item.type === 'text') {
+        return summarizeTextObjectContent(item.content);
+    }
+
+    if (item.type === 'group' && Array.isArray(item.items)) {
+        for (const child of item.items) {
+            const content = getFirstTextObjectContent(child);
+            if (content) {
+                return content;
+            }
+        }
+    }
+
+    return '';
+}
+
+function getTextObjectDisplayLabel(item, depth = 0) {
+    if (item?.type === 'text') {
+        return getFirstTextObjectContent(item) || '文字';
+    }
+
+    if (item?.type === 'group') {
+        return summarizeTextObjectContent(item.label) || (depth > 0 ? '子组' : '文本组');
+    }
+
+    if (item?.type === 'separator') {
+        return '分隔线';
+    }
+
+    if (item?.type === 'image') {
+        return summarizeTextObjectContent(item.source?.name) || '图片';
+    }
+
+    return getTextObjectTypeLabel(item);
+}
+
 function findTextObjectById(items = [], objectId, parent = null, depth = 0) {
     for (let index = 0; index < items.length; index += 1) {
         const item = items[index];
@@ -1070,36 +1116,35 @@ function ensureSelectedTextObject(template) {
     return selectedTextObjectId;
 }
 
-function commitTextModelChange(template, mutate) {
+function commitTextModelChange(template, mutate, {
+    renderEditor = true,
+} = {}) {
     const textModel = getTemplateTextModel(template);
-    mutate(textModel);
+    const result = mutate(textModel);
+    if (result === false) {
+        return false;
+    }
+
     setTemplateTextModel(template, textModel);
     ensureSelectedTextObject(template);
-    renderTextEditor();
+    if (renderEditor) {
+        renderTextEditor();
+    }
     updatePreview();
+
+    return true;
 }
 
 function createTextModelEditorPanel(template) {
     ensureSelectedTextObject(template);
 
-    const section = createInspectorSection('文本', createIconButton({
-        className: 'field-reset-button inspector-section-reset-button',
-        label: '重置文本',
-        iconPaths: RESET_ICON_PATHS,
-        onClick: resetCurrentTemplateTextModel,
-    }));
-    const content = getInspectorSectionContent(section);
-    const editor = createElement('div', {
+    return createElement('div', {
         className: 'text-model-editor',
         children: [
             createTextObjectTree(template),
             createSelectedTextObjectPanel(template),
         ],
     });
-
-    content.appendChild(editor);
-
-    return section;
 }
 
 function createTextObjectTree(template) {
@@ -1108,14 +1153,25 @@ function createTextObjectTree(template) {
         className: 'text-object-tree-header',
         children: [
             createElement('span', { textContent: '组 / 项' }),
-            createElement('button', {
-                className: 'btn-small text-object-add-button',
-                textContent: '新增文本组',
-                attributes: { type: 'button' },
+            createElement('div', {
+                className: 'text-object-tree-actions',
+                children: [
+                    createIconButton({
+                        className: 'field-reset-button',
+                        label: '重置文本',
+                        iconPaths: RESET_ICON_PATHS,
+                        onClick: resetCurrentTemplateTextModel,
+                    }),
+                    createElement('button', {
+                        className: 'btn-small text-object-add-button',
+                        textContent: '新增文本组',
+                        attributes: { type: 'button' },
+                    }),
+                ],
             }),
         ],
     });
-    const addButton = header.querySelector('button');
+    const addButton = header.querySelector('.text-object-add-button');
     addButton.addEventListener('click', () => {
         commitTextModelChange(template, (model) => {
             const group = createDefaultTextGroup();
@@ -1140,7 +1196,7 @@ function createTextObjectTree(template) {
     }
 
     return createElement('div', {
-        className: 'text-object-tree',
+        className: 'text-object-tree inspector-content-contained',
         children: [header, list],
     });
 }
@@ -1149,6 +1205,9 @@ function createTextObjectTreeNode(template, item, depth) {
     const isSelected = item.id === selectedTextObjectId;
     const node = createElement('div', {
         className: `text-object-node${isSelected ? ' selected' : ''}`,
+        dataset: {
+            textObjectId: item.id,
+        },
         styleProperties: {
             '--text-object-depth': depth,
         },
@@ -1165,7 +1224,7 @@ function createTextObjectTreeNode(template, item, depth) {
             }),
             createElement('span', {
                 className: 'text-object-label',
-                textContent: item.label || getTextObjectTypeLabel(item),
+                textContent: getTextObjectDisplayLabel(item, depth),
             }),
             createElement('span', {
                 className: 'text-object-status',
@@ -1196,7 +1255,7 @@ function createSelectedTextObjectPanel(template) {
 
     if (!selected) {
         return createElement('div', {
-            className: 'text-object-properties text-object-empty',
+            className: 'text-object-properties text-object-empty inspector-content-contained',
             textContent: '选择或新增文本组',
         });
     }
@@ -1212,8 +1271,9 @@ function createSelectedTextObjectPanel(template) {
 
 function createTextObjectActionBar(template, selected) {
     const { item, siblings, index, depth } = selected;
+    const itemId = item.id;
     const actions = createElement('div', {
-        className: 'text-object-action-bar',
+        className: 'text-object-action-bar inspector-content-contained',
     });
 
     if (item.type === 'group') {
@@ -1229,10 +1289,15 @@ function createTextObjectActionBar(template, selected) {
                 attributes: { type: 'button' },
             });
             button.addEventListener('click', () => {
-                commitTextModelChange(template, () => {
+                commitTextModelChange(template, (model) => {
+                    const current = findTextObjectById(model, itemId);
+                    if (!current || current.item.type !== 'group') {
+                        return false;
+                    }
+
                     const nextItem = createDefaultTextItem(type);
-                    item.items = Array.isArray(item.items) ? item.items : [];
-                    item.items.push(nextItem);
+                    current.item.items = Array.isArray(current.item.items) ? current.item.items : [];
+                    current.item.items.push(nextItem);
                     selectedTextObjectId = nextItem.id;
                 });
             });
@@ -1253,10 +1318,19 @@ function createTextObjectActionBar(template, selected) {
             },
         });
         button.addEventListener('click', () => {
-            commitTextModelChange(template, () => {
-                const nextIndex = index + direction;
-                const [movedItem] = siblings.splice(index, 1);
-                siblings.splice(nextIndex, 0, movedItem);
+            commitTextModelChange(template, (model) => {
+                const current = findTextObjectById(model, itemId);
+                if (!current) {
+                    return false;
+                }
+
+                const nextIndex = current.index + direction;
+                if (nextIndex < 0 || nextIndex >= current.siblings.length) {
+                    return false;
+                }
+
+                const [movedItem] = current.siblings.splice(current.index, 1);
+                current.siblings.splice(nextIndex, 0, movedItem);
             });
         });
         actions.appendChild(button);
@@ -1270,11 +1344,16 @@ function createTextObjectActionBar(template, selected) {
         },
     });
     deleteButton.addEventListener('click', () => {
-        commitTextModelChange(template, () => {
-            releaseTextModelObjectUrls([item]);
-            siblings.splice(index, 1);
-            selectedTextObjectId = siblings[Math.min(index, siblings.length - 1)]?.id
-                ?? selected.parent?.id
+        commitTextModelChange(template, (model) => {
+            const current = findTextObjectById(model, itemId);
+            if (!current) {
+                return false;
+            }
+
+            releaseTextModelObjectUrls([current.item]);
+            current.siblings.splice(current.index, 1);
+            selectedTextObjectId = current.siblings[Math.min(current.index, current.siblings.length - 1)]?.id
+                ?? current.parent?.id
                 ?? null;
         });
     });
@@ -1287,13 +1366,16 @@ function createTextObjectFields(template, selected) {
     const { item, depth } = selected;
     const fields = buildTextObjectFieldDefinitions(item, depth);
     const values = buildTextObjectFieldValues(item, fields);
-    const list = createInspectorFieldList(fields, {
+    const fieldOptions = {
         values,
         idPrefix: `text-object-${item.id}`,
         onChange: (field, nextValue) => {
             commitTextObjectFieldValue(template, item, field.key, nextValue);
         },
-    });
+    };
+    const list = item.type === 'group' && depth === 0
+        ? createRootTextGroupFieldList(fields, fieldOptions)
+        : createInspectorFieldList(fields, fieldOptions);
 
     if (item.type === 'image') {
         list.appendChild(createImageSourceControl(template, item));
@@ -1302,9 +1384,63 @@ function createTextObjectFields(template, selected) {
     return list;
 }
 
+function createRootTextGroupFieldList(fields, fieldOptions) {
+    const anchorLayoutFieldKeys = new Set(['region', 'anchor', 'direction']);
+    const content = createElement('div', {
+        className: 'editor-collapsible-content',
+    });
+
+    fields.forEach((field) => {
+        if (field.key === 'region') {
+            content.appendChild(createTextGroupAnchorLayout(fields, fieldOptions));
+            return;
+        }
+
+        if (anchorLayoutFieldKeys.has(field.key)) {
+            return;
+        }
+
+        content.appendChild(createFieldGroup(field, fieldOptions));
+    });
+
+    return content;
+}
+
+function createTextGroupAnchorLayout(fields, fieldOptions) {
+    const anchorField = fields.find((field) => field.key === 'anchor');
+    const sideFields = ['region', 'direction']
+        .map((fieldKey) => fields.find((field) => field.key === fieldKey))
+        .filter(Boolean);
+    const fieldGroups = [anchorField, ...sideFields]
+        .filter(Boolean)
+        .map((field) => createFieldGroup(field, fieldOptions));
+
+    return createElement('div', {
+        className: 'text-group-anchor-layout inspector-field-grid-contained',
+        children: fieldGroups,
+    });
+}
+
+const TEXT_EDITOR_GRAY_EXCLUDED_FIELD_KEYS = new Set(['label', 'style.fontId', 'style.fontStyle']);
+
+function applyTextEditorFieldFrameStyle(fields = []) {
+    return fields.map((field) => {
+        if (!field || TEXT_EDITOR_GRAY_EXCLUDED_FIELD_KEYS.has(field.key)) {
+            return field;
+        }
+
+        const classNames = new Set(String(field.groupClassName ?? '').split(/\s+/).filter(Boolean));
+        classNames.add('field-frame-gray');
+
+        return {
+            ...field,
+            groupClassName: Array.from(classNames).join(' '),
+        };
+    });
+}
+
 function buildTextObjectFieldDefinitions(item, depth) {
     const commonFields = [
-        { key: 'label', label: '名称', type: 'input', defaultValue: '' },
         { key: 'visible', label: '显示', type: 'toggle', defaultValue: true },
     ];
     const styleFields = [
@@ -1338,7 +1474,8 @@ function buildTextObjectFieldDefinitions(item, depth) {
     ];
 
     if (item.type === 'group') {
-        return [
+        return applyTextEditorFieldFrameStyle([
+            { key: 'label', label: '组标题', type: 'input', defaultValue: depth > 0 ? '子组' : '文本组' },
             ...commonFields,
             ...(depth === 0 ? [
                 {
@@ -1357,6 +1494,7 @@ function buildTextObjectFieldDefinitions(item, depth) {
                     key: 'anchor',
                     label: '锚点',
                     type: 'select',
+                    control: 'nine-grid',
                     defaultValue: 'center',
                     options: [
                         { value: 'top-left', label: '左上' },
@@ -1398,41 +1536,29 @@ function buildTextObjectFieldDefinitions(item, depth) {
                 { key: 'offsetYScale', label: 'Y 偏移倍率', type: 'number', step: 0.1, defaultValue: 0 },
             ] : []),
             ...styleFields,
-        ];
+        ]);
     }
 
     if (item.type === 'text') {
-        return [
+        return applyTextEditorFieldFrameStyle([
             ...commonFields,
             { key: 'content', label: '内容', type: 'textarea', defaultValue: '' },
-            {
-                key: 'emptyBehavior',
-                label: '空值行为',
-                type: 'select',
-                defaultValue: 'hide',
-                options: [
-                    { value: 'hide', label: '隐藏' },
-                    { value: 'fallback', label: '使用 fallback' },
-                    { value: 'show', label: '保留' },
-                ],
-            },
-            { key: 'fallbackContent', label: 'fallback 内容', type: 'textarea', defaultValue: '' },
             ...styleFields,
-        ];
+        ]);
     }
 
     if (item.type === 'separator') {
-        return [
+        return applyTextEditorFieldFrameStyle([
             ...commonFields,
             { key: 'forceVisible', label: '强制显示', type: 'toggle', defaultValue: false },
             { key: 'lengthScale', label: '长度倍率', type: 'number', min: 0.1, step: 0.05, defaultValue: 1.4 },
             { key: 'thicknessScale', label: '粗细倍率', type: 'number', min: 0.01, step: 0.01, defaultValue: 0.06 },
             { key: 'colorToken', label: '颜色 token', type: 'input', defaultValue: 'separator' },
             { key: 'color', label: '自定义颜色', type: 'color', defaultValue: '#9CA3AF' },
-        ];
+        ]);
     }
 
-    return commonFields;
+    return applyTextEditorFieldFrameStyle(commonFields);
 }
 
 function buildTextObjectFieldValues(item, fields) {
@@ -1443,14 +1569,52 @@ function buildTextObjectFieldValues(item, fields) {
 }
 
 function commitTextObjectFieldValue(template, item, fieldKey, nextValue) {
-    commitTextModelChange(template, () => {
-        setPathValue(item, fieldKey, nextValue);
+    const itemId = item.id;
+    const committed = commitTextModelChange(template, (model) => {
+        const current = findTextObjectById(model, itemId);
+        if (!current) {
+            return false;
+        }
+
+        setPathValue(current.item, fieldKey, nextValue);
+    }, {
+        renderEditor: false,
     });
+
+    if (committed) {
+        syncTextObjectTreeNode(template, itemId);
+    }
+}
+
+function syncTextObjectTreeNode(template, itemId) {
+    const textModel = getTemplateTextModel(template);
+    const current = findTextObjectById(textModel, itemId);
+    if (!current) {
+        return;
+    }
+
+    const node = Array.from(textEditor.querySelectorAll('.text-object-node'))
+        .find((candidate) => candidate.dataset.textObjectId === String(itemId));
+    if (!node) {
+        return;
+    }
+
+    const label = node.querySelector(':scope > .text-object-row > .text-object-label');
+    const status = node.querySelector(':scope > .text-object-row > .text-object-status');
+
+    if (label) {
+        label.textContent = getTextObjectDisplayLabel(current.item, current.depth);
+    }
+
+    if (status) {
+        status.textContent = current.item.visible === false ? '隐藏' : '';
+    }
 }
 
 function createImageSourceControl(template, item) {
+    const itemId = item.id;
     const wrapper = createElement('div', {
-        className: 'image-source-control',
+        className: 'image-source-control inspector-content-contained',
     });
     const label = createElement('div', {
         className: 'field-group-label',
@@ -1485,19 +1649,33 @@ function createImageSourceControl(template, item) {
 
         const objectUrl = URL.createObjectURL(file);
         objectUrlRegistry.add(objectUrl);
-        commitTextModelChange(template, () => {
-            releaseTextModelObjectUrls([item]);
-            item.source = {
+        const committed = commitTextModelChange(template, (model) => {
+            const current = findTextObjectById(model, itemId);
+            if (!current) {
+                return false;
+            }
+
+            releaseTextModelObjectUrls([current.item]);
+            current.item.source = {
                 type: 'objectUrl',
                 src: objectUrl,
                 name: file.name,
             };
         });
+        if (!committed) {
+            URL.revokeObjectURL(objectUrl);
+            objectUrlRegistry.delete(objectUrl);
+        }
     });
     clearButton.addEventListener('click', () => {
-        commitTextModelChange(template, () => {
-            releaseTextModelObjectUrls([item]);
-            item.source = null;
+        commitTextModelChange(template, (model) => {
+            const current = findTextObjectById(model, itemId);
+            if (!current) {
+                return false;
+            }
+
+            releaseTextModelObjectUrls([current.item]);
+            current.item.source = null;
         });
     });
 

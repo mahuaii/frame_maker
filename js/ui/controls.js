@@ -196,7 +196,6 @@ function createAutoSizingTextarea(field, value, onChange, defaultRows = 1) {
     input.addEventListener('input', (event) => {
         syncTextareaHeight(input);
         onChange?.(field, event.target.value, event);
-        blurControlAfterChange(input, 700);
     });
     input.addEventListener('keydown', (event) => {
         if ((event.metaKey || event.ctrlKey) && event.key === 'Enter') {
@@ -246,7 +245,6 @@ function createTextInput(field, value, onChange) {
     input.value = value ?? '';
     input.addEventListener('input', (event) => {
         onChange?.(field, event.target.value, event);
-        blurControlAfterChange(input, 700);
     });
     input.addEventListener('keydown', (event) => {
         if (event.key === 'Enter') {
@@ -511,6 +509,118 @@ function createColorOptionGroup(field, value, onChange) {
     return input;
 }
 
+function createNineGridPicker(field, value, onChange) {
+    const input = createElement('div', {
+        className: ['nine-grid-picker', field.controlClassName].filter(Boolean).join(' '),
+        attributes: {
+            role: 'radiogroup',
+            'aria-label': field.label,
+        },
+    });
+    const options = field.options ?? [];
+    let selectedValue = value ?? field.defaultValue ?? options[0]?.value ?? '';
+
+    function syncSelection(selectedButton) {
+        input.querySelectorAll('.nine-grid-picker-button').forEach((button) => {
+            const isSelected = button === selectedButton;
+            button.classList.toggle('selected', isSelected);
+            button.setAttribute('aria-checked', isSelected ? 'true' : 'false');
+            button.tabIndex = isSelected ? 0 : -1;
+        });
+    }
+
+    function commitSelection(button, option, event) {
+        if (String(option.value) === String(selectedValue)) {
+            syncSelection(button);
+            return;
+        }
+
+        selectedValue = option.value;
+        syncSelection(button);
+        onChange?.(field, option.value, event);
+    }
+
+    function focusAdjacentButton(currentButton, direction) {
+        const buttons = Array.from(input.querySelectorAll('.nine-grid-picker-button'));
+        const currentIndex = buttons.indexOf(currentButton);
+        if (currentIndex < 0) {
+            return;
+        }
+
+        const nextIndex = Math.min(Math.max(currentIndex + direction, 0), buttons.length - 1);
+        const nextButton = buttons[nextIndex];
+        const nextOption = options[nextIndex];
+        if (!nextButton || !nextOption) {
+            return;
+        }
+
+        nextButton.focus();
+        commitSelection(nextButton, nextOption);
+    }
+
+    options.forEach((option) => {
+        const isSelected = String(option.value) === String(selectedValue);
+        const button = createElement('button', {
+            className: `nine-grid-picker-button${isSelected ? ' selected' : ''}`,
+            attributes: {
+                type: 'button',
+                role: 'radio',
+                'aria-checked': isSelected ? 'true' : 'false',
+                'aria-label': option.label,
+                title: option.label,
+                tabindex: isSelected ? '0' : '-1',
+            },
+            dataset: {
+                value: option.value,
+            },
+            children: [
+                createElement('span', {
+                    className: 'nine-grid-picker-mark',
+                    attributes: {
+                        'aria-hidden': 'true',
+                    },
+                }),
+            ],
+        });
+
+        button.addEventListener('click', (event) => {
+            commitSelection(button, option, event);
+            blurControlAfterChange(button);
+        });
+        button.addEventListener('keydown', (event) => {
+            const keyDirections = {
+                ArrowLeft: -1,
+                ArrowUp: -3,
+                ArrowRight: 1,
+                ArrowDown: 3,
+            };
+
+            if (event.key in keyDirections) {
+                event.preventDefault();
+                focusAdjacentButton(button, keyDirections[event.key]);
+            }
+
+            if (event.key === ' ' || event.key === 'Enter') {
+                event.preventDefault();
+                commitSelection(button, option, event);
+            }
+        });
+
+        input.appendChild(button);
+    });
+
+    if (!input.querySelector('.nine-grid-picker-button.selected')) {
+        const firstButton = input.querySelector('.nine-grid-picker-button');
+        if (firstButton) {
+            firstButton.classList.add('selected');
+            firstButton.setAttribute('aria-checked', 'true');
+            firstButton.tabIndex = 0;
+        }
+    }
+
+    return input;
+}
+
 function createRangeInput(field, value, onChange) {
     const wrapperClassName = ['range-control', field.controlClassName]
         .filter(Boolean)
@@ -674,8 +784,13 @@ export function createFieldInput(field, {
                 idPrefix,
             }, value, onChange);
         case 'select':
-            input = field.control === 'color-buttons'
-                ? createColorOptionGroup(field, value, onChange)
+            if (field.control === 'color-buttons') {
+                input = createColorOptionGroup(field, value, onChange);
+                break;
+            }
+
+            input = field.control === 'nine-grid'
+                ? createNineGridPicker(field, value, onChange)
                 : createSelectInput(field, value, onChange);
             break;
         case 'toggle':

@@ -1,6 +1,7 @@
 /* === Field Controls === */
 .field-group {
     --field-height: 24px;
+    --field-double-row-height: calc(var(--field-height) + var(--field-height) + var(--settings-field-gap));
     --field-inline-padding: 8px;
     --field-font-size: 12px;
     --field-radius: 5px;

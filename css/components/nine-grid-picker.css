@@ -1,0 +1,144 @@
+/* === Nine Grid Picker === */
+.nine-grid-picker {
+    --nine-grid-picker-muted: color-mix(in srgb, var(--color-gray-dark) 48%, var(--color-white));
+
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    grid-template-rows: repeat(3, minmax(0, 1fr));
+    gap: 0;
+    width: 100%;
+    height: var(--field-double-row-height);
+    min-height: var(--field-double-row-height);
+    padding: 6px 10px;
+    border-radius: var(--field-radius);
+    background: var(--color-control-background-muted);
+}
+
+.nine-grid-picker-button {
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 0;
+    min-height: 0;
+    padding: 0;
+    border: 0;
+    border-radius: calc(var(--field-radius) - 1px);
+    color: transparent;
+    font-size: 0;
+    line-height: 1;
+    letter-spacing: 0;
+    text-indent: -9999px;
+    background: transparent;
+    cursor: pointer;
+    overflow: hidden;
+    transition: background-color 0.15s ease, color 0.15s ease;
+}
+
+.nine-grid-picker-button::before,
+.nine-grid-picker-button::after {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    pointer-events: none;
+}
+
+.nine-grid-picker-button::before {
+    width: 2px;
+    height: 2px;
+    border-radius: 50%;
+    background: var(--nine-grid-picker-muted);
+    transform: translate(-50%, -50%);
+}
+
+.nine-grid-picker-button::after {
+    width: 8px;
+    height: 2px;
+    opacity: 0;
+    border-radius: var(--radius-pill);
+    transform: translate(-50%, -5px);
+    background: currentColor;
+}
+
+.nine-grid-picker-mark::before,
+.nine-grid-picker-mark::after {
+    content: '';
+    position: absolute;
+    left: 50%;
+    height: 2px;
+    border-radius: var(--radius-pill);
+    background: currentColor;
+    opacity: 0;
+    pointer-events: none;
+    transform: translateX(-50%);
+}
+
+.nine-grid-picker-mark::before {
+    top: calc(50% - 1px);
+    width: 10px;
+}
+
+.nine-grid-picker-mark::after {
+    top: calc(50% + 3px);
+    width: 6px;
+}
+
+.nine-grid-picker-button:hover,
+.nine-grid-picker-button:focus-visible {
+    color: var(--color-text-secondary);
+    background: transparent;
+    outline: none;
+}
+
+.nine-grid-picker-button:hover::before,
+.nine-grid-picker-button:focus-visible::before,
+.nine-grid-picker-button.selected::before,
+.nine-grid-picker-button.is-selected::before,
+.nine-grid-picker-button[aria-pressed="true"]::before,
+.nine-grid-picker-button[aria-selected="true"]::before,
+.nine-grid-picker-button[aria-current="true"]::before {
+    opacity: 0;
+}
+
+.nine-grid-picker-button:hover::after,
+.nine-grid-picker-button:focus-visible::after,
+.nine-grid-picker-button:hover .nine-grid-picker-mark::before,
+.nine-grid-picker-button:hover .nine-grid-picker-mark::after,
+.nine-grid-picker-button:focus-visible .nine-grid-picker-mark::before,
+.nine-grid-picker-button:focus-visible .nine-grid-picker-mark::after {
+    opacity: 1;
+}
+
+.nine-grid-picker-button.selected,
+.nine-grid-picker-button.is-selected,
+.nine-grid-picker-button[aria-pressed="true"],
+.nine-grid-picker-button[aria-selected="true"],
+.nine-grid-picker-button[aria-current="true"] {
+    color: var(--color-control-accent);
+    background: transparent;
+}
+
+.nine-grid-picker-button.selected::after,
+.nine-grid-picker-button.is-selected::after,
+.nine-grid-picker-button[aria-pressed="true"]::after,
+.nine-grid-picker-button[aria-selected="true"]::after,
+.nine-grid-picker-button[aria-current="true"]::after,
+.nine-grid-picker-button.selected .nine-grid-picker-mark::before,
+.nine-grid-picker-button.selected .nine-grid-picker-mark::after,
+.nine-grid-picker-button.is-selected .nine-grid-picker-mark::before,
+.nine-grid-picker-button.is-selected .nine-grid-picker-mark::after,
+.nine-grid-picker-button[aria-pressed="true"] .nine-grid-picker-mark::before,
+.nine-grid-picker-button[aria-pressed="true"] .nine-grid-picker-mark::after,
+.nine-grid-picker-button[aria-selected="true"] .nine-grid-picker-mark::before,
+.nine-grid-picker-button[aria-selected="true"] .nine-grid-picker-mark::after,
+.nine-grid-picker-button[aria-current="true"] .nine-grid-picker-mark::before,
+.nine-grid-picker-button[aria-current="true"] .nine-grid-picker-mark::after {
+    opacity: 1;
+}
+
+.nine-grid-picker-button:disabled,
+.nine-grid-picker-button[aria-disabled="true"] {
+    cursor: default;
+    opacity: 0.48;
+}

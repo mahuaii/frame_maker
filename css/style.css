@@ -2,6 +2,7 @@
 @import url("./layout.css");
 @import url("./components/buttons.css");
 @import url("./components/fields.css");
+@import url("./components/nine-grid-picker.css");
 @import url("./components/option-input.css");
 @import url("./components/option-buttons.css");
 @import url("./features/export.css");
