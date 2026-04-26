@@ -6,7 +6,7 @@
 import { templates, getTemplateById } from './templates.js';
 import { FREE_FRAME_ASPECT_RATIO } from './core/templates/frame-layout.js';
 import { resolveTemplateAppearance } from './core/templates/registry.js';
-import { loadTemplateConfig, saveTemplateConfig } from './core/templates/config-store.js';
+import { loadTemplateConfig } from './core/templates/config-store.js';
 import { resolveTemplateConfig } from './core/templates/registry.js';
 import { preloadRuntimeFontsInBackground } from './core/fonts/index.js';
 import {
@@ -18,6 +18,13 @@ import {
     EDITABLE_EXIF_FIELDS,
 } from './renderer.js';
 import { fitInside, resolveResizeDimensions } from './core/render/sizing.js';
+import {
+    cloneTextModel,
+    createDefaultTextGroup,
+    createDefaultTextItem,
+    normalizeTextModel,
+} from './core/text/index.js';
+import { getPathValue, setPathValue } from './core/utils/object-path.js';
 import {
     RESET_ICON_PATHS,
     createElement,
@@ -43,6 +50,10 @@ let fieldValues = {};              // Record<string, string>
 const templateFieldValuesById = new Map(); // Map<string, Record<string, string>>
 let exifOverrideValues = {};       // Record<string, string>
 let initialExifOverrideValues = {}; // 上传后预填写到表单中的 EXIF 快照
+let activeInspectorPanel = 'basic';
+let selectedTextObjectId = null;
+const textModelsByTemplateId = new Map();
+const objectUrlRegistry = new Set();
 const THUMBNAIL_MAX_WIDTH = 180;
 const THUMBNAIL_MAX_HEIGHT = 135;
 const ASSET_VERSION = '20260425-000000';
@@ -79,6 +90,54 @@ function saveTemplateFieldValues(template, values) {
     }
 
     templateFieldValuesById.set(template.id, resolveTemplateConfig(template, values));
+}
+
+function getTemplateTextModel(template) {
+    if (!template) {
+        return [];
+    }
+
+    if (!textModelsByTemplateId.has(template.id)) {
+        textModelsByTemplateId.set(template.id, normalizeTextModel(cloneTextModel(template.textGroups ?? [])));
+    }
+
+    return textModelsByTemplateId.get(template.id);
+}
+
+function setTemplateTextModel(template, textModel) {
+    if (!template) {
+        return;
+    }
+
+    textModelsByTemplateId.set(template.id, normalizeTextModel(textModel));
+}
+
+function releaseTextModelObjectUrls(textModel = []) {
+    const visit = (items = []) => {
+        items.forEach((item) => {
+            if (item.type === 'image' && item.source?.type === 'objectUrl' && item.source.src) {
+                URL.revokeObjectURL(item.source.src);
+                objectUrlRegistry.delete(item.source.src);
+            }
+
+            if (item.type === 'group') {
+                visit(item.items);
+            }
+        });
+    };
+
+    visit(textModel);
+}
+
+function resetCurrentTemplateTextModel() {
+    const template = getTemplateById(selectedTemplateId);
+    if (!template) return;
+
+    releaseTextModelObjectUrls(getTemplateTextModel(template));
+    setTemplateTextModel(template, cloneTextModel(template.textGroups ?? []));
+    selectedTextObjectId = getTemplateTextModel(template)[0]?.id ?? null;
+    renderTextEditor();
+    updatePreview();
 }
 
 // ============================================
@@ -408,7 +467,6 @@ async function handleTemplateSelect(templateId) {
 const INSPECTOR_SECTION_DEFINITIONS = [
     { key: 'layout', title: '版式' },
     { key: 'appearance', title: '外观' },
-    { key: 'text', title: '文本' },
     { key: 'exif', title: '拍摄信息' },
 ];
 const LAYOUT_FIELD_KEYS = new Set([
@@ -438,6 +496,15 @@ function renderTextEditor() {
     textEditor.innerHTML = '';
     textEditor.appendChild(createInspectorActionArea());
 
+    if (activeInspectorPanel === 'text') {
+        textEditor.appendChild(createTextModelEditorPanel(template));
+        return;
+    }
+
+    renderBasicInspectorPanel(template);
+}
+
+function renderBasicInspectorPanel(template) {
     const visibleFields = template.fields.filter((field) => shouldShowTemplateField(field));
     const fieldsBySection = groupFieldsByInspectorSection(visibleFields);
 
@@ -475,7 +542,6 @@ function groupFieldsByInspectorSection(fields) {
     const groups = {
         layout: [],
         appearance: [],
-        text: [],
     };
 
     fields.forEach((field) => {
@@ -489,7 +555,6 @@ function groupFieldsByInspectorSection(fields) {
             return;
         }
 
-        groups.text.push(field);
     });
 
     return groups;
@@ -577,7 +642,6 @@ function commitFieldValue(field, nextValue) {
     fieldValues[field.key] = nextValue;
     fieldValues = resolveTemplateConfig(template, fieldValues);
     saveTemplateFieldValues(template, fieldValues);
-    saveTemplateConfig(template, fieldValues);
 
     if (field.key === 'frameAspectRatio') {
         renderTextEditor();
@@ -604,7 +668,6 @@ function resetAllLayoutFieldValues() {
         ...resetValues,
     });
     saveTemplateFieldValues(template, fieldValues);
-    saveTemplateConfig(template, fieldValues);
 
     renderTextEditor();
     updatePreview();
@@ -924,12 +987,522 @@ function createInspectorActionArea() {
             createExportButton(),
         ],
     });
+    const panelTabs = createElement('div', {
+        className: 'inspector-panel-tabs',
+        attributes: {
+            role: 'tablist',
+            'aria-label': '设置面板',
+        },
+        children: [
+            createInspectorPanelTab('basic', '基本'),
+            createInspectorPanelTab('text', '文本'),
+        ],
+    });
 
     actionArea.append(
-        primaryActions
+        primaryActions,
+        panelTabs
     );
 
     return actionArea;
+}
+
+function createInspectorPanelTab(panelKey, label) {
+    const isSelected = activeInspectorPanel === panelKey;
+    const button = createElement('button', {
+        className: `inspector-panel-tab${isSelected ? ' selected' : ''}`,
+        textContent: label,
+        attributes: {
+            type: 'button',
+            role: 'tab',
+            'aria-selected': isSelected ? 'true' : 'false',
+        },
+    });
+
+    button.addEventListener('click', () => {
+        if (activeInspectorPanel === panelKey) {
+            return;
+        }
+
+        activeInspectorPanel = panelKey;
+        renderTextEditor();
+    });
+
+    return button;
+}
+
+function getTextObjectTypeLabel(item) {
+    const labels = {
+        group: '组',
+        text: '文',
+        separator: '线',
+        image: '图',
+    };
+
+    return labels[item?.type] ?? '?';
+}
+
+function findTextObjectById(items = [], objectId, parent = null, depth = 0) {
+    for (let index = 0; index < items.length; index += 1) {
+        const item = items[index];
+        if (item.id === objectId) {
+            return { item, parent, index, depth, siblings: items };
+        }
+
+        if (item.type === 'group') {
+            const found = findTextObjectById(item.items ?? [], objectId, item, depth + 1);
+            if (found) {
+                return found;
+            }
+        }
+    }
+
+    return null;
+}
+
+function ensureSelectedTextObject(template) {
+    const textModel = getTemplateTextModel(template);
+    if (selectedTextObjectId && findTextObjectById(textModel, selectedTextObjectId)) {
+        return selectedTextObjectId;
+    }
+
+    selectedTextObjectId = textModel[0]?.id ?? null;
+    return selectedTextObjectId;
+}
+
+function commitTextModelChange(template, mutate) {
+    const textModel = getTemplateTextModel(template);
+    mutate(textModel);
+    setTemplateTextModel(template, textModel);
+    ensureSelectedTextObject(template);
+    renderTextEditor();
+    updatePreview();
+}
+
+function createTextModelEditorPanel(template) {
+    ensureSelectedTextObject(template);
+
+    const section = createInspectorSection('文本', createIconButton({
+        className: 'field-reset-button inspector-section-reset-button',
+        label: '重置文本',
+        iconPaths: RESET_ICON_PATHS,
+        onClick: resetCurrentTemplateTextModel,
+    }));
+    const content = getInspectorSectionContent(section);
+    const editor = createElement('div', {
+        className: 'text-model-editor',
+        children: [
+            createTextObjectTree(template),
+            createSelectedTextObjectPanel(template),
+        ],
+    });
+
+    content.appendChild(editor);
+
+    return section;
+}
+
+function createTextObjectTree(template) {
+    const textModel = getTemplateTextModel(template);
+    const header = createElement('div', {
+        className: 'text-object-tree-header',
+        children: [
+            createElement('span', { textContent: '组 / 项' }),
+            createElement('button', {
+                className: 'btn-small text-object-add-button',
+                textContent: '新增文本组',
+                attributes: { type: 'button' },
+            }),
+        ],
+    });
+    const addButton = header.querySelector('button');
+    addButton.addEventListener('click', () => {
+        commitTextModelChange(template, (model) => {
+            const group = createDefaultTextGroup();
+            model.push(group);
+            selectedTextObjectId = group.id;
+        });
+    });
+
+    const list = createElement('div', {
+        className: 'text-object-tree-list',
+    });
+
+    if (textModel.length === 0) {
+        list.appendChild(createElement('div', {
+            className: 'text-object-empty',
+            textContent: '暂无文本组',
+        }));
+    } else {
+        textModel.forEach((group) => {
+            list.appendChild(createTextObjectTreeNode(template, group, 0));
+        });
+    }
+
+    return createElement('div', {
+        className: 'text-object-tree',
+        children: [header, list],
+    });
+}
+
+function createTextObjectTreeNode(template, item, depth) {
+    const isSelected = item.id === selectedTextObjectId;
+    const node = createElement('div', {
+        className: `text-object-node${isSelected ? ' selected' : ''}`,
+        styleProperties: {
+            '--text-object-depth': depth,
+        },
+    });
+    const row = createElement('button', {
+        className: 'text-object-row',
+        attributes: {
+            type: 'button',
+        },
+        children: [
+            createElement('span', {
+                className: 'text-object-type',
+                textContent: getTextObjectTypeLabel(item),
+            }),
+            createElement('span', {
+                className: 'text-object-label',
+                textContent: item.label || getTextObjectTypeLabel(item),
+            }),
+            createElement('span', {
+                className: 'text-object-status',
+                textContent: item.visible === false ? '隐藏' : '',
+            }),
+        ],
+    });
+
+    row.addEventListener('click', () => {
+        selectedTextObjectId = item.id;
+        renderTextEditor();
+    });
+    node.appendChild(row);
+
+    if (item.type === 'group' && Array.isArray(item.items) && item.items.length > 0) {
+        item.items.forEach((child) => {
+            node.appendChild(createTextObjectTreeNode(template, child, depth + 1));
+        });
+    }
+
+    return node;
+}
+
+function createSelectedTextObjectPanel(template) {
+    const selectedId = ensureSelectedTextObject(template);
+    const textModel = getTemplateTextModel(template);
+    const selected = selectedId ? findTextObjectById(textModel, selectedId) : null;
+
+    if (!selected) {
+        return createElement('div', {
+            className: 'text-object-properties text-object-empty',
+            textContent: '选择或新增文本组',
+        });
+    }
+
+    return createElement('div', {
+        className: 'text-object-properties',
+        children: [
+            createTextObjectActionBar(template, selected),
+            createTextObjectFields(template, selected),
+        ],
+    });
+}
+
+function createTextObjectActionBar(template, selected) {
+    const { item, siblings, index, depth } = selected;
+    const actions = createElement('div', {
+        className: 'text-object-action-bar',
+    });
+
+    if (item.type === 'group') {
+        [
+            ['text', '文字'],
+            ['separator', '分隔线'],
+            ['image', '图片'],
+            ...(depth === 0 ? [['group', '子组']] : []),
+        ].forEach(([type, label]) => {
+            const button = createElement('button', {
+                className: 'btn-small text-object-action',
+                textContent: `+${label}`,
+                attributes: { type: 'button' },
+            });
+            button.addEventListener('click', () => {
+                commitTextModelChange(template, () => {
+                    const nextItem = createDefaultTextItem(type);
+                    item.items = Array.isArray(item.items) ? item.items : [];
+                    item.items.push(nextItem);
+                    selectedTextObjectId = nextItem.id;
+                });
+            });
+            actions.appendChild(button);
+        });
+    }
+
+    [
+        ['上移', -1],
+        ['下移', 1],
+    ].forEach(([label, direction]) => {
+        const button = createElement('button', {
+            className: 'btn-small text-object-action',
+            textContent: label,
+            attributes: {
+                type: 'button',
+                disabled: direction < 0 ? index <= 0 : index >= siblings.length - 1,
+            },
+        });
+        button.addEventListener('click', () => {
+            commitTextModelChange(template, () => {
+                const nextIndex = index + direction;
+                const [movedItem] = siblings.splice(index, 1);
+                siblings.splice(nextIndex, 0, movedItem);
+            });
+        });
+        actions.appendChild(button);
+    });
+
+    const deleteButton = createElement('button', {
+        className: 'btn-small text-object-action danger',
+        textContent: '删除',
+        attributes: {
+            type: 'button',
+        },
+    });
+    deleteButton.addEventListener('click', () => {
+        commitTextModelChange(template, () => {
+            releaseTextModelObjectUrls([item]);
+            siblings.splice(index, 1);
+            selectedTextObjectId = siblings[Math.min(index, siblings.length - 1)]?.id
+                ?? selected.parent?.id
+                ?? null;
+        });
+    });
+    actions.appendChild(deleteButton);
+
+    return actions;
+}
+
+function createTextObjectFields(template, selected) {
+    const { item, depth } = selected;
+    const fields = buildTextObjectFieldDefinitions(item, depth);
+    const values = buildTextObjectFieldValues(item, fields);
+    const list = createInspectorFieldList(fields, {
+        values,
+        idPrefix: `text-object-${item.id}`,
+        onChange: (field, nextValue) => {
+            commitTextObjectFieldValue(template, item, field.key, nextValue);
+        },
+    });
+
+    if (item.type === 'image') {
+        list.appendChild(createImageSourceControl(template, item));
+    }
+
+    return list;
+}
+
+function buildTextObjectFieldDefinitions(item, depth) {
+    const commonFields = [
+        { key: 'label', label: '名称', type: 'input', defaultValue: '' },
+        { key: 'visible', label: '显示', type: 'toggle', defaultValue: true },
+    ];
+    const styleFields = [
+        {
+            key: 'style.fontId',
+            label: '字体',
+            type: 'select',
+            defaultValue: 'systemSans',
+            options: [
+                { value: 'systemSans', label: 'System Sans' },
+                { value: 'miSans', label: 'MiSans' },
+                { value: 'angieSansStd', label: 'Angie Sans Std' },
+                { value: 'timesNewRoman', label: 'Times New Roman' },
+            ],
+        },
+        { key: 'style.fontScale', label: '字号倍率', type: 'number', min: 0.1, step: 0.05, defaultValue: 1 },
+        { key: 'style.fontWeight', label: '字重', type: 'number', min: 100, max: 900, step: 50, defaultValue: 400 },
+        {
+            key: 'style.fontStyle',
+            label: '字体样式',
+            type: 'select',
+            defaultValue: 'normal',
+            options: [
+                { value: 'normal', label: '常规' },
+                { value: 'italic', label: '斜体' },
+            ],
+        },
+        { key: 'style.colorToken', label: '颜色 token', type: 'input', defaultValue: 'textPrimary' },
+        { key: 'style.color', label: '自定义颜色', type: 'color', defaultValue: '#111111' },
+        { key: 'style.letterSpacingScale', label: '字距倍率', type: 'number', step: 0.01, defaultValue: 0 },
+    ];
+
+    if (item.type === 'group') {
+        return [
+            ...commonFields,
+            ...(depth === 0 ? [
+                {
+                    key: 'region',
+                    label: '位置边区',
+                    type: 'select',
+                    defaultValue: 'bottom',
+                    options: [
+                        { value: 'top', label: '上' },
+                        { value: 'right', label: '右' },
+                        { value: 'bottom', label: '下' },
+                        { value: 'left', label: '左' },
+                    ],
+                },
+                {
+                    key: 'anchor',
+                    label: '锚点',
+                    type: 'select',
+                    defaultValue: 'center',
+                    options: [
+                        { value: 'top-left', label: '左上' },
+                        { value: 'top-center', label: '上中' },
+                        { value: 'top-right', label: '右上' },
+                        { value: 'middle-left', label: '左中' },
+                        { value: 'center', label: '中心' },
+                        { value: 'middle-right', label: '右中' },
+                        { value: 'bottom-left', label: '左下' },
+                        { value: 'bottom-center', label: '下中' },
+                        { value: 'bottom-right', label: '右下' },
+                    ],
+                },
+            ] : []),
+            {
+                key: 'direction',
+                label: '排列方向',
+                type: 'select',
+                defaultValue: 'vertical',
+                options: [
+                    { value: 'vertical', label: '垂直' },
+                    { value: 'horizontal', label: '水平' },
+                ],
+            },
+            {
+                key: 'align',
+                label: '对齐方式',
+                type: 'select',
+                defaultValue: 'center',
+                options: [
+                    { value: 'start', label: '起始' },
+                    { value: 'center', label: '居中' },
+                    { value: 'end', label: '结束' },
+                ],
+            },
+            { key: 'gapScale', label: '组内间距倍率', type: 'number', step: 0.05, defaultValue: 0.4 },
+            ...(depth === 0 ? [
+                { key: 'offsetXScale', label: 'X 偏移倍率', type: 'number', step: 0.1, defaultValue: 0 },
+                { key: 'offsetYScale', label: 'Y 偏移倍率', type: 'number', step: 0.1, defaultValue: 0 },
+            ] : []),
+            ...styleFields,
+        ];
+    }
+
+    if (item.type === 'text') {
+        return [
+            ...commonFields,
+            { key: 'content', label: '内容', type: 'textarea', defaultValue: '' },
+            {
+                key: 'emptyBehavior',
+                label: '空值行为',
+                type: 'select',
+                defaultValue: 'hide',
+                options: [
+                    { value: 'hide', label: '隐藏' },
+                    { value: 'fallback', label: '使用 fallback' },
+                    { value: 'show', label: '保留' },
+                ],
+            },
+            { key: 'fallbackContent', label: 'fallback 内容', type: 'textarea', defaultValue: '' },
+            ...styleFields,
+        ];
+    }
+
+    if (item.type === 'separator') {
+        return [
+            ...commonFields,
+            { key: 'forceVisible', label: '强制显示', type: 'toggle', defaultValue: false },
+            { key: 'lengthScale', label: '长度倍率', type: 'number', min: 0.1, step: 0.05, defaultValue: 1.4 },
+            { key: 'thicknessScale', label: '粗细倍率', type: 'number', min: 0.01, step: 0.01, defaultValue: 0.06 },
+            { key: 'colorToken', label: '颜色 token', type: 'input', defaultValue: 'separator' },
+            { key: 'color', label: '自定义颜色', type: 'color', defaultValue: '#9CA3AF' },
+        ];
+    }
+
+    return commonFields;
+}
+
+function buildTextObjectFieldValues(item, fields) {
+    return fields.reduce((values, field) => {
+        values[field.key] = getPathValue(item, field.key) ?? field.defaultValue ?? '';
+        return values;
+    }, {});
+}
+
+function commitTextObjectFieldValue(template, item, fieldKey, nextValue) {
+    commitTextModelChange(template, () => {
+        setPathValue(item, fieldKey, nextValue);
+    });
+}
+
+function createImageSourceControl(template, item) {
+    const wrapper = createElement('div', {
+        className: 'image-source-control',
+    });
+    const label = createElement('div', {
+        className: 'field-group-label',
+        textContent: item.source?.name || '未选择图片',
+    });
+    const input = document.createElement('input');
+    input.type = 'file';
+    input.accept = 'image/*';
+    input.hidden = true;
+    const chooseButton = createElement('button', {
+        className: 'btn btn-secondary',
+        textContent: item.source ? '替换图片' : '选择图片',
+        attributes: { type: 'button' },
+    });
+    const clearButton = createElement('button', {
+        className: 'btn',
+        textContent: '清除图片',
+        attributes: {
+            type: 'button',
+            disabled: !item.source,
+        },
+    });
+
+    chooseButton.addEventListener('click', () => {
+        input.click();
+    });
+    input.addEventListener('change', () => {
+        const file = input.files?.[0];
+        if (!file) {
+            return;
+        }
+
+        const objectUrl = URL.createObjectURL(file);
+        objectUrlRegistry.add(objectUrl);
+        commitTextModelChange(template, () => {
+            releaseTextModelObjectUrls([item]);
+            item.source = {
+                type: 'objectUrl',
+                src: objectUrl,
+                name: file.name,
+            };
+        });
+    });
+    clearButton.addEventListener('click', () => {
+        commitTextModelChange(template, () => {
+            releaseTextModelObjectUrls([item]);
+            item.source = null;
+        });
+    });
+
+    wrapper.append(label, input, chooseButton, clearButton);
+    return wrapper;
 }
 
 // ============================================
@@ -1098,6 +1671,7 @@ async function updatePreview() {
         mode: 'preview',
         photo: currentPhoto,
         exifOverrides: exifOverrideValues,
+        textModel: getTemplateTextModel(template),
     });
 
     const previewSize = fitInside(
@@ -1145,6 +1719,7 @@ async function handleExport() {
         mode: 'export',
         photo: currentPhoto,
         exifOverrides: exifOverrideValues,
+        textModel: getTemplateTextModel(template),
         global: {
             resize,
             compression: {
@@ -1205,6 +1780,13 @@ function bindEvents() {
     window.addEventListener('resize', () => {
         setInspectorWidth(textEditor.getBoundingClientRect().width);
         updatePreview();
+    });
+
+    window.addEventListener('beforeunload', () => {
+        objectUrlRegistry.forEach((objectUrl) => {
+            URL.revokeObjectURL(objectUrl);
+        });
+        objectUrlRegistry.clear();
     });
 }
 

@@ -1,7 +1,7 @@
 import { buildDefaultConfig } from '../../core/templates/fields.js';
 import { buildAppearanceField } from '../../core/templates/appearance.js';
 import { createSolidAppearanceThemes } from '../appearance-presets.js';
-import { buildFontSelectField, buildFrameLayoutFields } from '../shared.js';
+import { buildFrameLayoutFields } from '../shared.js';
 
 export const storyExifAppearanceThemes = createSolidAppearanceThemes({
     white: {
@@ -42,55 +42,6 @@ export const storyExifFrame = {
 export const storyExifTemplateFields = [
     buildAppearanceField(storyExifAppearanceThemes),
     ...buildFrameLayoutFields(storyExifFrame),
-    {
-        key: 'title',
-        label: '标题',
-        type: 'text',
-        defaultValue: 'A small headline for the frame',
-    },
-    {
-        key: 'subtitle',
-        label: '副标题',
-        type: 'text',
-        defaultValue: 'Description goes here',
-    },
-    {
-        key: 'showSubtitle',
-        label: '副标题',
-        type: 'toggle',
-        defaultValue: true,
-    },
-    buildFontSelectField({
-        key: 'titleFontId',
-        label: '标题字体',
-        defaultValue: 'angieSansStd',
-    }),
-    buildFontSelectField({
-        key: 'metaFontId',
-        label: '信息字体',
-        defaultValue: 'systemSans',
-    }),
-    {
-        key: 'showLens',
-        label: '镜头',
-        type: 'toggle',
-        defaultValue: false,
-    },
-    {
-        key: 'metaScale',
-        label: '信息倍率',
-        type: 'number',
-        min: 0.8,
-        max: 1.8,
-        step: 0.1,
-        defaultValue: 1,
-    },
-    {
-        key: 'fallbackNote',
-        label: '无 EXIF 文案',
-        type: 'text',
-        defaultValue: 'EXIF unavailable',
-    },
 ];
 
 export const storyExifTemplateSchema = {
@@ -102,52 +53,101 @@ export const storyExifTemplateSchema = {
     frame: storyExifFrame,
     textGroups: [
         {
+            id: 'story-title-group',
+            type: 'group',
+            label: '标题组',
             region: 'bottom',
             anchor: 'middle-left',
-            maxWidthRatio: 0.58,
-            gapRatio: 0.18,
-            texts: [
+            direction: 'vertical',
+            align: 'start',
+            gapScale: 0.2,
+            offsetXScale: 0,
+            offsetYScale: 0,
+            visible: true,
+            style: {
+                fontId: 'angieSansStd',
+                fontScale: 1,
+                fontWeight: 400,
+                fontStyle: 'normal',
+                colorToken: 'title',
+                color: '#111827',
+                letterSpacingScale: 0,
+            },
+            items: [
                 {
-                    configPath: 'title',
-                    fontIdConfigKey: 'titleFontId',
-                    fontWeight: 600,
-                    fontSizeRatio: 1.28,
-                    colorKey: 'title',
-                    minFontSize: 14,
+                    id: 'story-title',
+                    type: 'text',
+                    label: '标题',
+                    content: 'A small headline for the frame',
+                    emptyBehavior: 'hide',
+                    visible: true,
+                    style: {
+                        fontId: 'angieSansStd',
+                        fontScale: 1.28,
+                        fontWeight: 600,
+                        colorToken: 'title',
+                    },
                 },
                 {
-                    configPath: 'subtitle',
-                    whenConfig: 'showSubtitle',
-                    fontIdConfigKey: 'titleFontId',
-                    fontSizeRatio: 0.82,
-                    colorKey: 'subtitle',
-                    minFontSize: 11,
+                    id: 'story-subtitle',
+                    type: 'text',
+                    label: '副标题',
+                    content: 'Description goes here',
+                    emptyBehavior: 'hide',
+                    visible: true,
+                    style: {
+                        fontId: 'angieSansStd',
+                        fontScale: 0.82,
+                        fontWeight: 400,
+                        colorToken: 'subtitle',
+                    },
                 },
             ],
         },
         {
+            id: 'story-meta-group',
+            type: 'group',
+            label: '拍摄信息组',
             region: 'bottom',
             anchor: 'middle-right',
-            textAlign: 'right',
-            maxWidthRatio: 0.38,
-            gapRatio: 0.18,
-            texts: [
+            direction: 'vertical',
+            align: 'end',
+            gapScale: 0.2,
+            offsetXScale: 0,
+            offsetYScale: 0,
+            visible: true,
+            style: {
+                fontId: 'systemSans',
+                fontScale: 0.88,
+                fontWeight: 400,
+                fontStyle: 'normal',
+                colorToken: 'metaPrimary',
+                color: '#1F2937',
+                letterSpacingScale: 0,
+            },
+            items: [
                 {
-                    dataPath: 'primaryMetaText',
-                    fontIdConfigKey: 'metaFontId',
-                    fontSizeRatioConfigKey: 'metaScale',
-                    fontSizeRatio: 0.88,
-                    colorKeyDataPath: 'primaryMetaColorKey',
-                    minFontSize: 11,
+                    id: 'story-meta-primary',
+                    type: 'text',
+                    label: '主参数',
+                    content: '{{metaPrimary}}',
+                    fallbackContent: 'EXIF unavailable',
+                    emptyBehavior: 'fallback',
+                    visible: true,
+                    style: {
+                        colorToken: 'metaPrimary',
+                    },
                 },
                 {
-                    dataPath: 'secondaryMetaText',
-                    whenData: 'hasSecondaryMeta',
-                    fontIdConfigKey: 'metaFontId',
-                    fontSizeRatioConfigKey: 'metaScale',
-                    fontSizeRatio: 0.88,
-                    colorKey: 'metaSecondary',
-                    minFontSize: 11,
+                    id: 'story-meta-secondary',
+                    type: 'text',
+                    label: '次参数',
+                    content: '{{metaSecondary}}',
+                    emptyBehavior: 'hide',
+                    visible: true,
+                    style: {
+                        colorToken: 'metaSecondary',
+                    },
                 },
             ],
         },

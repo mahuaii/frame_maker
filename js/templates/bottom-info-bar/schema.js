@@ -1,11 +1,14 @@
 import { buildDefaultConfig } from '../../core/templates/fields.js';
 import { buildAppearanceField } from '../../core/templates/appearance.js';
 import { createSolidAppearanceThemes } from '../appearance-presets.js';
-import { buildFontSelectField, buildFrameLayoutFields } from '../shared.js';
+import { buildFrameLayoutFields } from '../shared.js';
 
 export const bottomInfoBarAppearanceThemes = createSolidAppearanceThemes({
-    includeCanvasBackground: false,
     white: {
+        canvasBackground: {
+            type: 'solid',
+            color: '#FFFFFF',
+        },
         colors: {
             barBackground: '#FFFFFF',
             textPrimary: '#111111',
@@ -13,6 +16,10 @@ export const bottomInfoBarAppearanceThemes = createSolidAppearanceThemes({
         },
     },
     black: {
+        canvasBackground: {
+            type: 'solid',
+            color: '#111111',
+        },
         colors: {
             barBackground: '#111111',
             textPrimary: '#F8FAFC',
@@ -38,16 +45,6 @@ export const bottomInfoBarFrame = {
 export const bottomInfoBarTemplateFields = [
     buildAppearanceField(bottomInfoBarAppearanceThemes),
     ...buildFrameLayoutFields(bottomInfoBarFrame),
-    buildFontSelectField({
-        key: 'leftFontId',
-        label: '左侧字体',
-        defaultValue: 'systemSans',
-    }),
-    buildFontSelectField({
-        key: 'rightFontId',
-        label: '右侧字体',
-        defaultValue: 'systemSans',
-    }),
 ];
 
 export const bottomInfoBarTemplateSchema = {
@@ -57,7 +54,127 @@ export const bottomInfoBarTemplateSchema = {
     appearanceDefaultKey: 'white',
     appearanceThemes: bottomInfoBarAppearanceThemes,
     frame: bottomInfoBarFrame,
-    textGroups: [],
+    textGroups: [
+        {
+            id: 'bottom-info-camera',
+            type: 'group',
+            label: '相机信息',
+            region: 'bottom',
+            anchor: 'middle-left',
+            direction: 'horizontal',
+            align: 'center',
+            gapScale: 0.4,
+            offsetXScale: 0,
+            offsetYScale: 0,
+            visible: true,
+            style: {
+                fontId: 'systemSans',
+                fontScale: 0.92,
+                fontWeight: 700,
+                fontStyle: 'normal',
+                colorToken: 'textPrimary',
+                color: '#111111',
+                letterSpacingScale: 0,
+            },
+            items: [
+                {
+                    id: 'bottom-info-camera-text',
+                    type: 'text',
+                    label: '相机',
+                    content: '{{camera}}',
+                    fallbackContent: 'Unknown Camera',
+                    emptyBehavior: 'fallback',
+                    visible: true,
+                },
+            ],
+        },
+        {
+            id: 'bottom-info-meta',
+            type: 'group',
+            label: '参数信息',
+            region: 'bottom',
+            anchor: 'middle-right',
+            direction: 'horizontal',
+            align: 'center',
+            gapScale: 0.58,
+            offsetXScale: 0,
+            offsetYScale: 0,
+            visible: true,
+            style: {
+                fontId: 'systemSans',
+                fontScale: 0.8,
+                fontWeight: 600,
+                fontStyle: 'normal',
+                colorToken: 'textPrimary',
+                color: '#111111',
+                letterSpacingScale: 0,
+            },
+            items: [
+                {
+                    id: 'bottom-info-focal-length',
+                    type: 'text',
+                    label: '焦距',
+                    content: '{{focalLength}}',
+                    emptyBehavior: 'hide',
+                    visible: true,
+                },
+                {
+                    id: 'bottom-info-separator-1',
+                    type: 'separator',
+                    label: '分隔线',
+                    lengthScale: 1.1,
+                    thicknessScale: 0.06,
+                    colorToken: 'separator',
+                    color: '#9CA3AF',
+                    visible: true,
+                },
+                {
+                    id: 'bottom-info-aperture',
+                    type: 'text',
+                    label: '光圈',
+                    content: '{{aperture}}',
+                    emptyBehavior: 'hide',
+                    visible: true,
+                },
+                {
+                    id: 'bottom-info-separator-2',
+                    type: 'separator',
+                    label: '分隔线',
+                    lengthScale: 1.1,
+                    thicknessScale: 0.06,
+                    colorToken: 'separator',
+                    color: '#9CA3AF',
+                    visible: true,
+                },
+                {
+                    id: 'bottom-info-shutter',
+                    type: 'text',
+                    label: '快门',
+                    content: '{{shutter}}',
+                    emptyBehavior: 'hide',
+                    visible: true,
+                },
+                {
+                    id: 'bottom-info-separator-3',
+                    type: 'separator',
+                    label: '分隔线',
+                    lengthScale: 1.1,
+                    thicknessScale: 0.06,
+                    colorToken: 'separator',
+                    color: '#9CA3AF',
+                    visible: true,
+                },
+                {
+                    id: 'bottom-info-iso',
+                    type: 'text',
+                    label: 'ISO',
+                    content: 'ISO {{iso}}',
+                    emptyBehavior: 'hide',
+                    visible: true,
+                },
+            ],
+        },
+    ],
     defaultConfig: buildDefaultConfig(bottomInfoBarTemplateFields),
     fields: bottomInfoBarTemplateFields,
 };

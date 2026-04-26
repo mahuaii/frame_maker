@@ -1,7 +1,8 @@
-import { buildCanvasFont, loadRuntimeFonts, ensureRuntimeFont } from '../fonts/index.js';
+import { loadRuntimeFonts, ensureRuntimeFont } from '../fonts/index.js';
 import { buildTemplateResolveInput, createGlobalRenderSettings } from './input.js';
 import { ORIGINAL_FRAME_ASPECT_RATIO, parseFrameAspectRatio } from '../templates/frame-layout.js';
-import { getAppearanceColor, resolveTemplateAppearance, resolveTemplateConfig } from '../templates/registry.js';
+import { resolveTemplateAppearance, resolveTemplateConfig } from '../templates/registry.js';
+import { renderTextModel } from '../text/index.js';
 
 const FRAME_SIDE_KEYS = ['top', 'right', 'bottom', 'left'];
 const FRAME_SIDE_FIELD_KEYS = {
@@ -179,31 +180,6 @@ function getFrameFontSize(imageWidth, imageHeight, template) {
     const sizePercent = normalizeNonNegativeNumber(font.size, 2.8);
     const min = normalizeNonNegativeNumber(font.min, 12);
     return Math.max(Math.round(basis * (sizePercent / 100)), min);
-}
-
-function getLayoutBasisSize(metrics, basis = 'contentWidth', regionKey = 'bottom') {
-    const region = metrics.scaledTextRegions?.[regionKey] ?? { width: 0, height: 0 };
-    const contentRegion = metrics.scaledTextContentRegions?.[regionKey] ?? region;
-
-    switch (basis) {
-        case 'frameWidth':
-            return metrics.fullWidth;
-        case 'frameHeight':
-            return metrics.fullHeight;
-        case 'photoWidth':
-            return metrics.scaledPhotoArea?.width ?? metrics.imageWidth;
-        case 'photoHeight':
-            return metrics.scaledPhotoArea?.height ?? metrics.imageHeight;
-        case 'regionWidth':
-            return region.width;
-        case 'regionHeight':
-            return region.height;
-        case 'contentHeight':
-            return contentRegion.height;
-        case 'contentWidth':
-        default:
-            return contentRegion.width;
-    }
 }
 
 function buildDefaultFourSideFrame({ imageWidth, imageHeight, template, config }) {
@@ -819,228 +795,6 @@ export function createRuntimeHelpers({ canvas, ctx, canvasSize }) {
     };
 }
 
-function getPathValue(source, path) {
-    if (!path) {
-        return undefined;
-    }
-
-    return String(path)
-        .split('.')
-        .reduce((value, key) => (value == null ? undefined : value[key]), source);
-}
-
-function resolveTextDefinitionValue(textDefinition, { config, data }) {
-    if (textDefinition.text !== undefined) {
-        return textDefinition.text;
-    }
-
-    if (textDefinition.configPath) {
-        return getPathValue(config, textDefinition.configPath);
-    }
-
-    if (textDefinition.dataPath) {
-        return getPathValue(data, textDefinition.dataPath);
-    }
-
-    return textDefinition.fallbackText ?? '';
-}
-
-function isTextDefinitionVisible(textDefinition, { config, data }) {
-    if (textDefinition.whenConfig) {
-        return Boolean(getPathValue(config, textDefinition.whenConfig));
-    }
-
-    if (textDefinition.whenData) {
-        return Boolean(getPathValue(data, textDefinition.whenData));
-    }
-
-    if (typeof textDefinition.visible === 'boolean') {
-        return textDefinition.visible;
-    }
-
-    return true;
-}
-
-function getAnchorAlignment(anchor = 'center') {
-    const horizontal = anchor.endsWith('-left')
-        ? 'left'
-        : anchor.endsWith('-right')
-            ? 'right'
-            : 'center';
-    const vertical = anchor.startsWith('top-')
-        ? 'top'
-        : anchor.startsWith('bottom-')
-            ? 'bottom'
-            : 'middle';
-
-    return {
-        horizontal,
-        vertical,
-    };
-}
-
-function resolveTextDefinitionStyle(textDefinition, group, { config, data, metrics, appearance }) {
-    const fontId = textDefinition.fontId
-        ?? (textDefinition.fontIdConfigKey ? config[textDefinition.fontIdConfigKey] : undefined)
-        ?? group.fontId
-        ?? (group.fontIdConfigKey ? config[group.fontIdConfigKey] : undefined)
-        ?? 'systemSans';
-    const configuredRatio = textDefinition.fontSizeRatioConfigKey
-        ? normalizeNonNegativeNumber(config[textDefinition.fontSizeRatioConfigKey], 1)
-        : (group.fontSizeRatioConfigKey ? normalizeNonNegativeNumber(config[group.fontSizeRatioConfigKey], 1) : 1);
-    const fontSize = Math.max(
-        metrics.scaledFontSize * (textDefinition.fontSizeRatio ?? group.fontSizeRatio ?? 1) * configuredRatio,
-        textDefinition.minFontSize ?? group.minFontSize ?? 1
-    );
-    const fontWeight = textDefinition.fontWeight
-        ?? (textDefinition.fontWeightConfigKey ? config[textDefinition.fontWeightConfigKey] : undefined)
-        ?? group.fontWeight
-        ?? (group.fontWeightConfigKey ? config[group.fontWeightConfigKey] : undefined)
-        ?? 400;
-    const fontStyle = textDefinition.fontStyle ?? group.fontStyle ?? 'normal';
-    const colorKey = textDefinition.colorKeyDataPath
-        ? getPathValue(data, textDefinition.colorKeyDataPath)
-        : (textDefinition.colorKey ?? group.colorKey);
-    const color = getAppearanceColor(
-        appearance,
-        colorKey,
-        textDefinition.color ?? group.color ?? '#000000'
-    );
-
-    return {
-        fontId,
-        fontSize,
-        fontWeight,
-        fontStyle,
-        color,
-        letterSpacing: textDefinition.letterSpacing ?? group.letterSpacing ?? 0,
-        font: buildCanvasFont({
-            fontSize,
-            fontWeight,
-            fontStyle,
-            fontIdEn: fontId,
-            fontIdZh: fontId,
-        }),
-    };
-}
-
-function buildTextGroupDefinitions(group, args) {
-    const rawDefinitions = Array.isArray(group.texts) ? group.texts : [];
-
-    return rawDefinitions
-        .filter((textDefinition) => isTextDefinitionVisible(textDefinition, args))
-        .map((textDefinition) => {
-            const rawText = resolveTextDefinitionValue(textDefinition, args);
-            const text = String(rawText ?? '').trim() || String(textDefinition.fallbackText ?? '').trim();
-            if (!text) {
-                return null;
-            }
-
-            return {
-                ...textDefinition,
-                text,
-                style: resolveTextDefinitionStyle(textDefinition, group, args),
-            };
-        })
-        .filter(Boolean);
-}
-
-function drawDeclarativeTextGroup(ctx, group, args) {
-    const { metrics, runtime } = args;
-    const regionKey = group.region ?? 'bottom';
-    const region = metrics.scaledTextRegions?.[regionKey];
-    if (!region || region.width <= 0 || region.height <= 0) {
-        return;
-    }
-
-    const anchorKey = group.anchor ?? 'center';
-    const anchor = metrics.scaledAnchors?.[regionKey]?.[anchorKey];
-    const contentRegion = metrics.scaledTextContentRegions?.[regionKey] ?? region;
-    if (!anchor || contentRegion.width <= 0 || contentRegion.height <= 0) {
-        return;
-    }
-
-    const textDefinitions = buildTextGroupDefinitions(group, args);
-    if (textDefinitions.length === 0) {
-        return;
-    }
-
-    const groupMaxWidthBasis = getLayoutBasisSize(metrics, group.maxWidthBasis ?? 'contentWidth', regionKey);
-    const maxWidth = Math.max(groupMaxWidthBasis * (group.maxWidthRatio ?? 1), 1);
-    const measuredTexts = textDefinitions.map((textDefinition) => {
-        const textMaxWidthBasis = getLayoutBasisSize(metrics, textDefinition.maxWidthBasis ?? group.maxWidthBasis ?? 'contentWidth', regionKey);
-        const fit = runtime.fitText({
-            text: textDefinition.text,
-            maxWidth: textDefinition.maxWidthRatio ? textMaxWidthBasis * textDefinition.maxWidthRatio : maxWidth,
-            maxFontSize: textDefinition.style.fontSize,
-            minFontSize: textDefinition.minFontSize ?? group.minFontSize ?? Math.max(textDefinition.style.fontSize * 0.72, 8),
-            letterSpacing: textDefinition.style.letterSpacing,
-            buildFont: (fontSize) => buildCanvasFont({
-                fontSize,
-                fontWeight: textDefinition.style.fontWeight,
-                fontStyle: textDefinition.style.fontStyle,
-                fontIdEn: textDefinition.style.fontId,
-                fontIdZh: textDefinition.style.fontId,
-            }),
-        });
-        const metricsForText = runtime.measureText({
-            text: textDefinition.text,
-            font: fit.font,
-            letterSpacing: textDefinition.style.letterSpacing,
-        });
-        const height = (metricsForText.actualBoundingBoxAscent ?? fit.fontSize)
-            + (metricsForText.actualBoundingBoxDescent ?? 0);
-
-        return {
-            ...textDefinition,
-            font: fit.font,
-            fontSize: fit.fontSize,
-            ascent: metricsForText.actualBoundingBoxAscent ?? fit.fontSize,
-            descent: metricsForText.actualBoundingBoxDescent ?? 0,
-            height: Math.max(height, 0),
-        };
-    });
-    const gapBasis = getLayoutBasisSize(metrics, group.gapBasis ?? 'fontSize', regionKey);
-    const rawGap = group.gapBasis === 'fontSize' || !group.gapBasis
-        ? metrics.scaledFontSize * (group.gapRatio ?? 0.18)
-        : gapBasis * (group.gapRatio ?? 0.18);
-    const gap = Math.max(rawGap, group.minGap ?? 0);
-    const groupHeight = measuredTexts.reduce((sum, textDefinition) => sum + textDefinition.height, 0)
-        + gap * Math.max(measuredTexts.length - 1, 0);
-    const alignment = getAnchorAlignment(anchorKey);
-    const textAlign = group.textAlign ?? alignment.horizontal;
-    const offsetBasis = getLayoutBasisSize(metrics, group.offsetBasis ?? 'frameWidth', regionKey);
-    const baseX = anchor.x + (group.offsetX ?? 0) + offsetBasis * (group.offsetXRatio ?? 0);
-    let currentY = anchor.y + (group.offsetY ?? 0) + offsetBasis * (group.offsetYRatio ?? 0);
-
-    if (alignment.vertical === 'middle') {
-        currentY -= groupHeight / 2;
-    } else if (alignment.vertical === 'bottom') {
-        currentY -= groupHeight;
-    }
-
-    ctx.save();
-    ctx.textAlign = textAlign;
-    ctx.textBaseline = 'alphabetic';
-
-    measuredTexts.forEach((textDefinition, index) => {
-        ctx.font = textDefinition.font;
-        ctx.fillStyle = textDefinition.style.color;
-        ctx.fillText(textDefinition.text, baseX, currentY + textDefinition.ascent);
-        currentY += textDefinition.height + (index < measuredTexts.length - 1 ? gap : 0);
-    });
-
-    ctx.restore();
-}
-
-function renderDeclarativeTextGroups(ctx, args) {
-    const groups = Array.isArray(args.template?.textGroups) ? args.template.textGroups : [];
-
-    groups.forEach((group) => {
-        drawDeclarativeTextGroup(ctx, group, args);
-    });
-}
-
 function createScratchCanvas(width, height) {
     const scratchCanvas = document.createElement('canvas');
     scratchCanvas.width = Math.max(Math.round(width), 1);
@@ -1432,6 +1186,7 @@ export async function renderTemplateFrame(canvas, image, template, rawConfig, op
 
     const renderArgs = {
         template,
+        textModel: options.textModel,
         photo: resolveInput.photo,
         config,
         data,
@@ -1442,7 +1197,7 @@ export async function renderTemplateFrame(canvas, image, template, rawConfig, op
         runtime,
     };
 
-    renderDeclarativeTextGroups(ctx, renderArgs);
+    await renderTextModel(ctx, renderArgs);
 
     if (typeof template.renderOverlay === 'function') {
         template.renderOverlay(ctx, renderArgs);

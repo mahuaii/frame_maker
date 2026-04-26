@@ -1,7 +1,7 @@
 import { buildDefaultConfig } from '../../core/templates/fields.js';
 import { buildAppearanceField } from '../../core/templates/appearance.js';
 import { createSolidAppearanceThemes } from '../appearance-presets.js';
-import { buildFontSelectField, buildFrameLayoutFields } from '../shared.js';
+import { buildFrameLayoutFields } from '../shared.js';
 
 export const galleryCaptionMatAppearanceThemes = createSolidAppearanceThemes({
     white: {
@@ -46,41 +46,6 @@ export const galleryCaptionMatTemplateFields = [
         type: 'toggle',
         defaultValue: true,
     },
-    {
-        key: 'title',
-        label: '主标题',
-        type: 'text',
-        defaultValue: 'Sample Location / City',
-    },
-    {
-        key: 'subtitle',
-        label: '副标题',
-        type: 'text',
-        defaultValue: 'Camera Model / Notes',
-    },
-    {
-        key: 'showSubtitle',
-        label: '显示副标题',
-        type: 'toggle',
-        defaultValue: true,
-    },
-    buildFontSelectField({
-        key: 'titleFontId',
-        label: '主标题字体',
-        defaultValue: 'miSans',
-    }),
-    {
-        key: 'titleFontWeight',
-        label: '主标题字重',
-        type: 'number',
-        defaultValue: 300,
-        hidden: true,
-    },
-    buildFontSelectField({
-        key: 'subtitleFontId',
-        label: '副标题字体',
-        defaultValue: 'angieSansStd',
-    }),
 ];
 
 export const galleryCaptionMatTemplateSchema = {
@@ -92,31 +57,56 @@ export const galleryCaptionMatTemplateSchema = {
     frame: galleryCaptionMatFrame,
     textGroups: [
         {
+            id: 'caption',
+            type: 'group',
+            label: '标题组',
             region: 'bottom',
             anchor: 'center',
-            maxWidthBasis: 'frameWidth',
-            maxWidthRatio: 0.56,
-            gapBasis: 'frameWidth',
-            gapRatio: 0.014,
-            texts: [
+            direction: 'vertical',
+            align: 'center',
+            gapScale: 0.46,
+            offsetXScale: 0,
+            offsetYScale: 0,
+            visible: true,
+            style: {
+                fontId: 'miSans',
+                fontScale: 1,
+                fontWeight: 300,
+                fontStyle: 'normal',
+                colorToken: 'title',
+                color: '#1A1A1A',
+                letterSpacingScale: 0,
+            },
+            items: [
                 {
-                    configPath: 'title',
-                    fallbackText: 'Untitled',
-                    fontIdConfigKey: 'titleFontId',
-                    fontWeightConfigKey: 'titleFontWeight',
-                    fontSizeRatio: 1.05,
-                    colorKey: 'title',
-                    minFontSize: 12,
+                    id: 'caption-title',
+                    type: 'text',
+                    label: '主标题',
+                    content: 'Sample Location / City',
+                    fallbackContent: 'Untitled',
+                    emptyBehavior: 'fallback',
+                    visible: true,
+                    style: {
+                        fontId: 'miSans',
+                        fontScale: 1.05,
+                        fontWeight: 300,
+                        colorToken: 'title',
+                    },
                 },
                 {
-                    configPath: 'subtitle',
-                    whenConfig: 'showSubtitle',
-                    fontIdConfigKey: 'subtitleFontId',
-                    fontSizeRatio: 0.6,
-                    colorKey: 'subtitle',
-                    minFontSize: 8,
-                    maxWidthBasis: 'frameWidth',
-                    maxWidthRatio: 0.34,
+                    id: 'caption-subtitle',
+                    type: 'text',
+                    label: '副标题',
+                    content: 'Camera Model / Notes',
+                    fallbackContent: '',
+                    emptyBehavior: 'hide',
+                    visible: true,
+                    style: {
+                        fontId: 'angieSansStd',
+                        fontScale: 0.6,
+                        fontWeight: 400,
+                        colorToken: 'subtitle',
+                    },
                 },
             ],
         },

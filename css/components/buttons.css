@@ -44,6 +44,27 @@
     border-color: var(--color-divider);
 }
 
+.btn-small {
+    min-height: 24px;
+    padding: 0 8px;
+    border: 1px solid var(--color-control-border);
+    border-radius: var(--radius-sm);
+    background: var(--color-control-background);
+    color: var(--color-text-primary);
+    font-size: 11px;
+    letter-spacing: 0;
+    cursor: pointer;
+}
+
+.btn-small:hover:not(:disabled) {
+    background: var(--color-control-background-hover);
+}
+
+.btn-small:disabled {
+    cursor: default;
+    opacity: 0.42;
+}
+
 .field-reset-button {
     display: inline-flex;
     align-items: center;
