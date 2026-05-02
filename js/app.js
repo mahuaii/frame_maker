@@ -47,13 +47,19 @@ let currentImage = null;           // HTMLImageElement | null
 let currentPhoto = null;           // Normalized photo source | null
 let selectedTemplateId = 'gallery-caption-mat';  // 默认选第一个模板
 let fieldValues = {};              // Record<string, string>
-const templateFieldValuesById = new Map(); // Map<string, Record<string, string>>
+let templateFieldValuesById = new Map(); // Map<string, Record<string, string>>
 let exifOverrideValues = {};       // Record<string, string>
 let initialExifOverrideValues = {}; // 上传后预填写到表单中的 EXIF 快照
 let activeInspectorPanel = 'basic';
 let selectedTextObjectId = null;
-const textModelsByTemplateId = new Map();
+let textModelsByTemplateId = new Map();
+const photoEntries = [];
+let activePhotoId = null;
+let copiedBatchSettings = null;
 const objectUrlRegistry = new Set();
+let uploadNoticeElement = null;
+let uploadNoticeHideTimer = null;
+let uploadNoticeDisplayTimer = null;
 const THUMBNAIL_MAX_WIDTH = 180;
 const THUMBNAIL_MAX_HEIGHT = 135;
 const ASSET_VERSION = '20260426-000000';
@@ -61,6 +67,8 @@ const DEFAULT_INSPECTOR_WIDTH = 276;
 const MIN_INSPECTOR_WIDTH = 220;
 const MAX_INSPECTOR_WIDTH = 520;
 const MIN_WORKSPACE_WIDTH = 320;
+const UPLOAD_NOTICE_DURATION = 2200;
+const UPLOAD_NOTICE_FADE_DURATION = 180;
 const DEFAULT_EXPORT_SETTINGS = {
     format: 'image/jpeg',
     sizePreset: 'original',
@@ -71,6 +79,115 @@ const DEFAULT_EXPORT_SETTINGS = {
 const MIN_JPEG_QUALITY = 0.01;
 const MAX_JPEG_QUALITY = 1;
 let exportSettings = { ...DEFAULT_EXPORT_SETTINGS };
+
+function createPhotoEntryId() {
+    return `photo-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+}
+
+function getActivePhotoEntry() {
+    return photoEntries.find((entry) => entry.id === activePhotoId) ?? null;
+}
+
+function cloneTemplateFieldValuesMap(sourceMap = new Map()) {
+    const nextMap = new Map();
+
+    sourceMap.forEach((values, templateId) => {
+        nextMap.set(templateId, { ...(values ?? {}) });
+    });
+
+    return nextMap;
+}
+
+function cloneTextModelMap(sourceMap = new Map()) {
+    const nextMap = new Map();
+
+    sourceMap.forEach((model, templateId) => {
+        nextMap.set(templateId, normalizeTextModel(cloneTextModel(model ?? [])));
+    });
+
+    return nextMap;
+}
+
+function saveActivePhotoState() {
+    const entry = getActivePhotoEntry();
+    if (!entry) {
+        return;
+    }
+
+    const template = getTemplateById(selectedTemplateId);
+    if (template) {
+        saveTemplateFieldValues(template, fieldValues);
+    }
+
+    entry.selectedTemplateId = selectedTemplateId;
+    entry.fieldValuesByTemplateId = templateFieldValuesById;
+    entry.textModelsByTemplateId = textModelsByTemplateId;
+    entry.exifOverrideValues = { ...exifOverrideValues };
+    entry.initialExifOverrideValues = { ...initialExifOverrideValues };
+}
+
+function activatePhotoEntry(entry, { render = true } = {}) {
+    if (!entry) {
+        currentImage = null;
+        currentPhoto = null;
+        activePhotoId = null;
+        return;
+    }
+
+    currentImage = entry.image;
+    currentPhoto = entry.photo;
+    selectedTemplateId = entry.selectedTemplateId;
+    templateFieldValuesById = entry.fieldValuesByTemplateId;
+    textModelsByTemplateId = entry.textModelsByTemplateId;
+    exifOverrideValues = { ...entry.exifOverrideValues };
+    initialExifOverrideValues = { ...entry.initialExifOverrideValues };
+    activePhotoId = entry.id;
+
+    const template = getTemplateById(selectedTemplateId);
+    if (template) {
+        fieldValues = getTemplateFieldValues(template);
+        selectedTextObjectId = getTemplateTextModel(template)[0]?.id ?? null;
+    }
+
+    if (!render) {
+        return;
+    }
+
+    canvas.style.display = 'block';
+    uploadGuide.style.display = 'none';
+    previewArea.classList.add('has-image');
+    updateSelectorSelection();
+    renderTextEditor();
+    updatePreview();
+}
+
+function createPhotoEntry({ file, image, objectUrl, photo, exifOverrideSnapshot }) {
+    const template = getTemplateById(selectedTemplateId) ?? templates[0];
+    const entryFieldValuesById = new Map();
+    const entryTextModelsByTemplateId = new Map();
+
+    if (template) {
+        entryFieldValuesById.set(template.id, loadTemplateConfig(template));
+        entryTextModelsByTemplateId.set(
+            template.id,
+            normalizeTextModel(cloneTextModel(template.textGroups ?? []))
+        );
+    }
+
+    return {
+        id: createPhotoEntryId(),
+        file,
+        image,
+        objectUrl,
+        photo,
+        selectedForExport: true,
+        selectedTemplateId: template?.id ?? selectedTemplateId,
+        fieldValuesByTemplateId: entryFieldValuesById,
+        textModelsByTemplateId: entryTextModelsByTemplateId,
+        exifOverrideValues: { ...exifOverrideSnapshot },
+        initialExifOverrideValues: { ...exifOverrideSnapshot },
+    };
+}
 
 function getTemplateFieldValues(template) {
     if (!template) {
@@ -136,6 +253,7 @@ function resetCurrentTemplateTextModel() {
     releaseTextModelObjectUrls(getTemplateTextModel(template));
     setTemplateTextModel(template, cloneTextModel(template.textGroups ?? []));
     selectedTextObjectId = getTemplateTextModel(template)[0]?.id ?? null;
+    saveActivePhotoState();
     renderTextEditor();
     updatePreview();
 }
@@ -369,20 +487,20 @@ function setJpegQuality(rawValue) {
     syncExportControls();
 }
 
-function getBaseExportDimensions(template) {
-    const metrics = calculateFrameMetrics(currentImage, template, 1, fieldValues);
+function getBaseExportDimensions(template, image = currentImage, values = fieldValues) {
+    const metrics = calculateFrameMetrics(image, template, 1, values);
     return {
         width: metrics.fullWidth,
         height: metrics.fullHeight,
     };
 }
 
-function resolveExportResize(template) {
+function resolveExportResize(template, image = currentImage, values = fieldValues) {
     return resolveResizeDimensions({
         sizePreset: exportSettings.sizePreset,
         customWidth: exportSettings.customWidth,
         customHeight: exportSettings.customHeight,
-        baseDimensions: getBaseExportDimensions(template),
+        baseDimensions: getBaseExportDimensions(template, image, values),
     });
 }
 
@@ -451,7 +569,9 @@ async function handleTemplateSelect(templateId) {
     const template = getTemplateById(templateId);
     if (template) {
         fieldValues = getTemplateFieldValues(template);
+        selectedTextObjectId = getTemplateTextModel(template)[0]?.id ?? null;
     }
+    saveActivePhotoState();
 
     // 重新渲染选择器和编辑区
     updateSelectorSelection();
@@ -490,11 +610,17 @@ const APPEARANCE_FIELD_KEYS = new Set([
 
 function renderTextEditor() {
     const template = getTemplateById(selectedTemplateId);
-    if (!template) return;
 
     closeActiveExportMenu?.();
     textEditor.innerHTML = '';
     textEditor.appendChild(createInspectorActionArea());
+
+    if (activeInspectorPanel === 'batch') {
+        textEditor.appendChild(createBatchPhotoPanel());
+        return;
+    }
+
+    if (!template) return;
 
     if (activeInspectorPanel === 'text') {
         textEditor.appendChild(createTextModelEditorPanel(template));
@@ -646,6 +772,7 @@ function commitFieldValue(field, nextValue) {
     if (field.key === 'frameAspectRatio' || field.key === 'colorScheme') {
         renderTextEditor();
     }
+    saveActivePhotoState();
 
     updatePreview();
 }
@@ -668,6 +795,7 @@ function resetAllLayoutFieldValues() {
         ...resetValues,
     });
     saveTemplateFieldValues(template, fieldValues);
+    saveActivePhotoState();
 
     renderTextEditor();
     updatePreview();
@@ -698,6 +826,7 @@ function commitExifFieldValue(fieldKey, nextValue) {
         ...exifOverrideValues,
         [fieldKey]: nextValue,
     };
+    saveActivePhotoState();
 
     updatePreview();
 }
@@ -713,6 +842,7 @@ function resetAllExifFieldValues() {
         ...exifOverrideValues,
         ...resetValues,
     };
+    saveActivePhotoState();
 
     renderTextEditor();
     updatePreview();
@@ -996,6 +1126,7 @@ function createInspectorActionArea() {
         children: [
             createInspectorPanelTab('basic', '基本'),
             createInspectorPanelTab('text', '文本'),
+            createInspectorPanelTab('batch', '批量'),
         ],
     });
 
@@ -1029,6 +1160,235 @@ function createInspectorPanelTab(panelKey, label) {
     });
 
     return button;
+}
+
+function formatPhotoMeta(entry) {
+    const width = entry.photo?.width ?? 0;
+    const height = entry.photo?.height ?? 0;
+
+    if (!width || !height) {
+        return '';
+    }
+
+    return `${width} × ${height}`;
+}
+
+function setPhotoExportSelection(photoId, isSelected) {
+    const entry = photoEntries.find((item) => item.id === photoId);
+    if (!entry) {
+        return;
+    }
+
+    entry.selectedForExport = Boolean(isSelected);
+    renderTextEditor();
+}
+
+function handlePhotoCardSelect(photoId) {
+    const entry = photoEntries.find((item) => item.id === photoId);
+    if (!entry || entry.id === activePhotoId) {
+        return;
+    }
+
+    saveActivePhotoState();
+    activatePhotoEntry(entry);
+}
+
+function copyCurrentPhotoSettings() {
+    const entry = getActivePhotoEntry();
+    if (!entry) {
+        alert('请先上传照片');
+        return;
+    }
+
+    saveActivePhotoState();
+    copiedBatchSettings = {
+        selectedTemplateId: entry.selectedTemplateId,
+        fieldValuesByTemplateId: cloneTemplateFieldValuesMap(entry.fieldValuesByTemplateId),
+        textModelsByTemplateId: cloneTextModelMap(entry.textModelsByTemplateId),
+    };
+    renderTextEditor();
+}
+
+function applyBatchSettingsSnapshot(entry, settings) {
+    if (!entry || !settings) {
+        return;
+    }
+
+    entry.selectedTemplateId = settings.selectedTemplateId;
+    entry.fieldValuesByTemplateId = cloneTemplateFieldValuesMap(settings.fieldValuesByTemplateId);
+    entry.textModelsByTemplateId = cloneTextModelMap(settings.textModelsByTemplateId);
+}
+
+function pasteCopiedSettingsToCurrentPhoto() {
+    if (!copiedBatchSettings) {
+        alert('请先复制当前照片设置');
+        return;
+    }
+
+    const entry = getActivePhotoEntry();
+    if (!entry) {
+        alert('请先上传照片');
+        return;
+    }
+
+    saveActivePhotoState();
+    applyBatchSettingsSnapshot(entry, copiedBatchSettings);
+    activatePhotoEntry(entry);
+}
+
+function applyCurrentPhotoSettingsToAllPhotos() {
+    const entry = getActivePhotoEntry();
+    if (!entry) {
+        alert('请先上传照片');
+        return;
+    }
+
+    saveActivePhotoState();
+    const sourceSettings = {
+        selectedTemplateId: entry.selectedTemplateId,
+        fieldValuesByTemplateId: cloneTemplateFieldValuesMap(entry.fieldValuesByTemplateId),
+        textModelsByTemplateId: cloneTextModelMap(entry.textModelsByTemplateId),
+    };
+
+    photoEntries.forEach((photoEntry) => {
+        applyBatchSettingsSnapshot(photoEntry, sourceSettings);
+    });
+
+    const activeEntry = getActivePhotoEntry();
+    if (activeEntry) {
+        activatePhotoEntry(activeEntry);
+        return;
+    }
+
+    renderTextEditor();
+}
+
+function createBatchPhotoCard(entry) {
+    const isActive = entry.id === activePhotoId;
+    const checkbox = createElement('input', {
+        className: 'batch-photo-checkbox',
+        attributes: {
+            type: 'checkbox',
+            checked: entry.selectedForExport,
+            'aria-label': `选择导出 ${entry.photo?.name ?? '照片'}`,
+        },
+    });
+    const thumbnail = createElement('img', {
+        className: 'batch-photo-thumbnail',
+        attributes: {
+            alt: '',
+            'aria-hidden': 'true',
+            src: entry.objectUrl,
+        },
+    });
+    const name = createElement('span', {
+        className: 'batch-photo-name',
+        textContent: entry.photo?.name ?? '未命名照片',
+    });
+    const meta = createElement('span', {
+        className: 'batch-photo-meta',
+        textContent: formatPhotoMeta(entry),
+    });
+    const card = createElement('div', {
+        className: `batch-photo-card${isActive ? ' selected' : ''}`,
+        attributes: {
+            role: 'button',
+            tabindex: '0',
+            'aria-pressed': isActive ? 'true' : 'false',
+        },
+        dataset: {
+            photoId: entry.id,
+        },
+        children: [
+            thumbnail,
+            createElement('span', {
+                className: 'batch-photo-info',
+                children: [name, meta],
+            }),
+            createElement('span', {
+                className: 'checkbox-field batch-photo-check-wrap',
+                children: [checkbox],
+            }),
+        ],
+    });
+
+    checkbox.parentElement?.addEventListener('click', (event) => {
+        event.stopPropagation();
+    });
+    checkbox.addEventListener('click', (event) => {
+        event.stopPropagation();
+    });
+    checkbox.addEventListener('change', (event) => {
+        setPhotoExportSelection(entry.id, event.target.checked);
+    });
+    card.addEventListener('click', () => {
+        handlePhotoCardSelect(entry.id);
+    });
+    card.addEventListener('keydown', (event) => {
+        if (event.key === 'Enter' || event.key === ' ') {
+            event.preventDefault();
+            handlePhotoCardSelect(entry.id);
+        }
+    });
+
+    return card;
+}
+
+function createBatchPhotoPanel() {
+    const selectedCount = photoEntries.filter((entry) => entry.selectedForExport).length;
+    const section = createInspectorSection('照片列表');
+    const content = getInspectorSectionContent(section);
+    const actions = createElement('div', {
+        className: 'batch-actions inspector-content-contained',
+        children: [
+            createElement('button', {
+                className: 'btn-small text-object-action batch-action-button',
+                textContent: '复制设置',
+                attributes: {
+                    type: 'button',
+                    disabled: !activePhotoId,
+                },
+            }),
+            createElement('button', {
+                className: 'btn-small text-object-action batch-action-button',
+                textContent: '粘贴设置',
+                attributes: {
+                    type: 'button',
+                    disabled: !copiedBatchSettings || !activePhotoId,
+                },
+            }),
+            createElement('button', {
+                className: 'btn-small text-object-action batch-action-button',
+                textContent: '应用到全部',
+                attributes: {
+                    type: 'button',
+                    disabled: !activePhotoId || photoEntries.length === 0,
+                },
+            }),
+        ],
+    });
+    const summary = createElement('div', {
+        className: 'batch-summary inspector-content-contained',
+        textContent: photoEntries.length > 0
+            ? `共 ${photoEntries.length} 张，已选择 ${selectedCount} 张导出`
+            : '尚未上传照片',
+    });
+    const list = createElement('div', {
+        className: 'batch-photo-list inspector-content-contained',
+    });
+
+    actions.children[0].addEventListener('click', copyCurrentPhotoSettings);
+    actions.children[1].addEventListener('click', pasteCopiedSettingsToCurrentPhoto);
+    actions.children[2].addEventListener('click', applyCurrentPhotoSettingsToAllPhotos);
+
+    if (photoEntries.length > 0) {
+        photoEntries.forEach((entry) => {
+            list.appendChild(createBatchPhotoCard(entry));
+        });
+    }
+
+    content.append(actions, summary, list);
+    return section;
 }
 
 function getTextObjectTypeLabel(item) {
@@ -1127,6 +1487,7 @@ function commitTextModelChange(template, mutate, {
 
     setTemplateTextModel(template, textModel);
     ensureSelectedTextObject(template);
+    saveActivePhotoState();
     if (renderEditor) {
         renderTextEditor();
     }
@@ -1696,52 +2057,171 @@ function createImageSourceControl(template, item) {
 // 图片上传处理
 // ============================================
 
+function getPhotoEntryFileName(entry) {
+    return entry?.file?.name || entry?.photo?.name || '';
+}
+
+function getUploadedPhotoFileNames() {
+    return new Set(photoEntries.map(getPhotoEntryFileName).filter(Boolean));
+}
+
+function filterDuplicateImageFiles(files) {
+    const usedFileNames = getUploadedPhotoFileNames();
+    const acceptedFiles = [];
+    const duplicateNames = [];
+
+    files.forEach((file) => {
+        const fileName = file?.name || '';
+
+        if (fileName && usedFileNames.has(fileName)) {
+            duplicateNames.push(fileName);
+            return;
+        }
+
+        acceptedFiles.push(file);
+
+        if (fileName) {
+            usedFileNames.add(fileName);
+        }
+    });
+
+    return { acceptedFiles, duplicateNames };
+}
+
+function formatDuplicateUploadNotice(duplicateNames) {
+    const duplicateCount = duplicateNames.length;
+    return `已忽略 ${duplicateCount} 张重名照片`;
+
+}
+
+function getUploadNoticeElement() {
+    if (uploadNoticeElement) {
+        return uploadNoticeElement;
+    }
+
+    uploadNoticeElement = createElement('div', {
+        className: 'upload-notice',
+        attributes: {
+            id: 'upload-notice',
+            role: 'status',
+            'aria-live': 'polite',
+            hidden: true,
+        },
+    });
+    previewArea.appendChild(uploadNoticeElement);
+
+    return uploadNoticeElement;
+}
+
+function showUploadNotice(message) {
+    if (!message) {
+        return;
+    }
+
+    const notice = getUploadNoticeElement();
+    notice.textContent = message;
+    notice.hidden = false;
+
+    window.clearTimeout(uploadNoticeHideTimer);
+    window.clearTimeout(uploadNoticeDisplayTimer);
+
+    window.requestAnimationFrame(() => {
+        notice.classList.add('visible');
+    });
+
+    uploadNoticeHideTimer = window.setTimeout(() => {
+        notice.classList.remove('visible');
+        uploadNoticeDisplayTimer = window.setTimeout(() => {
+            notice.hidden = true;
+        }, UPLOAD_NOTICE_FADE_DURATION);
+    }, UPLOAD_NOTICE_DURATION);
+}
+
+function loadImageFile(file) {
+    return new Promise((resolve, reject) => {
+        if (!file || !file.type.startsWith('image/')) {
+            reject(new Error('invalid-file'));
+            return;
+        }
+
+        const image = new Image();
+        const objectUrl = URL.createObjectURL(file);
+        objectUrlRegistry.add(objectUrl);
+
+        image.onload = () => {
+            resolve({ file, image, objectUrl });
+        };
+        image.onerror = () => {
+            URL.revokeObjectURL(objectUrl);
+            objectUrlRegistry.delete(objectUrl);
+            reject(new Error('load-failed'));
+        };
+        image.src = objectUrl;
+    });
+}
+
+async function createPhotoEntryFromFile(file) {
+    const loaded = await loadImageFile(file);
+    const photo = createPhotoSource({
+        file: loaded.file,
+        image: loaded.image,
+    });
+    const extractedExif = await extractExifData(photo);
+    const exifOverrideSnapshot = createEditableExifOverrideValues(extractedExif);
+
+    return createPhotoEntry({
+        ...loaded,
+        photo,
+        exifOverrideSnapshot,
+    });
+}
+
 /**
  * 处理文件选择
  */
-function handleFileSelect(file) {
-    // 校验文件类型
-    if (!file || !file.type.startsWith('image/')) {
+async function handleFileSelect(files) {
+    const imageFiles = Array.from(files ?? []).filter((file) => file?.type?.startsWith('image/'));
+
+    if (imageFiles.length === 0) {
         alert('请选择有效的图片文件');
         return;
     }
 
-    const image = new Image();
-    image.src = URL.createObjectURL(file);
+    const { acceptedFiles, duplicateNames } = filterDuplicateImageFiles(imageFiles);
 
-    image.onload = async () => {
-        currentImage = image;
-        currentPhoto = createPhotoSource({ file, image });
-        const extractedExif = await extractExifData(currentPhoto);
-        const nextInitialExifOverrideValues = createEditableExifOverrideValues(extractedExif);
-        const shouldInitializeExifOverrides = Object.keys(exifOverrideValues).length === 0;
-        initialExifOverrideValues = { ...nextInitialExifOverrideValues };
+    if (duplicateNames.length > 0) {
+        showUploadNotice(formatDuplicateUploadNotice(duplicateNames));
+    }
 
-        if (shouldInitializeExifOverrides) {
-            exifOverrideValues = { ...nextInitialExifOverrideValues };
+    if (acceptedFiles.length === 0) {
+        return;
+    }
+
+    saveActivePhotoState();
+
+    const loadedEntries = [];
+    for (const file of acceptedFiles) {
+        try {
+            loadedEntries.push(await createPhotoEntryFromFile(file));
+        } catch (error) {
+            console.warn('Failed to load image file.', error);
         }
+    }
 
-        // 初始化 fieldValues（如果还没有值）
-        const template = getTemplateById(selectedTemplateId);
-        if (template) {
-            if (Object.keys(fieldValues).length === 0) {
-                fieldValues = getTemplateFieldValues(template);
-            }
-            renderTextEditor();
-        }
-
-        // 显示 canvas，隐藏上传引导
-        canvas.style.display = 'block';
-        uploadGuide.style.display = 'none';
-        previewArea.classList.add('has-image');
-
-        // 更新预览
-        await updatePreview();
-    };
-
-    image.onerror = () => {
+    if (loadedEntries.length === 0) {
         alert('图片加载失败，请重试');
-    };
+        return;
+    }
+
+    const shouldActivateFirstNewPhoto = !activePhotoId;
+    photoEntries.push(...loadedEntries);
+
+    if (shouldActivateFirstNewPhoto) {
+        activatePhotoEntry(loadedEntries[0]);
+        return;
+    }
+
+    renderTextEditor();
 }
 
 /**
@@ -1764,7 +2244,7 @@ function setupDragDrop() {
 
         const files = e.dataTransfer?.files;
         if (files && files.length > 0) {
-            handleFileSelect(files[0]);
+            handleFileSelect(files);
         }
     });
 }
@@ -1879,34 +2359,66 @@ async function updatePreview() {
 // ============================================
 // 导出下载
 // ============================================
-async function handleExport() {
-    if (!currentImage) {
-        alert('请先上传照片');
-        return;
+function getPhotoEntryTemplateFieldValues(entry, template) {
+    if (!entry?.fieldValuesByTemplateId.has(template.id)) {
+        entry.fieldValuesByTemplateId.set(template.id, loadTemplateConfig(template));
     }
 
-    const template = getTemplateById(selectedTemplateId);
-    if (!template) return;
+    return resolveTemplateConfig(template, entry.fieldValuesByTemplateId.get(template.id));
+}
 
+function getPhotoEntryTextModel(entry, template) {
+    if (!entry?.textModelsByTemplateId.has(template.id)) {
+        entry.textModelsByTemplateId.set(
+            template.id,
+            normalizeTextModel(cloneTextModel(template.textGroups ?? []))
+        );
+    }
+
+    return entry.textModelsByTemplateId.get(template.id);
+}
+
+function canvasToBlob(canvas, mimeType, quality) {
+    return new Promise((resolve) => {
+        canvas.toBlob(resolve, mimeType, quality);
+    });
+}
+
+function downloadBlob(blob, filename) {
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = filename;
+
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+
+    window.setTimeout(() => {
+        URL.revokeObjectURL(url);
+    }, 0);
+}
+
+async function exportPhotoEntry(entry) {
+    const template = getTemplateById(entry.selectedTemplateId);
+    if (!template) {
+        return false;
+    }
+
+    const entryFieldValues = getPhotoEntryTemplateFieldValues(entry, template);
+    const entryTextModel = getPhotoEntryTextModel(entry, template);
     // 创建临时的 offscreen Canvas
     const tempCanvas = document.createElement('canvas');
 
     // 以原始分辨率渲染（scale = 1）
-    let resize;
+    const resize = resolveExportResize(template, entry.image, entryFieldValues);
 
-    try {
-        resize = resolveExportResize(template);
-    } catch (error) {
-        alert(error.message || '导出尺寸无效，请检查后重试');
-        return;
-    }
-
-    const renderResult = await renderFrame(tempCanvas, currentImage, template, fieldValues, {
+    const renderResult = await renderFrame(tempCanvas, entry.image, template, entryFieldValues, {
         scale: 1,
         mode: 'export',
-        photo: currentPhoto,
-        exifOverrides: exifOverrideValues,
-        textModel: getTemplateTextModel(template),
+        photo: entry.photo,
+        exifOverrides: entry.exifOverrideValues,
+        textModel: entryTextModel,
         global: {
             resize,
             compression: {
@@ -1922,26 +2434,39 @@ async function handleExport() {
         quality: DEFAULT_EXPORT_SETTINGS.jpegQuality,
     };
 
-    exportCanvas.toBlob((blob) => {
-        if (!blob) {
-            alert('导出失败，请重试');
-            return;
+    const blob = await canvasToBlob(exportCanvas, compression.mimeType, compression.quality);
+    if (!blob) {
+        return false;
+    }
+
+    downloadBlob(blob, buildExportFilename(entry.photo?.name, compression.mimeType));
+    return true;
+}
+
+async function handleExport() {
+    if (photoEntries.length === 0) {
+        alert('请先上传照片');
+        return;
+    }
+
+    saveActivePhotoState();
+
+    const selectedEntries = photoEntries.filter((entry) => entry.selectedForExport);
+    if (selectedEntries.length === 0) {
+        alert('请先在批量面板选择要导出的照片');
+        return;
+    }
+
+    try {
+        for (const entry of selectedEntries) {
+            const exported = await exportPhotoEntry(entry);
+            if (!exported) {
+                throw new Error('导出失败，请重试');
+            }
         }
-
-        // 创建下载链接
-        const url = URL.createObjectURL(blob);
-        const link = document.createElement('a');
-        link.href = url;
-        link.download = buildExportFilename(currentPhoto?.name, compression.mimeType);
-
-        // 触发下载
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
-
-        // 释放 URL
-        URL.revokeObjectURL(url);
-    }, compression.mimeType, compression.quality);
+    } catch (error) {
+        alert(error.message || '导出尺寸无效，请检查后重试');
+    }
 }
 
 // ============================================
@@ -1950,9 +2475,9 @@ async function handleExport() {
 function bindEvents() {
     // 文件选择变化
     fileInput.addEventListener('change', (e) => {
-        const file = e.target.files?.[0];
-        if (file) {
-            handleFileSelect(file);
+        const files = e.target.files;
+        if (files && files.length > 0) {
+            handleFileSelect(files);
         }
         // 重置 input，允许重复选择同一文件
         fileInput.value = '';
