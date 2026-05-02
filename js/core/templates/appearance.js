@@ -109,6 +109,33 @@ export function resolveTemplateAppearance(template, config = {}) {
     };
 }
 
+export function buildColorTokenField(appearanceThemes, activeThemeKey, {
+    key = 'style.colorToken',
+    label = '颜色',
+    defaultValue,
+} = {}) {
+    const theme = appearanceThemes?.[activeThemeKey]
+        ?? Object.values(appearanceThemes ?? {})[0]
+        ?? {};
+    const colors = theme.colors ?? {};
+    const entries = Object.entries(colors);
+    const fallbackValue = defaultValue ?? entries[0]?.[0] ?? '';
+
+    return {
+        key,
+        label,
+        type: 'select',
+        control: 'color-buttons',
+        defaultValue: fallbackValue,
+        options: entries.map(([token, color]) => ({
+            value: token,
+            label: token,
+            swatch: color,
+            displayValue: color?.replace(/^#/, '').toUpperCase() ?? '',
+        })),
+    };
+}
+
 export function getAppearanceColor(appearance, token, fallback = null) {
     if (!appearance || typeof appearance !== 'object') {
         return fallback;

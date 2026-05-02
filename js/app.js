@@ -5,7 +5,7 @@
 
 import { templates, getTemplateById } from './templates.js';
 import { FREE_FRAME_ASPECT_RATIO } from './core/templates/frame-layout.js';
-import { resolveTemplateAppearance } from './core/templates/registry.js';
+import { buildColorTokenField, resolveTemplateAppearance } from './core/templates/registry.js';
 import { loadTemplateConfig } from './core/templates/config-store.js';
 import { resolveTemplateConfig } from './core/templates/registry.js';
 import { preloadRuntimeFontsInBackground } from './core/fonts/index.js';
@@ -643,7 +643,7 @@ function commitFieldValue(field, nextValue) {
     fieldValues = resolveTemplateConfig(template, fieldValues);
     saveTemplateFieldValues(template, fieldValues);
 
-    if (field.key === 'frameAspectRatio') {
+    if (field.key === 'frameAspectRatio' || field.key === 'colorScheme') {
         renderTextEditor();
     }
 
@@ -1364,7 +1364,7 @@ function createTextObjectActionBar(template, selected) {
 
 function createTextObjectFields(template, selected) {
     const { item, depth } = selected;
-    const fields = buildTextObjectFieldDefinitions(item, depth);
+    const fields = buildTextObjectFieldDefinitions(item, depth, template);
     const values = buildTextObjectFieldValues(item, fields);
     const fieldOptions = {
         values,
@@ -1439,7 +1439,8 @@ function applyTextEditorFieldFrameStyle(fields = []) {
     });
 }
 
-function buildTextObjectFieldDefinitions(item, depth) {
+function buildTextObjectFieldDefinitions(item, depth, template) {
+    const activeAppearanceKey = resolveTemplateAppearance(template, fieldValues).key;
     const commonFields = [
         { key: 'visible', label: '显示', type: 'toggle', defaultValue: true },
     ];
@@ -1468,7 +1469,11 @@ function buildTextObjectFieldDefinitions(item, depth) {
                 { value: 'italic', label: '斜体' },
             ],
         },
-        { key: 'style.colorToken', label: '颜色 token', type: 'input', defaultValue: 'textPrimary' },
+        buildColorTokenField(template?.appearanceThemes, activeAppearanceKey, {
+            key: 'style.colorToken',
+            label: '颜色',
+            defaultValue: 'textPrimary',
+        }),
         { key: 'style.color', label: '自定义颜色', type: 'color', defaultValue: '#111111' },
         { key: 'style.letterSpacingScale', label: '字距倍率', type: 'number', step: 0.01, defaultValue: 0 },
     ];
@@ -1553,7 +1558,11 @@ function buildTextObjectFieldDefinitions(item, depth) {
             { key: 'forceVisible', label: '强制显示', type: 'toggle', defaultValue: false },
             { key: 'lengthScale', label: '长度倍率', type: 'number', min: 0.1, step: 0.05, defaultValue: 1.4 },
             { key: 'thicknessScale', label: '粗细倍率', type: 'number', min: 0.01, step: 0.01, defaultValue: 0.06 },
-            { key: 'colorToken', label: '颜色 token', type: 'input', defaultValue: 'separator' },
+            buildColorTokenField(template?.appearanceThemes, activeAppearanceKey, {
+                key: 'colorToken',
+                label: '颜色',
+                defaultValue: 'separator',
+            }),
             { key: 'color', label: '自定义颜色', type: 'color', defaultValue: '#9CA3AF' },
         ]);
     }

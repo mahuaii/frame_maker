@@ -1,5 +1,5 @@
 import { normalizeTemplateConfig } from './fields.js';
-import { createAppearanceThemes, getAppearanceColor, resolveTemplateAppearance } from './appearance.js';
+import { buildColorTokenField, createAppearanceThemes, getAppearanceColor, resolveTemplateAppearance } from './appearance.js';
 
 function defaultResolveTemplateData() {
     return {};
@@ -85,4 +85,4 @@ export function resolveTemplateConfig(template, rawConfig = {}) {
     });
 }
 
-export { createAppearanceThemes, getAppearanceColor, resolveTemplateAppearance };
+export { buildColorTokenField, createAppearanceThemes, getAppearanceColor, resolveTemplateAppearance };
