@@ -29,11 +29,31 @@ function buildFontSource(localNames = [], assetRelativePath = '') {
     return [fileSource, ...localSources].filter(Boolean).join(', ');
 }
 
+function buildFontWeightOption(value, label, localNames = [], assetRelativePath = '') {
+    return {
+        value,
+        label,
+        source: buildFontSource(localNames, assetRelativePath),
+    };
+}
+
+const DEFAULT_FONT_WEIGHT_OPTIONS = Object.freeze([
+    { value: 400, label: 'Regular' },
+]);
+
 const FONT_REGISTRY = {
     angieSansStd: {
         id: 'angieSansStd',
         label: 'Angie Sans Std',
         family: 'Angie Sans Std',
+        weights: [
+            buildFontWeightOption(
+                400,
+                'Regular',
+                ['Angie Sans Std', 'AngieSansStd'],
+                '../../../assets/fonts/Angie_Sans_Std.otf'
+            ),
+        ],
         source: buildFontSource(
             ['Angie Sans Std', 'AngieSansStd'],
             '../../../assets/fonts/Angie_Sans_Std.otf'
@@ -43,6 +63,26 @@ const FONT_REGISTRY = {
         id: 'miSans',
         label: 'MiSans',
         family: 'MiSans',
+        weights: [
+            buildFontWeightOption(
+                300,
+                'Light',
+                ['MiSans Light', 'MiSans-Light'],
+                '../../../assets/fonts/MiSans-Light.woff2'
+            ),
+            buildFontWeightOption(
+                400,
+                'Regular',
+                ['MiSans Regular', 'MiSans-Regular', 'MiSans Normal', 'MiSans-Normal', 'MiSans'],
+                '../../../assets/fonts/MiSans-Regular.woff2'
+            ),
+            buildFontWeightOption(
+                500,
+                'Medium',
+                ['MiSans Medium', 'MiSans-Medium'],
+                '../../../assets/fonts/MiSans-Medium.woff2'
+            ),
+        ],
         source: buildFontSource(
             ['MiSans', 'MiSans Regular', 'MiSans-Regular', 'MiSans Normal', 'MiSans-Normal'],
             '../../../assets/fonts/MiSans-Regular.woff2'
@@ -52,6 +92,14 @@ const FONT_REGISTRY = {
         id: 'timesNewRoman',
         label: 'Times New Roman',
         family: 'Times New Roman',
+        weights: [
+            buildFontWeightOption(
+                400,
+                'Regular',
+                ['Times New Roman', 'TimesNewRomanPSMT', 'TimesNewRoman'],
+                '../../../assets/fonts/times.ttf'
+            ),
+        ],
         source: buildFontSource(
             ['Times New Roman', 'TimesNewRomanPSMT', 'TimesNewRoman'],
             '../../../assets/fonts/times.ttf'
@@ -62,6 +110,13 @@ const FONT_REGISTRY = {
         label: 'System Sans',
         family: SYSTEM_SANS_STACK,
         system: true,
+        weights: [
+            { value: 300, label: 'Light' },
+            { value: 400, label: 'Regular' },
+            { value: 500, label: 'Medium' },
+            { value: 600, label: 'Semi Bold' },
+            { value: 700, label: 'Bold' },
+        ],
     },
 };
 
@@ -94,6 +149,31 @@ export function getFontFieldOptions() {
         value: font.id,
         label: font.label,
     }));
+}
+
+export function getFontWeightOptions(fontId) {
+    const font = getFontById(fontId);
+    const weights = Array.isArray(font?.weights) && font.weights.length > 0
+        ? font.weights
+        : DEFAULT_FONT_WEIGHT_OPTIONS;
+
+    return weights.map((weight) => ({
+        value: weight.value,
+        label: weight.label,
+    }));
+}
+
+export function normalizeFontWeightForFont(fontWeight, fontId) {
+    const options = getFontWeightOptions(fontId);
+    const numericWeight = Number(fontWeight);
+
+    if (options.some((option) => option.value === numericWeight)) {
+        return numericWeight;
+    }
+
+    return options.find((option) => option.value === 400)?.value
+        ?? options[0]?.value
+        ?? DEFAULT_FONT_WEIGHT_OPTIONS[0].value;
 }
 
 export function resolveFontFamily(fontId, fallbackFamily = SYSTEM_SANS_STACK) {
@@ -207,8 +287,19 @@ export async function ensureRuntimeFont(fontId) {
         return;
     }
 
-    const fontFace = new FontFace(fontConfig.family, fontConfig.source);
-    const loadedFace = await fontFace.load();
-    document.fonts.add(loadedFace);
+    const fontFaces = (fontConfig.weights ?? [])
+        .filter((weight) => weight.source)
+        .map((weight) => new FontFace(fontConfig.family, weight.source, {
+            style: 'normal',
+            weight: String(weight.value),
+        }));
+    const facesToLoad = fontFaces.length > 0
+        ? fontFaces
+        : [new FontFace(fontConfig.family, fontConfig.source)];
+
+    const loadedFaces = await Promise.all(facesToLoad.map((fontFace) => fontFace.load()));
+    loadedFaces.forEach((loadedFace) => {
+        document.fonts.add(loadedFace);
+    });
     loadedFontIds.add(fontId);
 }

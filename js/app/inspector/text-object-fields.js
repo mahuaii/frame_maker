@@ -1,10 +1,28 @@
 import { getPathValue, setPathValue } from '../../core/utils/object-path.js';
 import { buildColorTokenField, resolveTemplateAppearance } from '../../core/templates/registry.js';
+import {
+    getFontFieldOptions,
+    getFontWeightOptions,
+    normalizeFontWeightForFont,
+} from '../../core/fonts/index.js';
 import { createElement, createFieldGroup } from '../../ui/controls.js';
 import { createInspectorFieldList } from '../../ui/inspector.js';
 import { findTextObjectById } from '../text-model-operations.js';
 
 const TEXT_EDITOR_GRAY_EXCLUDED_FIELD_KEYS = new Set(['label', 'style.fontId', 'style.fontStyle']);
+const DEFAULT_TEXT_OBJECT_FONT_ID = 'systemSans';
+const DEFAULT_TEXT_OBJECT_FONT_WEIGHT = 400;
+
+function getTextObjectFontId(item) {
+    return getPathValue(item, 'style.fontId') ?? DEFAULT_TEXT_OBJECT_FONT_ID;
+}
+
+function getTextObjectFontWeight(item, fontId = getTextObjectFontId(item)) {
+    return normalizeFontWeightForFont(
+        getPathValue(item, 'style.fontWeight') ?? DEFAULT_TEXT_OBJECT_FONT_WEIGHT,
+        fontId
+    );
+}
 
 function applyTextEditorFieldFrameStyle(fields = []) {
     return fields.map((field) => {
@@ -25,6 +43,7 @@ function applyTextEditorFieldFrameStyle(fields = []) {
 function buildTextObjectFieldDefinitions(item, depth, template, state) {
     const { fieldValues } = state.getCurrentSnapshot();
     const activeAppearanceKey = resolveTemplateAppearance(template, fieldValues).key;
+    const fontId = getTextObjectFontId(item);
     const commonFields = [
         { key: 'visible', label: '显示', type: 'toggle', defaultValue: true },
     ];
@@ -33,16 +52,9 @@ function buildTextObjectFieldDefinitions(item, depth, template, state) {
             key: 'style.fontId',
             label: '字体',
             type: 'select',
-            defaultValue: 'systemSans',
-            options: [
-                { value: 'systemSans', label: 'System Sans' },
-                { value: 'miSans', label: 'MiSans' },
-                { value: 'angieSansStd', label: 'Angie Sans Std' },
-                { value: 'timesNewRoman', label: 'Times New Roman' },
-            ],
+            defaultValue: DEFAULT_TEXT_OBJECT_FONT_ID,
+            options: getFontFieldOptions(),
         },
-        { key: 'style.fontScale', label: '字号倍率', type: 'number', min: 0.1, step: 0.05, defaultValue: 1 },
-        { key: 'style.fontWeight', label: '字重', type: 'number', min: 100, max: 900, step: 50, defaultValue: 400 },
         {
             key: 'style.fontStyle',
             label: '字体样式',
@@ -53,13 +65,21 @@ function buildTextObjectFieldDefinitions(item, depth, template, state) {
                 { value: 'italic', label: '斜体' },
             ],
         },
+        { key: 'style.fontScale', label: '字号', type: 'number', min: 0.1, step: 0.05, defaultValue: 1 },
+        {
+            key: 'style.fontWeight',
+            label: '字重',
+            type: 'select',
+            defaultValue: getTextObjectFontWeight(item, fontId),
+            options: getFontWeightOptions(fontId),
+        },
         buildColorTokenField(template?.appearanceThemes, activeAppearanceKey, {
             key: 'style.colorToken',
             label: '颜色',
             defaultValue: 'textPrimary',
         }),
         { key: 'style.color', label: '自定义颜色', type: 'color', defaultValue: '#111111' },
-        { key: 'style.letterSpacingScale', label: '字距倍率', type: 'number', step: 0.01, defaultValue: 0 },
+        { key: 'style.letterSpacingScale', label: '字距', type: 'number', step: 0.01, defaultValue: 0 },
     ];
 
     if (item.type === 'group') {
@@ -99,16 +119,6 @@ function buildTextObjectFieldDefinitions(item, depth, template, state) {
                 },
             ] : []),
             {
-                key: 'direction',
-                label: '排列方向',
-                type: 'select',
-                defaultValue: 'vertical',
-                options: [
-                    { value: 'vertical', label: '垂直' },
-                    { value: 'horizontal', label: '水平' },
-                ],
-            },
-            {
                 key: 'align',
                 label: '对齐方式',
                 type: 'select',
@@ -119,10 +129,20 @@ function buildTextObjectFieldDefinitions(item, depth, template, state) {
                     { value: 'end', label: '结束' },
                 ],
             },
-            { key: 'gapScale', label: '组内间距倍率', type: 'number', step: 0.05, defaultValue: 0.4 },
+            {
+                key: 'direction',
+                label: '排列方向',
+                type: 'select',
+                defaultValue: 'vertical',
+                options: [
+                    { value: 'vertical', label: '垂直' },
+                    { value: 'horizontal', label: '水平' },
+                ],
+            },
+            { key: 'gapScale', label: '组内间距', type: 'number', step: 0.05, defaultValue: 0.4 },
             ...(depth === 0 ? [
-                { key: 'offsetXScale', label: 'X 偏移倍率', type: 'number', step: 0.1, defaultValue: 0 },
-                { key: 'offsetYScale', label: 'Y 偏移倍率', type: 'number', step: 0.1, defaultValue: 0 },
+                { key: 'offsetXScale', label: 'X 偏移', type: 'number', step: 0.1, defaultValue: 0 },
+                { key: 'offsetYScale', label: 'Y 偏移', type: 'number', step: 0.1, defaultValue: 0 },
             ] : []),
             ...styleFields,
         ]);
@@ -140,8 +160,8 @@ function buildTextObjectFieldDefinitions(item, depth, template, state) {
         return applyTextEditorFieldFrameStyle([
             ...commonFields,
             { key: 'forceVisible', label: '强制显示', type: 'toggle', defaultValue: false },
-            { key: 'lengthScale', label: '长度倍率', type: 'number', min: 0.1, step: 0.05, defaultValue: 1.4 },
-            { key: 'thicknessScale', label: '粗细倍率', type: 'number', min: 0.01, step: 0.01, defaultValue: 0.06 },
+            { key: 'lengthScale', label: '长度', type: 'number', min: 0.1, step: 0.05, defaultValue: 1.4 },
+            { key: 'thicknessScale', label: '粗细', type: 'number', min: 0.01, step: 0.01, defaultValue: 0.06 },
             buildColorTokenField(template?.appearanceThemes, activeAppearanceKey, {
                 key: 'colorToken',
                 label: '颜色',
@@ -156,14 +176,63 @@ function buildTextObjectFieldDefinitions(item, depth, template, state) {
 
 function buildTextObjectFieldValues(item, fields) {
     return fields.reduce((values, field) => {
+        if (field.key === 'style.fontWeight') {
+            values[field.key] = getTextObjectFontWeight(item);
+            return values;
+        }
+
         values[field.key] = getPathValue(item, field.key) ?? field.defaultValue ?? '';
         return values;
     }, {});
 }
 
+function getFieldByKey(fields, fieldKey) {
+    return fields.find((field) => field.key === fieldKey);
+}
+
+function createTextObjectFieldGrid(fields, fieldOptions) {
+    const fieldGroups = fields
+        .filter(Boolean)
+        .map((field) => createFieldGroup(field, fieldOptions));
+
+    return createElement('div', {
+        className: 'inspector-field-grid inspector-field-grid-contained',
+        children: fieldGroups,
+    });
+}
+
+function createTextObjectOffsetFieldGrid(fields, fieldOptions) {
+    const prefixLabels = {
+        offsetXScale: 'X',
+        offsetYScale: 'Y',
+    };
+    const fieldGroups = fields
+        .filter(Boolean)
+        .map((field) => createFieldGroup(field, {
+            ...fieldOptions,
+            compact: true,
+            label: prefixLabels[field.key] ?? field.label,
+        }));
+    const grid = createElement('div', {
+        className: 'inspector-field-grid text-object-offset-grid',
+        children: fieldGroups,
+    });
+
+    return createElement('div', {
+        className: 'text-object-offset-fields inspector-field-grid-contained',
+        children: [
+            createElement('div', {
+                className: 'field-group-label',
+                textContent: '偏移',
+            }),
+            grid,
+        ],
+    });
+}
+
 function createTextGroupAnchorLayout(fields, fieldOptions) {
     const anchorField = fields.find((field) => field.key === 'anchor');
-    const sideFields = ['region', 'direction']
+    const sideFields = ['region', 'align']
         .map((fieldKey) => fields.find((field) => field.key === fieldKey))
         .filter(Boolean);
     const fieldGroups = [anchorField, ...sideFields]
@@ -176,19 +245,45 @@ function createTextGroupAnchorLayout(fields, fieldOptions) {
     });
 }
 
-function createRootTextGroupFieldList(fields, fieldOptions) {
-    const anchorLayoutFieldKeys = new Set(['region', 'anchor', 'direction']);
+function createTextObjectStructuredFieldList(fields, fieldOptions, {
+    rootGroup = false,
+} = {}) {
+    const anchorLayoutFieldKeys = new Set(['region', 'anchor', 'align']);
+    const pairedFieldKeyGroups = [
+        ['direction', 'gapScale'],
+        ['offsetXScale', 'offsetYScale'],
+        ['style.fontScale', 'style.fontWeight'],
+    ];
+    const pairedFieldKeys = new Set(pairedFieldKeyGroups.flat());
     const content = createElement('div', {
         className: 'editor-collapsible-content',
     });
 
     fields.forEach((field) => {
-        if (field.key === 'region') {
+        if (rootGroup && field.key === 'region') {
             content.appendChild(createTextGroupAnchorLayout(fields, fieldOptions));
             return;
         }
 
-        if (anchorLayoutFieldKeys.has(field.key)) {
+        if (rootGroup && anchorLayoutFieldKeys.has(field.key)) {
+            return;
+        }
+
+        const pairKeys = pairedFieldKeyGroups.find(([firstKey]) => firstKey === field.key);
+        if (pairKeys) {
+            const pairFields = pairKeys
+                .map((fieldKey) => getFieldByKey(fields, fieldKey))
+                .filter(Boolean);
+
+            if (pairFields.length > 0) {
+                content.appendChild(pairKeys[0] === 'offsetXScale'
+                    ? createTextObjectOffsetFieldGrid(pairFields, fieldOptions)
+                    : createTextObjectFieldGrid(pairFields, fieldOptions));
+            }
+            return;
+        }
+
+        if (pairedFieldKeys.has(field.key)) {
             return;
         }
 
@@ -206,9 +301,41 @@ function commitTextObjectFieldValue({ template, state, textModelOperations, onTr
             return false;
         }
 
-        setPathValue(current.item, fieldKey, nextValue);
+        const committedValue = fieldKey === 'style.fontWeight'
+            ? getTextObjectFontWeight({
+                style: {
+                    fontId: getTextObjectFontId(current.item),
+                    fontWeight: nextValue,
+                },
+            })
+            : nextValue;
+
+        setPathValue(current.item, fieldKey, committedValue);
     }, {
         renderEditor: false,
+    });
+
+    if (committed) {
+        onTreeNodeChanged?.(itemId);
+    }
+}
+
+function commitTextObjectFontId(context, item, nextFontId) {
+    const { template, state, textModelOperations, onTreeNodeChanged } = context;
+    const itemId = item.id;
+    const committed = textModelOperations.commitTextModelChange(template, (model) => {
+        const current = findTextObjectById(model, itemId);
+        if (!current) {
+            return false;
+        }
+
+        const nextFontWeight = normalizeFontWeightForFont(
+            getPathValue(current.item, 'style.fontWeight') ?? DEFAULT_TEXT_OBJECT_FONT_WEIGHT,
+            nextFontId
+        );
+
+        setPathValue(current.item, 'style.fontId', nextFontId);
+        setPathValue(current.item, 'style.fontWeight', nextFontWeight);
     });
 
     if (committed) {
@@ -297,11 +424,18 @@ export function createTextObjectFields(context, selected) {
         values,
         idPrefix: `text-object-${item.id}`,
         onChange: (field, nextValue) => {
+            if (field.key === 'style.fontId') {
+                commitTextObjectFontId(context, item, nextValue);
+                return;
+            }
+
             commitTextObjectFieldValue(context, item, field.key, nextValue);
         },
     };
-    const list = item.type === 'group' && depth === 0
-        ? createRootTextGroupFieldList(fields, fieldOptions)
+    const list = item.type === 'group' || item.type === 'text'
+        ? createTextObjectStructuredFieldList(fields, fieldOptions, {
+            rootGroup: item.type === 'group' && depth === 0,
+        })
         : createInspectorFieldList(fields, fieldOptions);
 
     if (item.type === 'image') {

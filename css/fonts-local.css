@@ -19,3 +19,14 @@
     font-style: normal;
     font-display: swap;
 }
+
+@font-face {
+    font-family: 'MiSans';
+    src: url('../assets/fonts/MiSans-Medium.woff2') format('woff2'),
+        local('MiSans Medium'),
+        local('MiSans-Medium'),
+        local('MiSans');
+    font-weight: 500;
+    font-style: normal;
+    font-display: swap;
+}
