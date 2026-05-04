@@ -1,4 +1,6 @@
 .DS_Store
+.claude/
+.qoder/
 .playwright-cli/
 assets/fonts/Angie_Sans_Std.otf
 TEXT_RENDERING_REFACTOR_DESIGN.md

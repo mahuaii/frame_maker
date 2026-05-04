@@ -428,7 +428,7 @@ body.is-resizing-inspector {
 .text-model-editor {
     display: flex;
     flex-direction: column;
-    gap: 16px;
+    gap: 0;
     padding: var(--spacing-4) 0 var(--spacing-4);
 }
 
@@ -437,6 +437,15 @@ body.is-resizing-inspector {
     display: flex;
     flex-direction: column;
     gap: 8px;
+}
+
+.text-object-tree {
+    margin-bottom: var(--spacing-4);
+}
+
+.text-object-properties {
+    padding-top: var(--spacing-4);
+    border-top: 1px solid var(--color-divider);
 }
 
 .text-object-tree-header {
@@ -473,24 +482,95 @@ body.is-resizing-inspector {
 }
 
 .text-object-row {
+    position: relative;
     display: grid;
-    grid-template-columns: 20px minmax(0, 1fr) auto;
+    grid-template-columns: 20px minmax(0, 1fr);
     align-items: center;
-    gap: 8px;
+    gap: 4px;
     width: 100%;
     min-height: 28px;
-    padding: 0 8px 0 calc(8px + var(--text-object-depth, 0) * 14px);
+    padding: 0 56px 0 calc(4px + var(--text-object-depth, 0) * 14px);
     border: 1px solid transparent;
     border-radius: var(--radius-sm);
     background: transparent;
     color: var(--color-text-primary);
     text-align: left;
-    cursor: pointer;
+}
+
+.text-object-node.is-dragging>.text-object-row {
+    opacity: 0.48;
+}
+
+.text-object-node.drag-over-before>.text-object-row,
+.text-object-node.drag-over-after>.text-object-row,
+.text-object-node.drag-over-inside>.text-object-row {
+    background-image: linear-gradient(var(--color-control-accent), var(--color-control-accent));
+    background-repeat: no-repeat;
+    background-size: calc(100% - 8px) 2px;
+}
+
+.text-object-node.drag-over-before>.text-object-row {
+    background-position: 4px 0;
+}
+
+.text-object-node.drag-over-after>.text-object-row,
+.text-object-node.drag-over-inside>.text-object-row {
+    background-position: 4px 100%;
 }
 
 .text-object-node.selected>.text-object-row {
     border-color: var(--color-control-accent);
-    background: var(--color-template-selected-background);
+    background-color: var(--color-control-background-muted);
+}
+
+.text-object-drag-handle {
+    display: inline-flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 2px;
+    width: 20px;
+    height: 24px;
+    padding: 0;
+    border: 0;
+    border-radius: var(--radius-sm);
+    background: transparent;
+    color: var(--color-text-secondary);
+    cursor: grab;
+}
+
+.text-object-drag-handle:active {
+    cursor: grabbing;
+}
+
+.text-object-drag-handle:hover,
+.text-object-drag-handle:focus-visible {
+    background: var(--color-control-background-hover);
+    color: var(--color-text-primary);
+}
+
+.text-object-drag-handle span {
+    width: 10px;
+    height: 1px;
+    border-radius: var(--radius-pill);
+    background: currentColor;
+}
+
+.text-object-select-button {
+    display: grid;
+    grid-template-columns: 20px minmax(0, 1fr);
+    align-items: center;
+    gap: 8px;
+    min-width: 0;
+    min-height: 26px;
+    padding: 0 4px;
+    border: 0;
+    border-radius: var(--radius-sm);
+    background: transparent;
+    color: inherit;
+    font: inherit;
+    text-align: left;
+    cursor: pointer;
 }
 
 .text-object-type {
@@ -506,8 +586,7 @@ body.is-resizing-inspector {
     font-weight: 600;
 }
 
-.text-object-label,
-.text-object-status {
+.text-object-label {
     min-width: 0;
     overflow: hidden;
     text-overflow: ellipsis;
@@ -516,9 +595,109 @@ body.is-resizing-inspector {
     letter-spacing: 0;
 }
 
-.text-object-status {
-    color: var(--color-text-secondary);
-    font-size: 11px;
+.text-object-node.hidden>.text-object-row .text-object-type,
+.text-object-node.hidden>.text-object-row .text-object-label {
+    opacity: 0.46;
+}
+
+.text-object-row::after {
+    position: absolute;
+    top: 50%;
+    right: 4px;
+    width: 50px;
+    height: 24px;
+    transform: translateY(-50%);
+    border-radius: var(--radius-sm);
+    background: var(--color-control-background-muted);
+    opacity: 0;
+    content: '';
+    pointer-events: none;
+}
+
+.text-object-delete-button,
+.text-object-visibility-button {
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 24px;
+    height: 24px;
+    padding: 0;
+    border: 0;
+    border-radius: var(--radius-sm);
+    background: transparent;
+    color: var(--color-text-primary);
+    cursor: pointer;
+    opacity: 0;
+    z-index: 1;
+}
+
+.text-object-delete-button {
+    right: 30px;
+    color: var(--color-text-primary);
+}
+
+.text-object-visibility-button {
+    right: 4px;
+}
+
+.text-object-row:hover .text-object-delete-button,
+.text-object-row:hover::after,
+.text-object-delete-button.confirming,
+.text-object-delete-button:focus-visible,
+.text-object-row:hover .text-object-visibility-button,
+.text-object-node.self-hidden>.text-object-row .text-object-visibility-button,
+.text-object-visibility-button:focus-visible {
+    opacity: 1;
+}
+
+.text-object-row:has(.text-object-delete-button.confirming)::after,
+.text-object-row:has(.text-object-delete-button:focus-visible)::after,
+.text-object-row:has(.text-object-visibility-button:focus-visible)::after {
+    opacity: 1;
+}
+
+.text-object-delete-button.confirming {
+    color: #b91c1c;
+}
+
+.text-object-delete-button:hover,
+.text-object-delete-button:focus-visible,
+.text-object-visibility-button:hover,
+.text-object-visibility-button:focus-visible {
+    color: var(--color-control-foreground);
+}
+
+.text-object-row:has(.text-object-delete-button:hover)::after,
+.text-object-row:has(.text-object-delete-button:focus-visible)::after,
+.text-object-row:has(.text-object-visibility-button:hover)::after,
+.text-object-row:has(.text-object-visibility-button:focus-visible)::after {
+    background: var(--color-control-background-hover);
+}
+
+.text-object-delete-button:hover,
+.text-object-delete-button:focus-visible {
+    color: var(--color-text-primary);
+}
+
+.text-object-delete-button.confirming,
+.text-object-delete-button.confirming:hover,
+.text-object-delete-button.confirming:focus-visible {
+    color: #b91c1c;
+}
+
+.text-object-delete-button svg,
+.text-object-visibility-button svg {
+    position: relative;
+    width: 16px;
+    height: 16px;
+    stroke: currentColor;
+    stroke-width: 1.45;
+    fill: none;
+    stroke-linecap: round;
+    stroke-linejoin: round;
 }
 
 .text-object-empty {
