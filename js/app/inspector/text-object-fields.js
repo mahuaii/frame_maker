@@ -12,9 +12,25 @@ import { findTextObjectById } from '../text-model-operations.js';
 const TEXT_EDITOR_GRAY_EXCLUDED_FIELD_KEYS = new Set(['label', 'style.fontId', 'style.fontStyle']);
 const DEFAULT_TEXT_OBJECT_FONT_ID = 'systemSans';
 const DEFAULT_TEXT_OBJECT_FONT_WEIGHT = 400;
+const OWN_FONT_STYLE_KEYS = [
+    'style.fontId',
+    'style.fontIdEn',
+    'style.fontIdZh',
+    'style.fontWeight',
+    'style.fontStyle',
+];
 
 function getTextObjectFontId(item) {
     return getPathValue(item, 'style.fontId') ?? DEFAULT_TEXT_OBJECT_FONT_ID;
+}
+
+function getTextObjectUsesOwnFont(item) {
+    const explicitValue = getPathValue(item, 'style.useOwnFont');
+    if (typeof explicitValue === 'boolean') {
+        return explicitValue;
+    }
+
+    return OWN_FONT_STYLE_KEYS.some((key) => getPathValue(item, key) !== undefined);
 }
 
 function getTextObjectFontWeight(item, fontId = getTextObjectFontId(item)) {
@@ -40,14 +56,28 @@ function applyTextEditorFieldFrameStyle(fields = []) {
     });
 }
 
+function buildTextObjectStyleFields(template, activeAppearanceKey, fontFields, {
+    includeFontFields = true,
+} = {}) {
+    return [
+        ...(includeFontFields ? fontFields : []),
+        { key: 'style.fontScale', label: '字号倍率', type: 'number', min: 0.1, step: 0.05, defaultValue: 1 },
+        buildColorTokenField(template?.appearanceThemes, activeAppearanceKey, {
+            key: 'style.colorToken',
+            label: '颜色',
+            defaultValue: 'textPrimary',
+        }),
+        { key: 'style.color', label: '自定义颜色', type: 'color', defaultValue: '#111111' },
+        { key: 'style.letterSpacingScale', label: '字距', type: 'number', step: 0.01, defaultValue: 0 },
+    ];
+}
+
 function buildTextObjectFieldDefinitions(item, depth, template, state) {
     const { fieldValues } = state.getCurrentSnapshot();
     const activeAppearanceKey = resolveTemplateAppearance(template, fieldValues).key;
     const fontId = getTextObjectFontId(item);
-    const commonFields = [
-        { key: 'visible', label: '显示', type: 'toggle', defaultValue: true },
-    ];
-    const styleFields = [
+    const usesOwnFont = getTextObjectUsesOwnFont(item);
+    const fontFields = [
         {
             key: 'style.fontId',
             label: '字体',
@@ -65,7 +95,6 @@ function buildTextObjectFieldDefinitions(item, depth, template, state) {
                 { value: 'italic', label: '斜体' },
             ],
         },
-        { key: 'style.fontScale', label: '字号', type: 'number', min: 0.1, step: 0.05, defaultValue: 1 },
         {
             key: 'style.fontWeight',
             label: '字重',
@@ -73,19 +102,12 @@ function buildTextObjectFieldDefinitions(item, depth, template, state) {
             defaultValue: getTextObjectFontWeight(item, fontId),
             options: getFontWeightOptions(fontId),
         },
-        buildColorTokenField(template?.appearanceThemes, activeAppearanceKey, {
-            key: 'style.colorToken',
-            label: '颜色',
-            defaultValue: 'textPrimary',
-        }),
-        { key: 'style.color', label: '自定义颜色', type: 'color', defaultValue: '#111111' },
-        { key: 'style.letterSpacingScale', label: '字距', type: 'number', step: 0.01, defaultValue: 0 },
     ];
+    const styleFields = buildTextObjectStyleFields(template, activeAppearanceKey, fontFields);
 
     if (item.type === 'group') {
         return applyTextEditorFieldFrameStyle([
             { key: 'label', label: '组标题', type: 'input', defaultValue: depth > 0 ? '子组' : '文本组' },
-            ...commonFields,
             ...(depth === 0 ? [
                 {
                     key: 'region',
@@ -150,15 +172,16 @@ function buildTextObjectFieldDefinitions(item, depth, template, state) {
 
     if (item.type === 'text') {
         return applyTextEditorFieldFrameStyle([
-            ...commonFields,
             { key: 'content', label: '内容', type: 'textarea', defaultValue: '' },
-            ...styleFields,
+            { key: 'style.useOwnFont', label: '独立字体', type: 'toggle', defaultValue: usesOwnFont },
+            ...buildTextObjectStyleFields(template, activeAppearanceKey, fontFields, {
+                includeFontFields: usesOwnFont,
+            }),
         ]);
     }
 
     if (item.type === 'separator') {
         return applyTextEditorFieldFrameStyle([
-            ...commonFields,
             { key: 'forceVisible', label: '强制显示', type: 'toggle', defaultValue: false },
             { key: 'lengthScale', label: '长度', type: 'number', min: 0.1, step: 0.05, defaultValue: 1.4 },
             { key: 'thicknessScale', label: '粗细', type: 'number', min: 0.01, step: 0.01, defaultValue: 0.06 },
@@ -171,11 +194,16 @@ function buildTextObjectFieldDefinitions(item, depth, template, state) {
         ]);
     }
 
-    return applyTextEditorFieldFrameStyle(commonFields);
+    return [];
 }
 
 function buildTextObjectFieldValues(item, fields) {
     return fields.reduce((values, field) => {
+        if (field.key === 'style.useOwnFont') {
+            values[field.key] = getTextObjectUsesOwnFont(item);
+            return values;
+        }
+
         if (field.key === 'style.fontWeight') {
             values[field.key] = getTextObjectFontWeight(item);
             return values;
@@ -311,8 +339,20 @@ function commitTextObjectFieldValue({ template, state, textModelOperations, onTr
             : nextValue;
 
         setPathValue(current.item, fieldKey, committedValue);
+
+        if (fieldKey === 'style.useOwnFont' && committedValue) {
+            if (getPathValue(current.item, 'style.fontId') === undefined) {
+                setPathValue(current.item, 'style.fontId', DEFAULT_TEXT_OBJECT_FONT_ID);
+            }
+            if (getPathValue(current.item, 'style.fontStyle') === undefined) {
+                setPathValue(current.item, 'style.fontStyle', 'normal');
+            }
+            if (getPathValue(current.item, 'style.fontWeight') === undefined) {
+                setPathValue(current.item, 'style.fontWeight', DEFAULT_TEXT_OBJECT_FONT_WEIGHT);
+            }
+        }
     }, {
-        renderEditor: false,
+        renderEditor: fieldKey === 'style.useOwnFont',
     });
 
     if (committed) {

@@ -78,6 +78,7 @@ export const DEFAULT_IMAGE_ITEM = Object.freeze({
 });
 
 const STYLE_KEYS = [
+    'useOwnFont',
     'fontId',
     'fontIdEn',
     'fontIdZh',
@@ -88,6 +89,14 @@ const STYLE_KEYS = [
     'color',
     'letterSpacingScale',
     'lineHeightScale',
+];
+
+const FONT_STYLE_KEYS = [
+    'fontId',
+    'fontIdEn',
+    'fontIdZh',
+    'fontWeight',
+    'fontStyle',
 ];
 
 function isObject(value) {
@@ -134,6 +143,10 @@ function normalizeStyle(style = {}, owner = {}) {
         normalizedStyle.fontScale = normalizeNonNegativeNumber(normalizedStyle.fontScale, DEFAULT_TEXT_STYLE.fontScale);
     }
 
+    if (normalizedStyle.useOwnFont !== undefined) {
+        normalizedStyle.useOwnFont = normalizeBoolean(normalizedStyle.useOwnFont, false);
+    }
+
     if (normalizedStyle.fontWeight !== undefined) {
         normalizedStyle.fontWeight = normalizeFiniteNumber(normalizedStyle.fontWeight, DEFAULT_TEXT_STYLE.fontWeight);
     }
@@ -155,6 +168,22 @@ function normalizeStyle(style = {}, owner = {}) {
     return normalizedStyle;
 }
 
+function hasOwnFontStyleValue(style = {}, owner = {}) {
+    const styleSource = isObject(style) ? style : {};
+
+    return FONT_STYLE_KEYS.some((key) => styleSource[key] !== undefined || owner[key] !== undefined);
+}
+
+function normalizeTextItemStyle(item) {
+    const style = normalizeStyle(item.style, item);
+
+    if (style.useOwnFont === undefined) {
+        style.useOwnFont = hasOwnFontStyleValue(item.style, item);
+    }
+
+    return style;
+}
+
 function normalizeId(value, fallbackId) {
     const id = normalizeString(value, '').trim();
     return id || fallbackId;
@@ -168,7 +197,7 @@ function normalizeTextItem(item, fallbackId) {
         label: normalizeString(item.label, DEFAULT_TEXT_ITEM.label),
         content: normalizeString(item.content ?? item.text, DEFAULT_TEXT_ITEM.content),
         visible: normalizeBoolean(item.visible, DEFAULT_TEXT_ITEM.visible),
-        style: normalizeStyle(item.style, item),
+        style: normalizeTextItemStyle(item),
     };
 }
 
@@ -371,10 +400,40 @@ export function cloneTextModel(textModel = []) {
 }
 
 export function mergeTextStyles(...styles) {
-    return styles.reduce((result, style) => ({
-        ...result,
-        ...(isObject(style) ? style : {}),
-    }), {});
+    return styles.reduce((result, style) => {
+        if (!isObject(style)) {
+            return result;
+        }
+
+        const nextStyle = { ...result };
+        const usesOwnFont = style.useOwnFont !== false;
+
+        Object.entries(style).forEach(([key, value]) => {
+            if (value === undefined) {
+                return;
+            }
+
+            if (key === 'useOwnFont') {
+                nextStyle[key] = value;
+                return;
+            }
+
+            if (key === 'fontScale') {
+                const previousScale = normalizeNonNegativeNumber(nextStyle.fontScale, DEFAULT_TEXT_STYLE.fontScale);
+                const nextScale = normalizeNonNegativeNumber(value, DEFAULT_TEXT_STYLE.fontScale);
+                nextStyle.fontScale = previousScale * nextScale;
+                return;
+            }
+
+            if (FONT_STYLE_KEYS.includes(key) && !usesOwnFont) {
+                return;
+            }
+
+            nextStyle[key] = value;
+        });
+
+        return nextStyle;
+    }, {});
 }
 
 export function getTextBaseUnit(metrics = {}) {
