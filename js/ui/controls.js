@@ -3,6 +3,39 @@ export const RESET_ICON_PATHS = [
     'M3.2 3.6v2.4h2.4',
 ];
 
+const TEXT_ALIGN_ICON_PATHS = Object.freeze({
+    start: [
+        {
+            className: 'text-align-radio-guide',
+            d: 'M7 17.5a.5.5 0 0 1-1 0v-12a.5.5 0 0 1 1 0z',
+        },
+        {
+            className: 'text-align-radio-line',
+            d: 'M17.25 10a.75.75 0 0 0 .75-.75v-.5a.75.75 0 0 0-.75-.75h-8a.75.75 0 0 0-.75.75v.5c0 .414.336.75.75.75zm-4 5a.75.75 0 0 0 .75-.75v-.5a.75.75 0 0 0-.75-.75h-4a.75.75 0 0 0-.75.75v.5c0 .414.336.75.75.75z',
+        },
+    ],
+    center: [
+        {
+            className: 'text-align-radio-guide',
+            d: 'M13 17.5a.5.5 0 0 1-1 0v-12a.5.5 0 0 1 1 0z',
+        },
+        {
+            className: 'text-align-radio-line',
+            d: 'M17.25 10a.75.75 0 0 0 .75-.75v-.5a.75.75 0 0 0-.75-.75h-9.5a.75.75 0 0 0-.75.75v.5c0 .414.336.75.75.75zm-2 5a.75.75 0 0 0 .75-.75v-.5a.75.75 0 0 0-.75-.75h-5.5a.75.75 0 0 0-.75.75v.5c0 .414.336.75.75.75z',
+        },
+    ],
+    end: [
+        {
+            className: 'text-align-radio-guide',
+            d: 'M18 17.5a.5.5 0 0 1-1 0v-12a.5.5 0 0 1 1 0z',
+        },
+        {
+            className: 'text-align-radio-line',
+            d: 'M14.75 10a.75.75 0 0 0 .75-.75v-.5a.75.75 0 0 0-.75-.75h-8a.75.75 0 0 0-.75.75v.5c0 .414.336.75.75.75zm0 5a.75.75 0 0 0 .75-.75v-.5a.75.75 0 0 0-.75-.75h-4a.75.75 0 0 0-.75.75v.5c0 .414.336.75.75.75z',
+        },
+    ],
+});
+
 function appendChildren(element, children = []) {
     children.filter(Boolean).forEach((child) => {
         element.appendChild(child);
@@ -81,6 +114,45 @@ export function createIcon(paths, {
     return svg;
 }
 
+function createTextAlignIcon(value) {
+    const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+    svg.setAttribute('class', 'text-align-radio-icon');
+    svg.setAttribute('viewBox', '0 0 24 24');
+    svg.setAttribute('aria-hidden', 'true');
+    svg.setAttribute('focusable', 'false');
+
+    (TEXT_ALIGN_ICON_PATHS[value] ?? TEXT_ALIGN_ICON_PATHS.center).forEach((pathData) => {
+        const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+        path.setAttribute('class', pathData.className);
+        path.setAttribute('fill-rule', 'evenodd');
+        path.setAttribute('clip-rule', 'evenodd');
+        path.setAttribute('d', pathData.d);
+        svg.appendChild(path);
+    });
+
+    return svg;
+}
+
+function createNineGridPickerIcon() {
+    const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+    svg.setAttribute('class', 'nine-grid-picker-icon');
+    svg.setAttribute('viewBox', '0 0 18 18');
+    svg.setAttribute('aria-hidden', 'true');
+    svg.setAttribute('focusable', 'false');
+
+    [
+        'M5 5h8',
+        'M4 9h10',
+        'M6 13h6',
+    ].forEach((pathData) => {
+        const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+        path.setAttribute('d', pathData);
+        svg.appendChild(path);
+    });
+
+    return svg;
+}
+
 export function createIconButton({
     className = '',
     label,
@@ -113,12 +185,157 @@ export function formatColorOptionValue(value) {
         return '000000';
     }
 
-    const hex = value.trim().match(/^#?([0-9a-f]{6})$/i);
+    const hex = value.trim().match(/^#?([0-9a-f]{6})([0-9a-f]{2})?$/i);
     if (hex) {
         return hex[1].toUpperCase();
     }
 
     return value.trim().toUpperCase();
+}
+
+function clampNumber(value, min, max) {
+    const numericValue = Number(value);
+    if (!Number.isFinite(numericValue)) {
+        return min;
+    }
+
+    return Math.min(Math.max(numericValue, min), max);
+}
+
+function normalizeHexChannel(value) {
+    const numericValue = clampNumber(value, 0, 255);
+
+    return Math.round(numericValue).toString(16).padStart(2, '0').toUpperCase();
+}
+
+function normalizeHexInputValue(value, fallbackHex = '000000') {
+    if (typeof value !== 'string') {
+        return fallbackHex;
+    }
+
+    const compactValue = value.trim().replace(/^#/, '').replace(/[^0-9a-f]/gi, '').toUpperCase();
+    if (compactValue.length === 3) {
+        return compactValue
+            .split('')
+            .map((character) => character + character)
+            .join('');
+    }
+
+    if (compactValue.length >= 6) {
+        return compactValue.slice(0, 6);
+    }
+
+    return fallbackHex;
+}
+
+function sanitizeHexDraftValue(value) {
+    if (typeof value !== 'string') {
+        return '';
+    }
+
+    return value.trim().replace(/^#/, '').replace(/[^0-9a-f]/gi, '').slice(0, 6).toUpperCase();
+}
+
+function alphaPercentToHex(alphaPercent) {
+    return normalizeHexChannel((clampNumber(alphaPercent, 0, 100) / 100) * 255);
+}
+
+function alphaHexToPercent(alphaHex) {
+    const numericValue = Number.parseInt(alphaHex, 16);
+    if (!Number.isFinite(numericValue)) {
+        return 100;
+    }
+
+    return Math.round((numericValue / 255) * 100);
+}
+
+function parseCssAlpha(value) {
+    if (typeof value !== 'string') {
+        return 100;
+    }
+
+    const trimmedValue = value.trim();
+    if (trimmedValue.endsWith('%')) {
+        return clampNumber(Number.parseFloat(trimmedValue), 0, 100);
+    }
+
+    return clampNumber(Number.parseFloat(trimmedValue) * 100, 0, 100);
+}
+
+function parseColorValue(value, fallbackValue = '#000000FF') {
+    const fallbackColor = { hex: '000000', alpha: 100 };
+
+    if (typeof value !== 'string') {
+        return typeof fallbackValue === 'string' && fallbackValue !== value
+            ? parseColorValue(fallbackValue)
+            : fallbackColor;
+    }
+
+    const trimmedValue = value.trim();
+    const hexMatch = trimmedValue.match(/^#?([0-9a-f]{3}|[0-9a-f]{6}|[0-9a-f]{8})$/i);
+    if (hexMatch) {
+        const rawHex = hexMatch[1].toUpperCase();
+        const expandedHex = rawHex.length === 3
+            ? rawHex.split('').map((character) => character + character).join('')
+            : rawHex;
+        const hex = expandedHex.slice(0, 6);
+        const alpha = expandedHex.length === 8 ? alphaHexToPercent(expandedHex.slice(6, 8)) : 100;
+
+        return { hex, alpha };
+    }
+
+    const rgbMatch = trimmedValue.match(/^rgba?\((.+)\)$/i);
+    if (rgbMatch) {
+        const parts = rgbMatch[1]
+            .split(',')
+            .map((part) => part.trim());
+        const [red, green, blue] = parts;
+
+        if (red !== undefined && green !== undefined && blue !== undefined) {
+            return {
+                hex: [
+                    normalizeHexChannel(Number.parseFloat(red)),
+                    normalizeHexChannel(Number.parseFloat(green)),
+                    normalizeHexChannel(Number.parseFloat(blue)),
+                ].join(''),
+                alpha: parts[3] !== undefined ? parseCssAlpha(parts[3]) : 100,
+            };
+        }
+    }
+
+    return typeof fallbackValue === 'string' && fallbackValue !== value
+        ? parseColorValue(fallbackValue)
+        : fallbackColor;
+}
+
+function formatAlphaPercent(value) {
+    return String(Math.round(clampNumber(value, 0, 100)));
+}
+
+function serializeColorValue({ hex, alpha }) {
+    const normalizedHex = normalizeHexInputValue(hex);
+    const alphaHex = alphaPercentToHex(alpha);
+
+    return `#${normalizedHex}${alphaHex}`;
+}
+
+function normalizeOptionOpacity(opacity, fallbackAlpha = 100) {
+    if (opacity === null || opacity === undefined || opacity === '') {
+        return fallbackAlpha;
+    }
+
+    if (typeof opacity === 'string') {
+        return parseCssAlpha(opacity);
+    }
+
+    const numericOpacity = Number(opacity);
+    if (!Number.isFinite(numericOpacity)) {
+        return fallbackAlpha;
+    }
+
+    return numericOpacity <= 1
+        ? clampNumber(numericOpacity * 100, 0, 100)
+        : clampNumber(numericOpacity, 0, 100);
 }
 
 export function syncRangeProgress(input, value = input?.value) {
@@ -227,16 +444,143 @@ function createNumberInput(field, value, onChange) {
 }
 
 function createColorInput(field, value, onChange) {
-    const input = document.createElement('input');
-    input.type = 'color';
-    input.value = value ?? '#000000';
-    input.addEventListener('input', (event) => {
-        onChange?.(field, event.target.value, event);
+    const parsedColor = parseColorValue(value, field.defaultValue ?? '#000000FF');
+    let currentColor = {
+        hex: parsedColor.hex,
+        alpha: parsedColor.alpha,
+    };
+    const wrapper = createElement('div', {
+        className: 'color-alpha-control',
     });
-    input.addEventListener('change', () => {
-        blurControlAfterChange(input);
+    const nativeInput = document.createElement('input');
+    const swatchButton = createElement('button', {
+        className: 'color-alpha-swatch-button',
+        attributes: {
+            type: 'button',
+            'aria-label': `${field.label ?? '颜色'}色板`,
+        },
     });
-    return input;
+    const swatch = createElement('span', {
+        className: 'color-alpha-swatch',
+        attributes: {
+            'aria-hidden': 'true',
+        },
+    });
+    const hexInput = document.createElement('input');
+    const alphaInput = document.createElement('input');
+    const unit = createElement('span', {
+        className: 'color-alpha-unit',
+        textContent: '%',
+    });
+
+    nativeInput.type = 'color';
+    nativeInput.className = 'color-alpha-native-input';
+    nativeInput.tabIndex = -1;
+    nativeInput.setAttribute('aria-hidden', 'true');
+    nativeInput.setAttribute('title', '');
+    hexInput.type = 'text';
+    hexInput.className = 'color-alpha-hex-input';
+    hexInput.maxLength = 6;
+    hexInput.inputMode = 'text';
+    hexInput.setAttribute('autocomplete', 'off');
+    hexInput.setAttribute('aria-label', `${field.label ?? '颜色'} HEX`);
+    alphaInput.type = 'number';
+    alphaInput.className = 'color-alpha-opacity-input';
+    alphaInput.min = '0';
+    alphaInput.max = '100';
+    alphaInput.step = '1';
+    alphaInput.inputMode = 'numeric';
+    alphaInput.setAttribute('aria-label', `${field.label ?? '颜色'}不透明度`);
+
+    function syncControl() {
+        const serializedValue = serializeColorValue(currentColor);
+        const hexValue = normalizedHexForNativeInput(currentColor.hex);
+
+        nativeInput.value = hexValue;
+        hexInput.value = currentColor.hex;
+        alphaInput.value = formatAlphaPercent(currentColor.alpha);
+        swatch.style.setProperty('--color-alpha-swatch-color', serializedValue);
+    }
+
+    function normalizedHexForNativeInput(hex) {
+        return `#${normalizeHexInputValue(hex)}`;
+    }
+
+    function commitColor(nextColor, event) {
+        currentColor = {
+            hex: normalizeHexInputValue(nextColor.hex, currentColor.hex),
+            alpha: clampNumber(nextColor.alpha, 0, 100),
+        };
+        syncControl();
+        onChange?.(field, serializeColorValue(currentColor), event);
+    }
+
+    swatchButton.appendChild(swatch);
+    swatchButton.addEventListener('click', () => {
+        nativeInput.click();
+    });
+    nativeInput.addEventListener('input', (event) => {
+        commitColor({
+            ...currentColor,
+            hex: normalizeHexInputValue(event.target.value, currentColor.hex),
+        }, event);
+    });
+    nativeInput.addEventListener('change', () => {
+        blurControlAfterChange(swatchButton);
+    });
+    hexInput.addEventListener('input', (event) => {
+        const nextHex = sanitizeHexDraftValue(event.target.value);
+        hexInput.value = nextHex;
+        if (nextHex.length === 6) {
+            commitColor({
+                ...currentColor,
+                hex: nextHex,
+            }, event);
+        }
+    });
+    hexInput.addEventListener('change', (event) => {
+        commitColor({
+            ...currentColor,
+            hex: normalizeHexInputValue(event.target.value, currentColor.hex),
+        }, event);
+        blurControlAfterChange(hexInput);
+    });
+    hexInput.addEventListener('keydown', (event) => {
+        if (event.key === 'Enter') {
+            commitColor({
+                ...currentColor,
+                hex: normalizeHexInputValue(event.currentTarget.value, currentColor.hex),
+            }, event);
+            blurControlAfterChange(hexInput);
+        }
+    });
+    alphaInput.addEventListener('input', (event) => {
+        commitColor({
+            ...currentColor,
+            alpha: event.target.value,
+        }, event);
+    });
+    alphaInput.addEventListener('change', (event) => {
+        commitColor({
+            ...currentColor,
+            alpha: event.target.value,
+        }, event);
+        blurControlAfterChange(alphaInput);
+    });
+    alphaInput.addEventListener('keydown', (event) => {
+        if (event.key === 'Enter') {
+            commitColor({
+                ...currentColor,
+                alpha: event.currentTarget.value,
+            }, event);
+            blurControlAfterChange(alphaInput);
+        }
+    });
+
+    syncControl();
+    wrapper.append(nativeInput, swatchButton, hexInput, alphaInput, unit);
+
+    return wrapper;
 }
 
 function createTextInput(field, value, onChange) {
@@ -461,6 +805,12 @@ function createColorOptionGroup(field, value, onChange) {
 
     (field.options ?? []).forEach((option) => {
         const swatch = option.swatch ?? '#111111';
+        const parsedSwatch = parseColorValue(swatch);
+        const alpha = normalizeOptionOpacity(option.opacity, parsedSwatch.alpha);
+        const displayColor = {
+            hex: parsedSwatch.hex,
+            alpha,
+        };
         const isSelected = option.value === selectedValue;
         const button = createElement('button', {
             className: `option-button color-option-row${isSelected ? ' selected' : ''}`,
@@ -468,13 +818,14 @@ function createColorOptionGroup(field, value, onChange) {
                 type: 'button',
                 role: 'radio',
                 'aria-checked': isSelected ? 'true' : 'false',
-                'aria-label': option.label,
+                'aria-label': `${option.label} ${displayColor.hex} ${formatAlphaPercent(alpha)}%`,
+                title: option.label,
             },
             dataset: {
                 value: option.value,
             },
             styleProperties: {
-                '--option-swatch': swatch,
+                '--option-swatch': serializeColorValue(displayColor),
             },
         });
 
@@ -486,10 +837,18 @@ function createColorOptionGroup(field, value, onChange) {
         });
         const valueElement = createElement('span', {
             className: 'color-option-value',
-            textContent: option.displayValue ?? formatColorOptionValue(swatch),
+            textContent: displayColor.hex,
+        });
+        const opacityElement = createElement('span', {
+            className: 'color-option-opacity',
+            textContent: formatAlphaPercent(alpha),
+        });
+        const unitElement = createElement('span', {
+            className: 'color-option-unit',
+            textContent: '%',
         });
 
-        button.append(swatchElement, valueElement);
+        button.append(swatchElement, valueElement, opacityElement, unitElement);
         button.addEventListener('click', () => {
             input.querySelectorAll('.option-button').forEach((item) => {
                 const itemSelected = item === button;
@@ -505,6 +864,239 @@ function createColorOptionGroup(field, value, onChange) {
             children: [button],
         }));
     });
+
+    return input;
+}
+
+function createThemeRadioGroup(field, value, onChange) {
+    const input = createElement('div', {
+        className: 'option-button-group theme-radio-list',
+        attributes: {
+            role: 'radiogroup',
+            'aria-label': field.label,
+        },
+    });
+    const options = field.options ?? [];
+    let selectedValue = value ?? field.defaultValue ?? options[0]?.value ?? '';
+
+    function syncSelection(selectedButton) {
+        input.querySelectorAll('.theme-radio-button').forEach((button) => {
+            const isSelected = button === selectedButton;
+            button.classList.toggle('selected', isSelected);
+            button.setAttribute('aria-checked', isSelected ? 'true' : 'false');
+            button.tabIndex = isSelected ? 0 : -1;
+        });
+    }
+
+    function commitSelection(button, option, event) {
+        if (String(option.value) === String(selectedValue)) {
+            syncSelection(button);
+            return;
+        }
+
+        selectedValue = option.value;
+        syncSelection(button);
+        onChange?.(field, option.value, event);
+    }
+
+    function focusAdjacentButton(currentButton, direction) {
+        const buttons = Array.from(input.querySelectorAll('.theme-radio-button'));
+        const currentIndex = buttons.indexOf(currentButton);
+        if (currentIndex < 0) {
+            return;
+        }
+
+        const nextIndex = (currentIndex + direction + buttons.length) % buttons.length;
+        const nextButton = buttons[nextIndex];
+        const nextOption = options[nextIndex];
+        if (!nextButton || !nextOption) {
+            return;
+        }
+
+        nextButton.focus();
+        commitSelection(nextButton, nextOption);
+    }
+
+    options.forEach((option) => {
+        const swatch = option.swatch ?? '#111111';
+        const parsedSwatch = parseColorValue(swatch);
+        const alpha = normalizeOptionOpacity(option.opacity, parsedSwatch.alpha);
+        const displayColor = {
+            hex: parsedSwatch.hex,
+            alpha,
+        };
+        const isSelected = String(option.value) === String(selectedValue);
+        const button = createElement('button', {
+            className: `option-button theme-radio-button${isSelected ? ' selected' : ''}`,
+            attributes: {
+                type: 'button',
+                role: 'radio',
+                'aria-checked': isSelected ? 'true' : 'false',
+                'aria-label': option.label,
+                title: option.label,
+                tabindex: isSelected ? '0' : '-1',
+            },
+            dataset: {
+                value: option.value,
+            },
+            styleProperties: {
+                '--theme-radio-swatch': serializeColorValue(displayColor),
+            },
+            children: [
+                createElement('span', {
+                    className: 'theme-radio-swatch',
+                    attributes: {
+                        'aria-hidden': 'true',
+                    },
+                }),
+                createElement('span', {
+                    className: 'theme-radio-label',
+                    textContent: option.label,
+                }),
+            ],
+        });
+
+        button.addEventListener('click', (event) => {
+            commitSelection(button, option, event);
+            blurControlAfterChange(button);
+        });
+        button.addEventListener('keydown', (event) => {
+            const keyDirections = {
+                ArrowLeft: -1,
+                ArrowUp: -1,
+                ArrowRight: 1,
+                ArrowDown: 1,
+            };
+
+            if (event.key in keyDirections) {
+                event.preventDefault();
+                focusAdjacentButton(button, keyDirections[event.key]);
+            }
+
+            if (event.key === ' ' || event.key === 'Enter') {
+                event.preventDefault();
+                commitSelection(button, option, event);
+            }
+        });
+
+        input.appendChild(button);
+    });
+
+    if (!input.querySelector('.theme-radio-button.selected')) {
+        const firstButton = input.querySelector('.theme-radio-button');
+        if (firstButton) {
+            firstButton.classList.add('selected');
+            firstButton.setAttribute('aria-checked', 'true');
+            firstButton.tabIndex = 0;
+        }
+    }
+
+    return input;
+}
+
+function createTextAlignRadioGroup(field, value, onChange) {
+    const input = createElement('div', {
+        className: 'text-align-radio',
+        attributes: {
+            role: 'radiogroup',
+            'aria-label': field.label,
+        },
+    });
+    const options = field.options ?? [];
+    let selectedValue = value ?? field.defaultValue ?? options[0]?.value ?? '';
+
+    function syncSelection(selectedButton) {
+        input.querySelectorAll('.text-align-radio-button').forEach((button) => {
+            const isSelected = button === selectedButton;
+            button.classList.toggle('selected', isSelected);
+            button.setAttribute('aria-checked', isSelected ? 'true' : 'false');
+            button.tabIndex = isSelected ? 0 : -1;
+        });
+    }
+
+    function commitSelection(button, option, event) {
+        if (String(option.value) === String(selectedValue)) {
+            syncSelection(button);
+            return;
+        }
+
+        selectedValue = option.value;
+        syncSelection(button);
+        onChange?.(field, option.value, event);
+    }
+
+    function focusAdjacentButton(currentButton, direction, event) {
+        const buttons = Array.from(input.querySelectorAll('.text-align-radio-button'));
+        const currentIndex = buttons.indexOf(currentButton);
+        if (currentIndex < 0) {
+            return;
+        }
+
+        const nextIndex = Math.min(Math.max(currentIndex + direction, 0), buttons.length - 1);
+        const nextButton = buttons[nextIndex];
+        const nextOption = options[nextIndex];
+        if (!nextButton || !nextOption) {
+            return;
+        }
+
+        nextButton.focus();
+        commitSelection(nextButton, nextOption, event);
+    }
+
+    options.forEach((option) => {
+        const isSelected = String(option.value) === String(selectedValue);
+        const button = createElement('button', {
+            className: `option-button icon-option-button text-align-radio-button${isSelected ? ' selected' : ''}`,
+            attributes: {
+                type: 'button',
+                role: 'radio',
+                'aria-checked': isSelected ? 'true' : 'false',
+                'aria-label': option.label,
+                title: option.label,
+                tabindex: isSelected ? '0' : '-1',
+            },
+            dataset: {
+                value: option.value,
+            },
+            children: [
+                createTextAlignIcon(option.value),
+            ],
+        });
+
+        button.addEventListener('click', (event) => {
+            commitSelection(button, option, event);
+            blurControlAfterChange(button);
+        });
+        button.addEventListener('keydown', (event) => {
+            const keyDirections = {
+                ArrowLeft: -1,
+                ArrowUp: -1,
+                ArrowRight: 1,
+                ArrowDown: 1,
+            };
+
+            if (event.key in keyDirections) {
+                event.preventDefault();
+                focusAdjacentButton(button, keyDirections[event.key], event);
+            }
+
+            if (event.key === ' ' || event.key === 'Enter') {
+                event.preventDefault();
+                commitSelection(button, option, event);
+            }
+        });
+
+        input.appendChild(button);
+    });
+
+    if (!input.querySelector('.text-align-radio-button.selected')) {
+        const firstButton = input.querySelector('.text-align-radio-button');
+        if (firstButton) {
+            firstButton.classList.add('selected');
+            firstButton.setAttribute('aria-checked', 'true');
+            firstButton.tabIndex = 0;
+        }
+    }
 
     return input;
 }
@@ -574,12 +1166,7 @@ function createNineGridPicker(field, value, onChange) {
                 value: option.value,
             },
             children: [
-                createElement('span', {
-                    className: 'nine-grid-picker-mark',
-                    attributes: {
-                        'aria-hidden': 'true',
-                    },
-                }),
+                createNineGridPickerIcon(),
             ],
         });
 
@@ -611,6 +1198,128 @@ function createNineGridPicker(field, value, onChange) {
 
     if (!input.querySelector('.nine-grid-picker-button.selected')) {
         const firstButton = input.querySelector('.nine-grid-picker-button');
+        if (firstButton) {
+            firstButton.classList.add('selected');
+            firstButton.setAttribute('aria-checked', 'true');
+            firstButton.tabIndex = 0;
+        }
+    }
+
+    return input;
+}
+
+function createFrameRegionPicker(field, value, onChange) {
+    const input = createElement('div', {
+        className: ['frame-region-picker', field.controlClassName].filter(Boolean).join(' '),
+        attributes: {
+            role: 'radiogroup',
+            'aria-label': field.label,
+        },
+        children: [
+            createElement('span', {
+                className: 'frame-region-picker-photo',
+                attributes: {
+                    'aria-hidden': 'true',
+                },
+            }),
+        ],
+    });
+    const options = field.options ?? [];
+    let selectedValue = value ?? field.defaultValue ?? options[0]?.value ?? '';
+
+    function syncSelection(selectedButton) {
+        input.querySelectorAll('.frame-region-picker-button').forEach((button) => {
+            const isSelected = button === selectedButton;
+            button.classList.toggle('selected', isSelected);
+            button.setAttribute('aria-checked', isSelected ? 'true' : 'false');
+            button.tabIndex = isSelected ? 0 : -1;
+        });
+    }
+
+    function commitSelection(button, option, event) {
+        if (String(option.value) === String(selectedValue)) {
+            syncSelection(button);
+            return;
+        }
+
+        selectedValue = option.value;
+        syncSelection(button);
+        onChange?.(field, option.value, event);
+    }
+
+    function focusRegion(valueKey, event) {
+        const nextButton = input.querySelector(`.frame-region-picker-button[data-value="${valueKey}"]`);
+        const nextOption = options.find((option) => String(option.value) === String(valueKey));
+        if (!nextButton || !nextOption) {
+            return;
+        }
+
+        nextButton.focus();
+        commitSelection(nextButton, nextOption, event);
+    }
+
+    function focusAdjacentButton(currentButton, key, event) {
+        const currentValue = currentButton.dataset.value;
+        const nextValues = {
+            top: { ArrowLeft: 'left', ArrowRight: 'right', ArrowDown: 'center' },
+            right: { ArrowLeft: 'center', ArrowDown: 'bottom', ArrowUp: 'top' },
+            bottom: { ArrowLeft: 'left', ArrowRight: 'right', ArrowUp: 'center' },
+            left: { ArrowRight: 'center', ArrowDown: 'bottom', ArrowUp: 'top' },
+            center: { ArrowLeft: 'left', ArrowRight: 'right', ArrowUp: 'top', ArrowDown: 'bottom' },
+        };
+        const nextValue = nextValues[currentValue]?.[key];
+
+        if (nextValue) {
+            focusRegion(nextValue, event);
+        }
+    }
+
+    options.forEach((option) => {
+        const isSelected = String(option.value) === String(selectedValue);
+        const button = createElement('button', {
+            className: `frame-region-picker-button frame-region-picker-${option.value}${isSelected ? ' selected' : ''}`,
+            attributes: {
+                type: 'button',
+                role: 'radio',
+                'aria-checked': isSelected ? 'true' : 'false',
+                'aria-label': option.label,
+                title: option.label,
+                tabindex: isSelected ? '0' : '-1',
+            },
+            dataset: {
+                value: option.value,
+            },
+            children: [
+                createElement('span', {
+                    className: 'frame-region-picker-mark',
+                    attributes: {
+                        'aria-hidden': 'true',
+                    },
+                }),
+            ],
+        });
+
+        button.addEventListener('click', (event) => {
+            commitSelection(button, option, event);
+            blurControlAfterChange(button);
+        });
+        button.addEventListener('keydown', (event) => {
+            if (['ArrowLeft', 'ArrowUp', 'ArrowRight', 'ArrowDown'].includes(event.key)) {
+                event.preventDefault();
+                focusAdjacentButton(button, event.key, event);
+            }
+
+            if (event.key === ' ' || event.key === 'Enter') {
+                event.preventDefault();
+                commitSelection(button, option, event);
+            }
+        });
+
+        input.appendChild(button);
+    });
+
+    if (!input.querySelector('.frame-region-picker-button.selected')) {
+        const firstButton = input.querySelector('.frame-region-picker-button');
         if (firstButton) {
             firstButton.classList.add('selected');
             firstButton.setAttribute('aria-checked', 'true');
@@ -784,13 +1493,28 @@ export function createFieldInput(field, {
                 idPrefix,
             }, value, onChange);
         case 'select':
+            if (field.control === 'theme-radio') {
+                input = createThemeRadioGroup(field, value, onChange);
+                break;
+            }
+
+            if (field.control === 'text-align-radio') {
+                input = createTextAlignRadioGroup(field, value, onChange);
+                break;
+            }
+
             if (field.control === 'color-buttons') {
                 input = createColorOptionGroup(field, value, onChange);
                 break;
             }
 
-            input = field.control === 'nine-grid'
-                ? createNineGridPicker(field, value, onChange)
+            if (field.control === 'nine-grid') {
+                input = createNineGridPicker(field, value, onChange);
+                break;
+            }
+
+            input = field.control === 'frame-region'
+                ? createFrameRegionPicker(field, value, onChange)
                 : createSelectInput(field, value, onChange);
             break;
         case 'toggle':

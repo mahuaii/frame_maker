@@ -28,8 +28,8 @@ export const UPLOAD_ICON_PATHS = [
 ];
 
 export const INSPECTOR_SECTION_DEFINITIONS = [
-    { key: 'layout', title: '版式' },
     { key: 'appearance', title: '外观' },
+    { key: 'layout', title: '版式' },
     { key: 'exif', title: '拍摄信息' },
 ];
 

@@ -27,6 +27,13 @@ function cloneTextModelMap(sourceMap = new Map()) {
     return nextMap;
 }
 
+function createTextColorPaletteItem(value = '#000000FF') {
+    return {
+        id: `text-color-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+        value,
+    };
+}
+
 export function createAppState({ templates, getTemplateById }) {
     let currentImage = null;
     let currentPhoto = null;
@@ -38,6 +45,7 @@ export function createAppState({ templates, getTemplateById }) {
     let activeInspectorPanel = 'basic';
     let selectedTextObjectId = null;
     let textModelsByTemplateId = new Map();
+    const textColorPalettesByTemplateId = new Map();
     const photoEntries = [];
     let activePhotoId = null;
     let copiedBatchSettings = null;
@@ -120,6 +128,60 @@ export function createAppState({ templates, getTemplateById }) {
         }
 
         return entry.textModelsByTemplateId.get(template.id);
+    }
+
+    function getTemplateTextColorPalette(template) {
+        if (!template) {
+            return [];
+        }
+
+        if (!textColorPalettesByTemplateId.has(template.id)) {
+            textColorPalettesByTemplateId.set(template.id, []);
+        }
+
+        return textColorPalettesByTemplateId.get(template.id);
+    }
+
+    function setTemplateTextColorPalette(template, palette) {
+        if (!template) {
+            return;
+        }
+
+        textColorPalettesByTemplateId.set(template.id, Array.isArray(palette) ? palette : []);
+    }
+
+    function addTemplateTextColor(template, value) {
+        if (!template) {
+            return null;
+        }
+
+        const item = createTextColorPaletteItem(value);
+        setTemplateTextColorPalette(template, [
+            ...getTemplateTextColorPalette(template),
+            item,
+        ]);
+
+        return item;
+    }
+
+    function updateTemplateTextColor(template, colorId, value) {
+        if (!template || !colorId) {
+            return;
+        }
+
+        setTemplateTextColorPalette(template, getTemplateTextColorPalette(template).map((item) => (
+            item.id === colorId ? { ...item, value } : item
+        )));
+    }
+
+    function removeTemplateTextColor(template, colorId) {
+        if (!template || !colorId) {
+            return;
+        }
+
+        setTemplateTextColorPalette(template, getTemplateTextColorPalette(template).filter((item) => (
+            item.id !== colorId
+        )));
     }
 
     function saveActivePhotoState() {
@@ -282,6 +344,10 @@ export function createAppState({ templates, getTemplateById }) {
         getTemplateTextModel,
         setTemplateTextModel,
         getPhotoEntryTextModel,
+        getTemplateTextColorPalette,
+        addTemplateTextColor,
+        updateTemplateTextColor,
+        removeTemplateTextColor,
         saveActivePhotoState,
         activatePhotoEntry,
         createPhotoEntry,

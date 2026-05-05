@@ -92,12 +92,22 @@ function appendLayoutSectionContent(content, fields, context) {
     }
 
     if (isFreeFrameLayout(state)) {
-        appendInspectorFields(content, sideFields, {
+        const sideFieldGroup = createElement('div', {
+            className: 'field-group',
+            children: [
+                createElement('div', {
+                    className: 'field-group-label',
+                    textContent: '边界宽度',
+                }),
+            ],
+        });
+        sideFieldGroup.appendChild(createInspectorFieldGrid(sideFields, {
             values: fieldValues,
             onChange: (field, nextValue) => commitFieldValue(context, field, nextValue),
             compact: true,
             getLabel: getCompactFieldLabel,
-        });
+        }));
+        content.appendChild(sideFieldGroup);
         return;
     }
 
