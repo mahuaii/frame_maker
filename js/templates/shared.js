@@ -20,10 +20,56 @@ const sideFieldDefinitions = {
 };
 
 const frameSideControlOrder = ['top', 'right', 'bottom', 'left'];
+const frameSideIconRotations = {
+    top: 180,
+    right: -90,
+    bottom: 0,
+    left: 90,
+};
+const frameSideIconPaths = [
+    'M6.2 5v6.2c0 1.1.44 2.16 1.22 2.94s1.84 1.22 2.94 1.22h3.28c1.1 0 2.16-.44 2.94-1.22s1.22-1.84 1.22-2.94V5',
+    'M7.1 19.2h9.8',
+];
+const frameBorderIconPaths = [
+    'M8 5h8',
+    'M8 19h8',
+    'M5 8v8',
+    'M19 8v8',
+];
 
 function getFrameSideDefault(frame = {}, control) {
     const sides = frame.sides ?? {};
     return sides[control] ?? 0;
+}
+
+function buildFrameSidePrefixIcon(control) {
+    return {
+        prefixIconPaths: frameSideIconPaths.map((path) => ({
+            d: path,
+            fill: 'none',
+            stroke: 'var(--fpl-icon-color, var(--color-icon))',
+            strokeWidth: 1.4,
+            strokeLinecap: 'round',
+            strokeLinejoin: 'round',
+        })),
+        prefixIconViewBox: '4 4 16 16',
+        prefixIconRotationCenter: '12 12',
+        prefixIconRotation: frameSideIconRotations[control] ?? 0,
+    };
+}
+
+function buildFrameBorderPrefixIcon() {
+    return {
+        prefixIconPaths: frameBorderIconPaths.map((path) => ({
+            d: path,
+            fill: 'none',
+            stroke: 'var(--fpl-icon-color, var(--color-icon))',
+            strokeWidth: 1.4,
+            strokeLinecap: 'round',
+            strokeLinejoin: 'round',
+        })),
+        prefixIconViewBox: '4 4 16 16',
+    };
 }
 
 export function buildFrameLayoutFields(frame = {}, {
@@ -44,17 +90,15 @@ export function buildFrameLayoutFields(frame = {}, {
         {
             key: 'frameBorderWidth',
             label: '边界宽度',
-            type: 'range',
+            type: 'number',
             groupClassName: 'field-frame-gray',
             min: 0,
             max: 100,
             step: 0.1,
             inputMode: 'decimal',
             defaultValue: borderWidth,
-            valueInput: true,
-            valueUnit: '%',
             normalizeValue: normalizeFrameBorderWidth,
-            formatValue: (value) => `${Number(value).toFixed(1).replace(/\.0$/, '')}%`,
+            ...buildFrameBorderPrefixIcon(),
         },
         ...frameSideControlOrder.map((control) => {
             const definition = sideFieldDefinitions[control];
@@ -67,6 +111,7 @@ export function buildFrameLayoutFields(frame = {}, {
                 max: 80,
                 step: 0.1,
                 defaultValue: getFrameSideDefault(frame, control),
+                ...buildFrameSidePrefixIcon(control),
             };
         }),
     ];

@@ -82,6 +82,7 @@ export const DEFAULT_IMAGE_ITEM = Object.freeze({
 
 const STYLE_KEYS = [
     'useOwnFont',
+    'fontOverride',
     'fontId',
     'fontIdEn',
     'fontIdZh',
@@ -155,6 +156,10 @@ function normalizeStyle(style = {}, owner = {}) {
         normalizedStyle.useOwnFont = normalizeBoolean(normalizedStyle.useOwnFont, false);
     }
 
+    if (normalizedStyle.fontOverride !== undefined) {
+        normalizedStyle.fontOverride = normalizeBoolean(normalizedStyle.fontOverride, false);
+    }
+
     if (normalizedStyle.fontWeight !== undefined) {
         normalizedStyle.fontWeight = normalizeFiniteNumber(normalizedStyle.fontWeight, DEFAULT_TEXT_STYLE.fontWeight);
     }
@@ -180,6 +185,21 @@ function hasOwnFontStyleValue(style = {}, owner = {}) {
     const styleSource = isObject(style) ? style : {};
 
     return FONT_STYLE_KEYS.some((key) => styleSource[key] !== undefined || owner[key] !== undefined);
+}
+
+function mergeLetterSpacingScale(previousValue, nextValue) {
+    const previousScale = normalizeFiniteNumber(previousValue, DEFAULT_TEXT_STYLE.letterSpacingScale);
+    const nextScale = normalizeFiniteNumber(nextValue, DEFAULT_TEXT_STYLE.letterSpacingScale);
+
+    if (!previousScale) {
+        return nextScale;
+    }
+
+    if (!nextScale) {
+        return previousScale;
+    }
+
+    return previousScale * nextScale;
 }
 
 function normalizeTextItemStyle(item) {
@@ -415,7 +435,7 @@ export function mergeTextStyles(...styles) {
         }
 
         const nextStyle = { ...result };
-        const usesOwnFont = style.useOwnFont !== false;
+        const parentFontOverride = result.fontOverride === true;
 
         Object.entries(style).forEach(([key, value]) => {
             if (value === undefined) {
@@ -427,6 +447,11 @@ export function mergeTextStyles(...styles) {
                 return;
             }
 
+            if (key === 'fontOverride') {
+                nextStyle[key] = parentFontOverride || value === true;
+                return;
+            }
+
             if (key === 'fontScale') {
                 const previousScale = normalizeNonNegativeNumber(nextStyle.fontScale, DEFAULT_TEXT_STYLE.fontScale);
                 const nextScale = normalizeNonNegativeNumber(value, DEFAULT_TEXT_STYLE.fontScale);
@@ -434,7 +459,12 @@ export function mergeTextStyles(...styles) {
                 return;
             }
 
-            if (FONT_STYLE_KEYS.includes(key) && !usesOwnFont) {
+            if (key === 'letterSpacingScale') {
+                nextStyle.letterSpacingScale = mergeLetterSpacingScale(nextStyle.letterSpacingScale, value);
+                return;
+            }
+
+            if (FONT_STYLE_KEYS.includes(key) && parentFontOverride) {
                 return;
             }
 

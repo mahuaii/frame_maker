@@ -5,25 +5,55 @@ import {
     getFontWeightOptions,
     normalizeFontWeightForFont,
 } from '../../core/fonts/index.js';
-import { createElement, createFieldGroup, createIconButton } from '../../ui/controls.js';
-import { createInspectorFieldList } from '../../ui/inspector.js';
+import { createElement, createFieldGroup, createFieldInput, createIconButton } from '../../ui/controls.js';
+import {
+    createInspectorSection,
+    getInspectorSectionContent,
+} from '../../ui/inspector.js';
 import { findTextObjectById } from '../text-model-operations.js';
 
 const TEXT_EDITOR_GRAY_EXCLUDED_FIELD_KEYS = new Set(['label', 'style.fontId', 'style.fontStyle']);
 const TEXT_EDITOR_WHITE_FIELD_KEYS = new Set(['rotation', 'align', 'direction', 'style.fontWeight']);
-const TEXT_COLOR_FIELD_KEYS = new Set(['style.colorToken', 'style.color', 'colorToken', 'color']);
+const TEXT_STANDALONE_FIELD_KEYS = new Set(['label', 'content']);
+const TEXT_LAYOUT_FIELD_KEYS = new Set([
+    'region',
+    'anchor',
+    'rotation',
+    'align',
+    'direction',
+    'gapScale',
+    'offsetXScale',
+    'offsetYScale',
+    'forceVisible',
+    'lengthScale',
+    'thicknessScale',
+]);
+const TEXT_FONT_FIELD_KEYS = new Set([
+    'style.fontId',
+    'style.fontStyle',
+    'style.fontWeight',
+    'style.fontOverride',
+    'style.fontScale',
+    'style.letterSpacingScale',
+]);
 const DEFAULT_TEXT_OBJECT_FONT_ID = 'systemSans';
 const DEFAULT_TEXT_OBJECT_FONT_WEIGHT = 400;
+const GAP_SCALE_PREFIX_ICON_PATH = 'M7.5 7a.5.5 0 0 1 .5.5v.25c0 .138.112.25.25.25h6.5a.25.25 0 0 0 .25-.25V7.5a.5.5 0 0 1 1 0v.25C16 8.44 15.44 9 14.75 9h-6.5C7.56 9 7 8.44 7 7.75V7.5a.5.5 0 0 1 .5-.5m.75 8a.25.25 0 0 0-.25.25v.25a.5.5 0 0 1-1 0v-.25c0-.69.56-1.25 1.25-1.25h6.5c.69 0 1.25.56 1.25 1.25v.25a.5.5 0 0 1-1 0v-.25a.25.25 0 0 0-.25-.25zm1.25-4a.5.5 0 0 0 0 1h4a.5.5 0 0 0 0-1z';
+const FONT_SCALE_PREFIX_ICON_PATH = 'M9.88 6.3a.6.6 0 0 1 1.11 0l3.5 9.2a.6.6 0 1 1-1.12.43l-.85-2.23H8.35l-.84 2.23a.6.6 0 1 1-1.12-.43zm.56 1.9-1.64 4.3h3.27zm6.43 2.06a.48.48 0 0 1 .9 0l1.82 4.91a.49.49 0 1 1-.91.34l-.34-.91h-2.05l-.33.91a.49.49 0 0 1-.91-.34zm.45 1.5-.67 1.85h1.34z';
+const LETTER_SPACING_PREFIX_ICON_PATH = 'M6.5 6a.5.5 0 0 1 .5.5v11a.5.5 0 0 1-1 0v-11a.5.5 0 0 1 .5-.5m11 0a.5.5 0 0 1 .5.5v11a.5.5 0 0 1-1 0v-11a.5.5 0 0 1 .5-.5m-5.25 3a.5.5 0 0 1 .472.335l1.75 5a.5.5 0 1 1-.944.33l-.407-1.165H10.88l-.407 1.165a.5.5 0 1 1-.944-.33l1.75-5 .032-.072A.5.5 0 0 1 11.75 9zm-1.02 3.5h1.54L12 10.298z';
+const OFFSET_PREFIX_ICON_PATH = 'M16.5 8.5a.5.5 0 0 1 .5.5v5a.5.5 0 1 1-1 0v-2H7v2a.5.5 0 0 1-1 0V9a.5.5 0 0 1 1 0v2h9V9a.5.5 0 0 1 .5-.5';
+const SEPARATOR_LENGTH_PREFIX_ICON_PATHS = [
+    'M5 6.5h14',
+    'M5 17.5h14',
+    'M7 12h10',
+    'M7 12l2-2',
+    'M7 12l2 2',
+    'M17 12l-2-2',
+    'M17 12l-2 2',
+];
+const SEPARATOR_THICKNESS_PREFIX_ICON_PATH = 'M6 6.5a.5.5 0 0 1 .5-.5h11a.5.5 0 0 1 0 1h-11a.5.5 0 0 1-.5-.5M7 10v1h10v-1zm-.25-1a.75.75 0 0 0-.75.75v1.5c0 .414.336.75.75.75h10.5a.75.75 0 0 0 .75-.75v-1.5a.75.75 0 0 0-.75-.75zM7 17v-2h10v2zm-1-2.25a.75.75 0 0 1 .75-.75h10.5a.75.75 0 0 1 .75.75v2.5a.75.75 0 0 1-.75.75H6.75a.75.75 0 0 1-.75-.75z';
 const PLUS_ICON_PATHS = ['M8 3v10', 'M3 8h10'];
 const MINUS_ICON_PATHS = ['M3 8h10'];
-const OWN_FONT_STYLE_KEYS = [
-    'style.fontId',
-    'style.fontIdEn',
-    'style.fontIdZh',
-    'style.fontWeight',
-    'style.fontStyle',
-];
-
 function clampNumber(value, min, max) {
     const numericValue = Number(value);
     if (!Number.isFinite(numericValue)) {
@@ -145,21 +175,17 @@ function getColorOptionValue(option) {
     return normalizeColorValue(option?.swatch ?? '#000000EE');
 }
 
-function isTextColorField(field) {
-    return TEXT_COLOR_FIELD_KEYS.has(field?.key);
-}
-
 function getTextObjectFontId(item) {
     return getPathValue(item, 'style.fontId') ?? DEFAULT_TEXT_OBJECT_FONT_ID;
 }
 
-function getTextObjectUsesOwnFont(item) {
-    const explicitValue = getPathValue(item, 'style.useOwnFont');
+function getTextGroupUsesFontOverride(item) {
+    const explicitValue = getPathValue(item, 'style.fontOverride');
     if (typeof explicitValue === 'boolean') {
         return explicitValue;
     }
 
-    return OWN_FONT_STYLE_KEYS.some((key) => getPathValue(item, key) !== undefined);
+    return false;
 }
 
 function getTextObjectFontWeight(item, fontId = getTextObjectFontId(item)) {
@@ -200,7 +226,19 @@ function buildTextObjectStyleFields(template, activeAppearanceKey, fontFields, {
 } = {}) {
     return [
         ...(includeFontFields ? fontFields : []),
-        { key: 'style.fontScale', label: '字号倍率', type: 'number', min: 0.1, step: 0.05, defaultValue: 1 },
+        {
+            key: 'style.fontScale',
+            label: '字号倍率',
+            type: 'number',
+            min: 0.1,
+            step: 0.05,
+            defaultValue: 1,
+            prefixIconPaths: [{
+                d: FONT_SCALE_PREFIX_ICON_PATH,
+                fill: 'var(--fpl-icon-color, var(--color-icon))',
+            }],
+            prefixIconViewBox: '5.5 5.5 15 11',
+        },
         buildColorTokenField(template?.appearanceThemes, activeAppearanceKey, {
             key: 'style.colorToken',
             label: '颜色',
@@ -208,7 +246,18 @@ function buildTextObjectStyleFields(template, activeAppearanceKey, fontFields, {
             group: 'text',
         }),
         { key: 'style.color', label: '自定义颜色', type: 'color', defaultValue: '#000000EE' },
-        { key: 'style.letterSpacingScale', label: '字距', type: 'number', step: 0.01, defaultValue: 0 },
+        {
+            key: 'style.letterSpacingScale',
+            label: '字距',
+            type: 'number',
+            step: 0.01,
+            defaultValue: 0,
+            prefixIconPaths: [{
+                d: LETTER_SPACING_PREFIX_ICON_PATH,
+                fill: 'var(--fpl-icon-color, var(--color-icon))',
+            }],
+            prefixIconViewBox: '5.5 5.5 13 13',
+        },
     ];
 }
 
@@ -216,7 +265,7 @@ function buildTextObjectFieldDefinitions(item, depth, template, state) {
     const { fieldValues } = state.getCurrentSnapshot();
     const activeAppearanceKey = resolveTemplateAppearance(template, fieldValues).key;
     const fontId = getTextObjectFontId(item);
-    const usesOwnFont = getTextObjectUsesOwnFont(item);
+    const usesFontOverride = item.type === 'group' ? getTextGroupUsesFontOverride(item) : false;
     const fontFields = [
         {
             key: 'style.fontId',
@@ -227,7 +276,7 @@ function buildTextObjectFieldDefinitions(item, depth, template, state) {
         },
         {
             key: 'style.fontStyle',
-            label: '字体样式',
+            label: '字体',
             type: 'select',
             defaultValue: 'normal',
             options: [
@@ -286,6 +335,7 @@ function buildTextObjectFieldDefinitions(item, depth, template, state) {
                 key: 'rotation',
                 label: '文字方向',
                 type: 'select',
+                control: 'text-rotation-radio',
                 defaultValue: 0,
                 options: [
                     { value: 0, label: '正常' },
@@ -296,7 +346,7 @@ function buildTextObjectFieldDefinitions(item, depth, template, state) {
             },
             {
                 key: 'align',
-                label: '对齐方式',
+                label: '对齐',
                 type: 'select',
                 control: 'text-align-radio',
                 defaultValue: 'center',
@@ -308,19 +358,69 @@ function buildTextObjectFieldDefinitions(item, depth, template, state) {
             },
             {
                 key: 'direction',
-                label: '排列方向',
+                label: '排列',
                 type: 'select',
+                control: 'text-direction-radio',
                 defaultValue: 'vertical',
                 options: [
                     { value: 'vertical', label: '垂直' },
                     { value: 'horizontal', label: '水平' },
                 ],
             },
-            { key: 'gapScale', label: '组内间距', type: 'number', step: 0.05, defaultValue: 0.4 },
+            {
+                key: 'gapScale',
+                label: '组内间距',
+                type: 'number',
+                step: 0.05,
+                defaultValue: 0.4,
+                prefixIconPaths: [{
+                    d: GAP_SCALE_PREFIX_ICON_PATH,
+                    fill: 'var(--fpl-icon-color, var(--color-icon))',
+                    fillRule: 'evenodd',
+                    clipRule: 'evenodd',
+                }],
+                prefixIconViewBox: '8 6.5 10 10',
+                prefixIconRotation: 90,
+                prefixIconRotationCenter: '12.125 12.125',
+            },
             ...(depth === 0 ? [
-                { key: 'offsetXScale', label: 'X 偏移', type: 'number', step: 0.1, defaultValue: 0 },
-                { key: 'offsetYScale', label: 'Y 偏移', type: 'number', step: 0.1, defaultValue: 0 },
+                {
+                    key: 'offsetXScale',
+                    label: 'X 偏移',
+                    type: 'number',
+                    step: 0.1,
+                    defaultValue: 0,
+                    prefixIconPaths: [{
+                        d: OFFSET_PREFIX_ICON_PATH,
+                        fill: 'var(--fpl-icon-color, var(--color-icon))',
+                        fillRule: 'evenodd',
+                        clipRule: 'evenodd',
+                    }],
+                    prefixIconViewBox: '5.5 8 12 7',
+                },
+                {
+                    key: 'offsetYScale',
+                    label: 'Y 偏移',
+                    type: 'number',
+                    step: 0.1,
+                    defaultValue: 0,
+                    prefixIconPaths: [{
+                        d: OFFSET_PREFIX_ICON_PATH,
+                        fill: 'var(--fpl-icon-color, var(--color-icon))',
+                        fillRule: 'evenodd',
+                        clipRule: 'evenodd',
+                    }],
+                    prefixIconViewBox: '9 5.5 7 13',
+                    prefixIconRotation: 90,
+                    prefixIconRotationCenter: '11.625 12.125',
+                },
             ] : []),
+            {
+                key: 'style.fontOverride',
+                label: '字体覆盖',
+                type: 'toggle',
+                defaultValue: usesFontOverride,
+            },
             ...styleFields,
         ]);
     }
@@ -328,9 +428,8 @@ function buildTextObjectFieldDefinitions(item, depth, template, state) {
     if (item.type === 'text') {
         return applyTextEditorFieldFrameStyle([
             { key: 'content', label: '内容', type: 'textarea', defaultValue: '' },
-            { key: 'style.useOwnFont', label: '独立字体', type: 'toggle', defaultValue: usesOwnFont },
             ...buildTextObjectStyleFields(template, activeAppearanceKey, fontFields, {
-                includeFontFields: usesOwnFont,
+                includeFontFields: true,
             }),
         ]);
     }
@@ -338,8 +437,38 @@ function buildTextObjectFieldDefinitions(item, depth, template, state) {
     if (item.type === 'separator') {
         return applyTextEditorFieldFrameStyle([
             { key: 'forceVisible', label: '强制显示', type: 'toggle', defaultValue: false },
-            { key: 'lengthScale', label: '长度', type: 'number', min: 0.1, step: 0.05, defaultValue: 1.4 },
-            { key: 'thicknessScale', label: '粗细', type: 'number', min: 0.01, step: 0.01, defaultValue: 0.06 },
+            {
+                key: 'lengthScale',
+                label: '长度',
+                type: 'number',
+                min: 0.1,
+                step: 0.05,
+                defaultValue: 1.4,
+                prefixIconPaths: SEPARATOR_LENGTH_PREFIX_ICON_PATHS.map((path) => ({
+                    d: path,
+                    fill: 'none',
+                    stroke: 'var(--fpl-icon-color, var(--color-icon))',
+                    strokeWidth: 1.4,
+                    strokeLinecap: 'round',
+                    strokeLinejoin: 'round',
+                })),
+                prefixIconViewBox: '4 4 16 16',
+            },
+            {
+                key: 'thicknessScale',
+                label: '粗细',
+                type: 'number',
+                min: 0.01,
+                step: 0.01,
+                defaultValue: 0.06,
+                prefixIconPaths: [{
+                    d: SEPARATOR_THICKNESS_PREFIX_ICON_PATH,
+                    fill: 'var(--fpl-icon-color, var(--color-icon))',
+                    fillRule: 'evenodd',
+                    clipRule: 'evenodd',
+                }],
+                prefixIconViewBox: '4 4 16 16',
+            },
             buildColorTokenField(template?.appearanceThemes, activeAppearanceKey, {
                 key: 'colorToken',
                 label: '颜色',
@@ -355,8 +484,8 @@ function buildTextObjectFieldDefinitions(item, depth, template, state) {
 
 function buildTextObjectFieldValues(item, fields) {
     return fields.reduce((values, field) => {
-        if (field.key === 'style.useOwnFont') {
-            values[field.key] = getTextObjectUsesOwnFont(item);
+        if (field.key === 'style.fontOverride') {
+            values[field.key] = getTextGroupUsesFontOverride(item);
             return values;
         }
 
@@ -374,10 +503,31 @@ function getFieldByKey(fields, fieldKey) {
     return fields.find((field) => field.key === fieldKey);
 }
 
+function getCompactNumberFieldOptions(field, fieldOptions) {
+    const compactFields = {
+        gapScale: { compactTitle: '间距' },
+        'style.fontScale': { compactTitle: '字号' },
+        'style.letterSpacingScale': { compactTitle: '字距' },
+        lengthScale: {},
+        thicknessScale: {},
+    };
+    const compactOptions = compactFields[field.key];
+
+    if (!compactOptions) {
+        return fieldOptions;
+    }
+
+    return {
+        ...fieldOptions,
+        compact: true,
+        ...compactOptions,
+    };
+}
+
 function createTextObjectFieldGrid(fields, fieldOptions) {
     const fieldGroups = fields
         .filter(Boolean)
-        .map((field) => createFieldGroup(field, fieldOptions));
+        .map((field) => createFieldGroup(field, getCompactNumberFieldOptions(field, fieldOptions)));
 
     return createElement('div', {
         className: 'inspector-field-grid inspector-field-grid-contained',
@@ -411,6 +561,64 @@ function createTextObjectOffsetFieldGrid(fields, fieldOptions) {
             }),
             grid,
         ],
+    });
+}
+
+function createTextObjectSeparatorMetricFieldGrid(fields, fieldOptions) {
+    return createTextObjectFieldGrid(fields, fieldOptions);
+}
+
+function createTextFontPanel(fields, fieldOptions) {
+    const fontIdField = fields.find((field) => field.key === 'style.fontId');
+    const variantFields = [
+        fields.find((field) => field.key === 'style.fontStyle'),
+        fields.find((field) => field.key === 'style.fontWeight'),
+    ].filter(Boolean);
+
+    if (!fontIdField && variantFields.length === 0) {
+        return null;
+    }
+
+    const children = [];
+
+    if (fontIdField) {
+        children.push(createFieldGroup(fontIdField, {
+            ...fieldOptions,
+            label: '',
+        }));
+    }
+
+    if (variantFields.length > 0) {
+        children.push(createElement('div', {
+            className: 'inspector-field-grid text-font-variant-grid',
+            children: variantFields.map((field) => createFieldGroup(field, {
+                ...fieldOptions,
+                label: '',
+            })),
+        }));
+    }
+
+    return createElement('div', {
+        className: 'text-font-panel field-group field-frame-gray',
+        children,
+    });
+}
+
+function createTextFontOverrideAction(fields, fieldOptions) {
+    const overrideField = fields.find((field) => field.key === 'style.fontOverride');
+    if (!overrideField) {
+        return null;
+    }
+
+    const input = createFieldInput(overrideField, fieldOptions);
+
+    return createElement('label', {
+        className: 'text-font-override-toggle',
+        attributes: {
+            title: '字体覆盖',
+            'aria-label': '字体覆盖',
+        },
+        children: [input],
     });
 }
 
@@ -649,33 +857,10 @@ function createTextColorRow(context, item, tokenField, colorField, option) {
     return shell;
 }
 
-function createTextColorPanel(context, item, fields) {
-    const colorFields = getTextColorFields(fields);
-    if (!colorFields) {
-        return null;
-    }
-
-    const { tokenField, colorField } = colorFields;
+function createTextColorAddButton(context, item, tokenField, colorField) {
     const { state, template } = context;
-    const tokenValue = getTextColorTokenValue(item, tokenField);
-    const customValue = getTextColorCustomValue(item, colorField);
-    const palette = state.getTemplateTextColorPalette(template);
-    const selectedCustom = !tokenValue
-        ? palette.find((paletteItem) => normalizeColorValue(paletteItem.value) === customValue)
-        : null;
-    const tokenOptions = (tokenField.options ?? []).map((option) => ({
-        type: 'token',
-        token: option.value,
-        color: getColorOptionValue(option),
-        selected: tokenValue === option.value,
-    }));
-    const customOptions = palette.map((paletteItem) => ({
-        type: 'custom',
-        paletteItem,
-        color: normalizeColorValue(paletteItem.value),
-        selected: selectedCustom?.id === paletteItem.id,
-    }));
-    const addButton = createIconButton({
+
+    return createIconButton({
         className: 'text-color-add-button',
         label: '添加自定义颜色',
         iconPaths: PLUS_ICON_PATHS,
@@ -695,19 +880,28 @@ function createTextColorPanel(context, item, fields) {
             });
         },
     });
-    const header = createElement('div', {
-        className: 'text-color-panel-header',
-        children: [
-            createElement('div', {
-                className: 'field-group-label text-color-panel-title',
-                textContent: '颜色',
-            }),
-            createElement('div', {
-                className: 'text-color-panel-actions',
-                children: [addButton],
-            }),
-        ],
-    });
+}
+
+function createTextColorPanel(context, item, { tokenField, colorField }) {
+    const { state, template } = context;
+    const tokenValue = getTextColorTokenValue(item, tokenField);
+    const customValue = getTextColorCustomValue(item, colorField);
+    const palette = state.getTemplateTextColorPalette(template);
+    const selectedCustom = !tokenValue
+        ? palette.find((paletteItem) => normalizeColorValue(paletteItem.value) === customValue)
+        : null;
+    const tokenOptions = (tokenField.options ?? []).map((option) => ({
+        type: 'token',
+        token: option.value,
+        color: getColorOptionValue(option),
+        selected: tokenValue === option.value,
+    }));
+    const customOptions = palette.map((paletteItem) => ({
+        type: 'custom',
+        paletteItem,
+        color: normalizeColorValue(paletteItem.value),
+        selected: selectedCustom?.id === paletteItem.id,
+    }));
     const rows = createElement('div', {
         className: 'text-color-row-list',
         children: [...tokenOptions, ...customOptions].map((option) => (
@@ -717,11 +911,58 @@ function createTextColorPanel(context, item, fields) {
 
     return createElement('div', {
         className: 'text-color-panel field-group field-frame-gray',
-        children: [header, rows],
+        children: [rows],
     });
 }
 
-function createTextObjectStructuredFieldList(fields, fieldOptions, {
+function getFieldsByKeySet(fields, fieldKeys) {
+    return fields.filter((field) => fieldKeys.has(field.key));
+}
+
+function createTextObjectStandaloneFields(fields, fieldOptions) {
+    const standaloneFields = getFieldsByKeySet(fields, TEXT_STANDALONE_FIELD_KEYS);
+    if (standaloneFields.length === 0) {
+        return null;
+    }
+
+    return createElement('div', {
+        className: 'text-object-standalone-fields',
+        children: standaloneFields.map((field) => createFieldGroup(field, fieldOptions)),
+    });
+}
+
+function appendTextObjectPairedFieldGroup(content, fields, fieldOptions, pairKeys) {
+    const pairFields = pairKeys
+        .map((fieldKey) => getFieldByKey(fields, fieldKey))
+        .filter(Boolean);
+
+    if (pairFields.length === 0) {
+        return;
+    }
+
+    if (pairKeys[0] === 'offsetXScale') {
+        content.appendChild(createTextObjectOffsetFieldGrid(pairFields, fieldOptions));
+        return;
+    }
+
+    if (pairKeys[0] === 'lengthScale') {
+        content.appendChild(createTextObjectSeparatorMetricFieldGrid(pairFields, fieldOptions));
+        return;
+    }
+
+    content.appendChild(createTextObjectFieldGrid(pairFields, fieldOptions));
+}
+
+function createTextObjectFieldSection(title, fields, fieldOptions, appendFields, headerAction = null) {
+    const section = createInspectorSection(title, headerAction);
+    const content = getInspectorSectionContent(section);
+
+    appendFields(content, fields, fieldOptions);
+
+    return content.hasChildNodes() ? section : null;
+}
+
+function appendTextObjectLayoutFields(content, fields, fieldOptions, {
     rootGroup = false,
 } = {}) {
     const anchorLayoutFieldKeys = new Set(['region', 'anchor']);
@@ -729,13 +970,9 @@ function createTextObjectStructuredFieldList(fields, fieldOptions, {
         ['rotation', 'align'],
         ['direction', 'gapScale'],
         ['offsetXScale', 'offsetYScale'],
-        ['style.fontStyle', 'style.fontWeight'],
-        ['style.fontScale', 'style.letterSpacingScale'],
+        ['lengthScale', 'thicknessScale'],
     ];
     const pairedFieldKeys = new Set(pairedFieldKeyGroups.flat());
-    const content = createElement('div', {
-        className: 'editor-collapsible-content',
-    });
 
     fields.forEach((field) => {
         if (rootGroup && field.key === 'region') {
@@ -749,15 +986,7 @@ function createTextObjectStructuredFieldList(fields, fieldOptions, {
 
         const pairKeys = pairedFieldKeyGroups.find(([firstKey]) => firstKey === field.key);
         if (pairKeys) {
-            const pairFields = pairKeys
-                .map((fieldKey) => getFieldByKey(fields, fieldKey))
-                .filter(Boolean);
-
-            if (pairFields.length > 0) {
-                content.appendChild(pairKeys[0] === 'offsetXScale'
-                    ? createTextObjectOffsetFieldGrid(pairFields, fieldOptions)
-                    : createTextObjectFieldGrid(pairFields, fieldOptions));
-            }
+            appendTextObjectPairedFieldGroup(content, fields, fieldOptions, pairKeys);
             return;
         }
 
@@ -766,6 +995,99 @@ function createTextObjectStructuredFieldList(fields, fieldOptions, {
         }
 
         content.appendChild(createFieldGroup(field, fieldOptions));
+    });
+}
+
+function appendTextObjectFontFields(content, fields, fieldOptions) {
+    const fontPanelFieldKeys = new Set([
+        'style.fontId',
+        'style.fontStyle',
+        'style.fontWeight',
+        'style.fontOverride',
+    ]);
+    const pairedFieldKeyGroups = [
+        ['style.fontScale', 'style.letterSpacingScale'],
+    ];
+    const pairedFieldKeys = new Set(pairedFieldKeyGroups.flat());
+
+    fields.forEach((field) => {
+        if (field.key === 'style.fontId') {
+            const fontPanel = createTextFontPanel(fields, fieldOptions);
+            if (fontPanel) {
+                content.appendChild(fontPanel);
+            }
+            return;
+        }
+
+        if (fontPanelFieldKeys.has(field.key)) {
+            return;
+        }
+
+        const pairKeys = pairedFieldKeyGroups.find(([firstKey]) => firstKey === field.key);
+        if (pairKeys) {
+            appendTextObjectPairedFieldGroup(content, fields, fieldOptions, pairKeys);
+            return;
+        }
+
+        if (pairedFieldKeys.has(field.key)) {
+            return;
+        }
+
+        content.appendChild(createFieldGroup(field, fieldOptions));
+    });
+}
+
+function createTextColorSection(context, item, fields) {
+    const colorFields = getTextColorFields(fields);
+    if (!colorFields) {
+        return null;
+    }
+
+    const { tokenField, colorField } = colorFields;
+    const section = createInspectorSection(
+        '颜色',
+        createTextColorAddButton(context, item, tokenField, colorField)
+    );
+    const content = getInspectorSectionContent(section);
+
+    content.appendChild(createTextColorPanel(context, item, colorFields));
+
+    return section;
+}
+
+function createTextObjectSectionedFieldList(context, item, fields, fieldOptions, {
+    rootGroup = false,
+} = {}) {
+    const content = createElement('div', {
+        className: 'editor-collapsible-content text-object-sectioned-fields',
+    });
+    const standaloneFields = createTextObjectStandaloneFields(fields, fieldOptions);
+    const layoutFields = getFieldsByKeySet(fields, TEXT_LAYOUT_FIELD_KEYS);
+    const fontFields = getFieldsByKeySet(fields, TEXT_FONT_FIELD_KEYS);
+    const layoutSection = createTextObjectFieldSection(
+        item.type === 'separator' ? '分隔线' : '布局',
+        layoutFields,
+        fieldOptions,
+        (sectionContent, sectionFields, options) => appendTextObjectLayoutFields(sectionContent, sectionFields, options, {
+            rootGroup,
+        })
+    );
+    const fontSection = createTextObjectFieldSection(
+        '字体',
+        fontFields,
+        fieldOptions,
+        appendTextObjectFontFields,
+        createTextFontOverrideAction(fontFields, fieldOptions)
+    );
+    const colorSection = createTextColorSection(context, item, fields);
+
+    [
+        standaloneFields,
+        layoutSection,
+        fontSection,
+        colorSection,
+    ].filter(Boolean).forEach((element) => {
+        content.appendChild(element);
     });
 
     return content;
@@ -790,7 +1112,7 @@ function commitTextObjectFieldValue({ template, state, textModelOperations, onTr
 
         setPathValue(current.item, fieldKey, committedValue);
 
-        if (fieldKey === 'style.useOwnFont' && committedValue) {
+        if (fieldKey === 'style.fontOverride' && committedValue) {
             if (getPathValue(current.item, 'style.fontId') === undefined) {
                 setPathValue(current.item, 'style.fontId', DEFAULT_TEXT_OBJECT_FONT_ID);
             }
@@ -802,7 +1124,7 @@ function commitTextObjectFieldValue({ template, state, textModelOperations, onTr
             }
         }
     }, {
-        renderEditor: fieldKey === 'style.useOwnFont',
+        renderEditor: fieldKey === 'style.fontOverride',
     });
 
     if (committed) {
@@ -909,7 +1231,6 @@ export function createTextObjectFields(context, selected) {
     const { template, state } = context;
     const { item, depth } = selected;
     const fields = buildTextObjectFieldDefinitions(item, depth, template, state);
-    const visibleFields = fields.filter((field) => !isTextColorField(field));
     const values = buildTextObjectFieldValues(item, fields);
     const fieldOptions = {
         values,
@@ -923,16 +1244,9 @@ export function createTextObjectFields(context, selected) {
             commitTextObjectFieldValue(context, item, field.key, nextValue);
         },
     };
-    const list = item.type === 'group' || item.type === 'text'
-        ? createTextObjectStructuredFieldList(visibleFields, fieldOptions, {
-            rootGroup: item.type === 'group' && depth === 0,
-        })
-        : createInspectorFieldList(visibleFields, fieldOptions);
-    const colorPanel = createTextColorPanel(context, item, fields);
-
-    if (colorPanel) {
-        list.appendChild(colorPanel);
-    }
+    const list = createTextObjectSectionedFieldList(context, item, fields, fieldOptions, {
+        rootGroup: item.type === 'group' && depth === 0,
+    });
 
     if (item.type === 'image') {
         list.appendChild(createImageSourceControl(context, item));

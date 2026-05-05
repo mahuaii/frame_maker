@@ -271,6 +271,18 @@
     appearance: none;
 }
 
+.field-prefix-number-control input[type="number"] {
+    appearance: textfield;
+    -moz-appearance: textfield;
+}
+
+.field-prefix-number-control input[type="number"]::-webkit-outer-spin-button,
+.field-prefix-number-control input[type="number"]::-webkit-inner-spin-button {
+    margin: 0;
+    appearance: none;
+    -webkit-appearance: none;
+}
+
 .color-alpha-unit {
     color: var(--color-text-secondary);
     font-size: var(--field-font-size);
@@ -423,12 +435,55 @@
 }
 
 .field-prefix-control-label {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
     min-width: 10px;
     font-size: var(--field-font-size);
     font-weight: 400;
     line-height: 1;
     color: var(--color-text-secondary);
     white-space: nowrap;
+}
+
+.field-prefix-control-icon {
+    width: 1em;
+    height: 1em;
+    color: var(--color-text-secondary);
+    --fpl-icon-color: currentColor;
+    --color-icon: currentColor;
+}
+
+.field-prefix-number-control {
+    grid-template-columns: auto minmax(0, 1fr) auto;
+    column-gap: 6px;
+    padding-right: 6px;
+}
+
+.field-prefix-number-drag-handle {
+    width: 12px;
+    height: 16px;
+    color: var(--color-text-secondary);
+    cursor: ns-resize;
+    opacity: 0.52;
+    transition: opacity 0.12s ease, color 0.12s ease;
+    user-select: none;
+    touch-action: none;
+}
+
+.field-prefix-number-drag-handle path {
+    fill: currentColor;
+}
+
+.field-prefix-number-drag-handle:hover,
+.field-prefix-number-control.is-dragging-number .field-prefix-number-drag-handle {
+    opacity: 0.9;
+    color: var(--color-text-primary);
+}
+
+.field-prefix-number-control.is-dragging-number,
+.field-prefix-number-control.is-dragging-number .field-prefix-number-drag-handle {
+    cursor: ns-resize;
 }
 
 .field-prefix-control input,
@@ -502,8 +557,8 @@
     top: 2px;
     width: 4px;
     height: 8px;
-    border-right: 1.5px solid var(--color-control-foreground);
-    border-bottom: 1.5px solid var(--color-control-foreground);
+    border-right: 1px solid var(--color-control-foreground);
+    border-bottom: 1px solid var(--color-control-foreground);
     transform: rotate(40deg);
 }
 

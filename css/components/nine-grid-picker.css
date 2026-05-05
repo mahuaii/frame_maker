@@ -120,7 +120,8 @@
     --frame-region-picker-muted: color-mix(in srgb, var(--color-gray-dark) 45%, var(--color-white));
     --frame-region-picker-photo-border: color-mix(in srgb, var(--color-gray-dark) 10%, transparent);
     --frame-region-picker-mark-length: 16px;
-    --frame-region-picker-mark-thickness: 2px;
+    --frame-region-picker-mark-thickness: 1px;
+    --frame-region-picker-selected-mark-thickness: 2px;
 
     position: relative;
     width: 100%;
@@ -164,6 +165,8 @@
 
 .frame-region-picker-button.selected,
 .frame-region-picker-button[aria-checked="true"] {
+    --frame-region-picker-mark-thickness: var(--frame-region-picker-selected-mark-thickness);
+
     color: var(--color-control-accent);
 }
 

@@ -115,6 +115,9 @@ function appendLayoutSectionContent(content, fields, context) {
         appendInspectorFields(content, [borderField], {
             values: fieldValues,
             onChange: (field, nextValue) => commitFieldValue(context, field, nextValue),
+            compact: true,
+            compactTitle: '边界宽度',
+            getLabel: (field) => field.label,
         });
     }
 }

@@ -119,6 +119,14 @@
     background: var(--color-control-background-muted);
 }
 
+.text-direction-radio {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.text-rotation-radio {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+
 .text-align-radio-button {
     display: inline-flex;
     align-items: center;

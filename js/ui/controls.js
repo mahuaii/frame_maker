@@ -36,6 +36,13 @@ const TEXT_ALIGN_ICON_PATHS = Object.freeze({
     ],
 });
 
+const TEXT_DIRECTION_ICON_PATHS = Object.freeze({
+    vertical: 'M9.654 13.008A1.5 1.5 0 0 1 11 14.5v2l-.008.153a1.5 1.5 0 0 1-1.338 1.34L9.5 18h-2l-.153-.008a1.5 1.5 0 0 1-1.339-1.339L6 16.5v-2a1.5 1.5 0 0 1 1.347-1.492L7.5 13h2zM15.5 6a.5.5 0 0 1 .49.4l.01.1v9.794l1.146-1.146a.501.501 0 0 1 .708.707l-2 2a.5.5 0 0 1-.707 0l-2-2a.5.5 0 0 1 .707-.707L15 16.294V6.5l.01-.1a.5.5 0 0 1 .49-.4m-8 8a.5.5 0 0 0-.5.5v2a.5.5 0 0 0 .5.5h2a.5.5 0 0 0 .5-.5v-2a.5.5 0 0 0-.5-.5zm2.154-7.992A1.5 1.5 0 0 1 11 7.5v2l-.008.153a1.5 1.5 0 0 1-1.338 1.34L9.5 11h-2l-.153-.008a1.5 1.5 0 0 1-1.339-1.339L6 9.5v-2a1.5 1.5 0 0 1 1.347-1.492L7.5 6h2zM7.5 7a.5.5 0 0 0-.5.5v2a.5.5 0 0 0 .5.5h2a.5.5 0 0 0 .5-.5v-2a.5.5 0 0 0-.5-.5z',
+    horizontal: 'M15.147 13.147a.5.5 0 0 1 .707 0l2 2a.5.5 0 0 1 0 .707l-2 2a.5.5 0 0 1-.707-.707L16.293 16H6.5l-.101-.01a.5.5 0 0 1 0-.98L6.5 15h9.793l-1.146-1.146a.5.5 0 0 1 0-.707m-5.493-7.14A1.5 1.5 0 0 1 11 7.5v2l-.007.153a1.5 1.5 0 0 1-1.34 1.34L9.5 11h-2l-.153-.008a1.5 1.5 0 0 1-1.339-1.339L6 9.5v-2a1.5 1.5 0 0 1 1.347-1.492L7.5 6h2zm7 0A1.5 1.5 0 0 1 18 7.5v2l-.007.153a1.5 1.5 0 0 1-1.34 1.34L16.5 11h-2l-.153-.008a1.5 1.5 0 0 1-1.339-1.339L13 9.5v-2a1.5 1.5 0 0 1 1.347-1.492L14.5 6h2zM14.5 7a.5.5 0 0 0-.5.5v2a.5.5 0 0 0 .5.5h2a.5.5 0 0 0 .5-.5v-2a.5.5 0 0 0-.5-.5zm-7 0a.5.5 0 0 0-.5.5v2a.5.5 0 0 0 .5.5h2a.5.5 0 0 0 .5-.5v-2a.5.5 0 0 0-.5-.5z',
+});
+
+const TEXT_ROTATION_ICON_PATH = 'M8.646 9.073a.5.5 0 0 0 .708.708L11.5 7.634v7.793a.5.5 0 0 0 1 0V7.634l2.146 2.147a.5.5 0 0 0 .708-.708l-3-3a.5.5 0 0 0-.708 0zM6 17.927a.5.5 0 0 1 0-1h12a.5.5 0 0 1 0 1z';
+
 function appendChildren(element, children = []) {
     children.filter(Boolean).forEach((child) => {
         element.appendChild(child);
@@ -129,6 +136,39 @@ function createTextAlignIcon(value) {
         path.setAttribute('d', pathData.d);
         svg.appendChild(path);
     });
+
+    return svg;
+}
+
+function createTextDirectionIcon(value) {
+    const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+    svg.setAttribute('class', 'text-align-radio-icon');
+    svg.setAttribute('viewBox', '0 0 24 24');
+    svg.setAttribute('aria-hidden', 'true');
+    svg.setAttribute('focusable', 'false');
+
+    const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+    path.setAttribute('class', 'text-align-radio-line');
+    path.setAttribute('d', TEXT_DIRECTION_ICON_PATHS[value] ?? TEXT_DIRECTION_ICON_PATHS.vertical);
+    svg.appendChild(path);
+
+    return svg;
+}
+
+function createTextRotationIcon(value) {
+    const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+    svg.setAttribute('class', 'text-align-radio-icon');
+    svg.setAttribute('viewBox', '0 0 24 24');
+    svg.setAttribute('aria-hidden', 'true');
+    svg.setAttribute('focusable', 'false');
+
+    const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+    path.setAttribute('class', 'text-align-radio-line');
+    path.setAttribute('fill-rule', 'evenodd');
+    path.setAttribute('clip-rule', 'evenodd');
+    path.setAttribute('d', TEXT_ROTATION_ICON_PATH);
+    path.setAttribute('transform', `rotate(${Number(value) || 0} 12 12)`);
+    svg.appendChild(path);
 
     return svg;
 }
@@ -995,8 +1035,16 @@ function createThemeRadioGroup(field, value, onChange) {
 }
 
 function createTextAlignRadioGroup(field, value, onChange) {
+    const controlClassNames = {
+        'text-direction-radio': 'text-direction-radio',
+        'text-rotation-radio': 'text-rotation-radio',
+    };
     const input = createElement('div', {
-        className: 'text-align-radio',
+        className: [
+            'text-align-radio',
+            controlClassNames[field.control],
+            field.controlClassName,
+        ].filter(Boolean).join(' '),
         attributes: {
             role: 'radiogroup',
             'aria-label': field.label,
@@ -1059,7 +1107,7 @@ function createTextAlignRadioGroup(field, value, onChange) {
                 value: option.value,
             },
             children: [
-                createTextAlignIcon(option.value),
+                createTextRadioIcon(field.control, option.value),
             ],
         });
 
@@ -1099,6 +1147,18 @@ function createTextAlignRadioGroup(field, value, onChange) {
     }
 
     return input;
+}
+
+function createTextRadioIcon(control, value) {
+    if (control === 'text-direction-radio') {
+        return createTextDirectionIcon(value);
+    }
+
+    if (control === 'text-rotation-radio') {
+        return createTextRotationIcon(value);
+    }
+
+    return createTextAlignIcon(value);
 }
 
 function createNineGridPicker(field, value, onChange) {
@@ -1443,26 +1503,230 @@ function createRangeInput(field, value, onChange) {
     return wrapper;
 }
 
+function getNumberStep(field) {
+    const numericStep = Number(field.step ?? 1);
+
+    return Number.isFinite(numericStep) && numericStep > 0 ? numericStep : 1;
+}
+
+function getNumberStepPrecision(step) {
+    const stepText = String(step);
+    const exponentMatch = stepText.match(/e-(\d+)$/i);
+    if (exponentMatch) {
+        return Number(exponentMatch[1]);
+    }
+
+    const decimalPart = stepText.split('.')[1];
+    return decimalPart ? decimalPart.length : 0;
+}
+
+function clampFieldNumberValue(field, value) {
+    let nextValue = Number(value);
+    if (!Number.isFinite(nextValue)) {
+        nextValue = Number(field.defaultValue ?? 0);
+    }
+
+    const min = Number(field.min);
+    const max = Number(field.max);
+    if (Number.isFinite(min)) {
+        nextValue = Math.max(nextValue, min);
+    }
+    if (Number.isFinite(max)) {
+        nextValue = Math.min(nextValue, max);
+    }
+
+    return nextValue;
+}
+
+function formatSteppedNumberValue(value, step) {
+    const precision = Math.min(getNumberStepPrecision(step), 8);
+
+    return String(Number(value.toFixed(precision)));
+}
+
+function createNumberDragHandle(field = {}) {
+    const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+    svg.setAttribute('class', 'field-prefix-number-drag-handle');
+    svg.setAttribute('viewBox', field.dragHandleViewBox ?? '0 0 12 16');
+    svg.setAttribute('aria-hidden', 'true');
+    svg.setAttribute('focusable', 'false');
+
+    const paths = field.dragHandlePaths ?? [
+        { d: 'M6 3 3 6h6z' },
+        { d: 'M6 13 3 10h6z' },
+    ];
+
+    paths.forEach((pathData) => {
+        const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+        const pathDefinition = typeof pathData === 'string' ? { d: pathData } : pathData;
+        path.setAttribute('d', pathDefinition.d);
+
+        if (pathDefinition.fillRule) {
+            path.setAttribute('fill-rule', pathDefinition.fillRule);
+        }
+        if (pathDefinition.clipRule) {
+            path.setAttribute('clip-rule', pathDefinition.clipRule);
+        }
+        if (field.dragHandleRotation) {
+            const center = field.dragHandleRotationCenter ?? '12 12';
+            path.setAttribute('transform', `rotate(${field.dragHandleRotation} ${center})`);
+        }
+
+        svg.appendChild(path);
+    });
+
+    return svg;
+}
+
+function enablePrefixedNumberDrag(wrapper, handle, input, field, onChange) {
+    const pixelsPerStep = 2;
+    const step = getNumberStep(field);
+    let dragState = null;
+
+    function commitDragValue(nextValue, event) {
+        const normalizedValue = formatSteppedNumberValue(clampFieldNumberValue(field, nextValue), step);
+        if (input.value === normalizedValue) {
+            return;
+        }
+
+        input.value = normalizedValue;
+        onChange?.(field, normalizedValue, event);
+    }
+
+    function endDrag(event) {
+        if (!dragState) {
+            return;
+        }
+
+        if (handle.hasPointerCapture?.(dragState.pointerId)) {
+            handle.releasePointerCapture(dragState.pointerId);
+        }
+
+        dragState = null;
+        wrapper.classList.remove('is-dragging-number');
+        event?.preventDefault();
+    }
+
+    handle.addEventListener('pointerdown', (event) => {
+        if (event.button !== 0) {
+            return;
+        }
+
+        event.preventDefault();
+        const startValue = clampFieldNumberValue(field, input.value);
+        dragState = {
+            pointerId: event.pointerId,
+            startY: event.clientY,
+            startValue,
+            lastStepOffset: 0,
+        };
+        wrapper.classList.add('is-dragging-number');
+        handle.setPointerCapture?.(event.pointerId);
+    });
+
+    handle.addEventListener('pointermove', (event) => {
+        if (!dragState || event.pointerId !== dragState.pointerId) {
+            return;
+        }
+
+        event.preventDefault();
+        const stepOffset = Math.trunc((dragState.startY - event.clientY) / pixelsPerStep);
+        if (stepOffset === dragState.lastStepOffset) {
+            return;
+        }
+
+        dragState.lastStepOffset = stepOffset;
+        commitDragValue(dragState.startValue + (stepOffset * step), event);
+    });
+
+    handle.addEventListener('pointerup', endDrag);
+    handle.addEventListener('pointercancel', endDrag);
+}
+
+function createFieldPrefixLabelContent(label, field = {}) {
+    if (!field.prefixIconPaths) {
+        return {
+            textContent: label,
+        };
+    }
+
+    const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+    svg.setAttribute('class', 'field-prefix-control-icon');
+    svg.setAttribute('viewBox', field.prefixIconViewBox ?? '0 0 24 24');
+    svg.setAttribute('aria-hidden', 'true');
+    svg.setAttribute('focusable', 'false');
+
+    field.prefixIconPaths.forEach((pathData) => {
+        const pathDefinition = typeof pathData === 'string' ? { d: pathData } : pathData;
+        const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+        path.setAttribute('d', pathDefinition.d);
+
+        if (pathDefinition.fill) {
+            path.setAttribute('fill', pathDefinition.fill);
+        }
+        if (pathDefinition.stroke) {
+            path.setAttribute('stroke', pathDefinition.stroke);
+        }
+        if (pathDefinition.strokeWidth) {
+            path.setAttribute('stroke-width', pathDefinition.strokeWidth);
+        }
+        if (pathDefinition.strokeLinecap) {
+            path.setAttribute('stroke-linecap', pathDefinition.strokeLinecap);
+        }
+        if (pathDefinition.strokeLinejoin) {
+            path.setAttribute('stroke-linejoin', pathDefinition.strokeLinejoin);
+        }
+        if (pathDefinition.fillRule) {
+            path.setAttribute('fill-rule', pathDefinition.fillRule);
+        }
+        if (pathDefinition.clipRule) {
+            path.setAttribute('clip-rule', pathDefinition.clipRule);
+        }
+        if (field.prefixIconRotation) {
+            const center = field.prefixIconRotationCenter ?? '12 12';
+            path.setAttribute('transform', `rotate(${field.prefixIconRotation} ${center})`);
+        }
+
+        svg.appendChild(path);
+    });
+
+    return {
+        children: [svg],
+    };
+}
+
 export function createFieldPrefixControl(input, label, {
     ariaLabel = label,
+    field,
+    onChange,
 } = {}) {
     if (ariaLabel && !input.getAttribute('aria-label')) {
         input.setAttribute('aria-label', ariaLabel);
     }
 
-    return createElement('label', {
+    const labelElement = createElement('span', {
+        className: 'field-prefix-control-label',
+        ...createFieldPrefixLabelContent(label, field),
+        attributes: {
+            'aria-hidden': 'true',
+        },
+    });
+    const wrapper = createElement('label', {
         className: 'field-prefix-control',
         children: [
-            createElement('span', {
-                className: 'field-prefix-control-label',
-                textContent: label,
-                attributes: {
-                    'aria-hidden': 'true',
-                },
-            }),
+            labelElement,
             input,
         ],
     });
+
+    if (field?.type === 'number' && input instanceof HTMLInputElement && input.type === 'number') {
+        const dragHandle = createNumberDragHandle(field);
+        wrapper.classList.add('field-prefix-number-control');
+        wrapper.appendChild(dragHandle);
+        enablePrefixedNumberDrag(wrapper, dragHandle, input, field, onChange);
+    }
+
+    return wrapper;
 }
 
 export function createFieldInput(field, {
@@ -1503,6 +1767,16 @@ export function createFieldInput(field, {
                 break;
             }
 
+            if (field.control === 'text-direction-radio') {
+                input = createTextAlignRadioGroup(field, value, onChange);
+                break;
+            }
+
+            if (field.control === 'text-rotation-radio') {
+                input = createTextAlignRadioGroup(field, value, onChange);
+                break;
+            }
+
             if (field.control === 'color-buttons') {
                 input = createColorOptionGroup(field, value, onChange);
                 break;
@@ -1538,6 +1812,7 @@ export function createFieldGroup(field, {
     values = {},
     idPrefix = 'field',
     compact = false,
+    compactTitle,
     label = field.label,
     onChange,
     defaultRows,
@@ -1569,8 +1844,20 @@ export function createFieldGroup(field, {
     }
 
     if (compact && label) {
+        if (compactTitle) {
+            fieldGroup.appendChild(createElement('label', {
+                className: 'field-group-label',
+                textContent: compactTitle,
+                attributes: {
+                    for: `${idPrefix}-${field.key}`,
+                },
+            }));
+        }
+
         fieldGroup.appendChild(createFieldPrefixControl(input, label, {
             ariaLabel: field.label ?? label,
+            field,
+            onChange,
         }));
         return fieldGroup;
     }

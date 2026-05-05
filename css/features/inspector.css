@@ -440,16 +440,28 @@ body.is-resizing-inspector {
 .text-object-properties {
     display: flex;
     flex-direction: column;
-    gap: 8px;
 }
 
 .text-object-tree {
+    gap: 8px;
     margin-bottom: var(--spacing-4);
 }
 
 .text-object-properties {
+    gap: 0;
     padding-top: var(--spacing-4);
     border-top: 1px solid var(--color-divider);
+}
+
+.text-object-sectioned-fields,
+.text-object-standalone-fields {
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+}
+
+.text-object-sectioned-fields>.inspector-section:first-child .inspector-section-title {
+    padding-top: 0;
 }
 
 .text-object-tree-header {
@@ -493,7 +505,7 @@ body.is-resizing-inspector {
     gap: 4px;
     width: 100%;
     min-height: 28px;
-    padding: 0 56px 0 calc(4px + var(--text-object-depth, 0) * 14px);
+    padding: 0 4px 0 calc(4px + var(--text-object-depth, 0) * 14px);
     border: 1px solid transparent;
     border-radius: var(--radius-sm);
     background: transparent;
@@ -608,7 +620,7 @@ body.is-resizing-inspector {
     position: absolute;
     top: 50%;
     right: 4px;
-    width: 50px;
+    width: 52px;
     height: 24px;
     transform: translateY(-50%);
     border-radius: var(--radius-sm);
@@ -655,6 +667,16 @@ body.is-resizing-inspector {
 .text-object-node.self-hidden>.text-object-row .text-object-visibility-button,
 .text-object-visibility-button:focus-visible {
     opacity: 1;
+}
+
+.text-object-node.self-hidden>.text-object-row .text-object-visibility-button {
+    background: var(--color-control-background-muted);
+}
+
+.text-object-node.self-hidden>.text-object-row:hover .text-object-visibility-button,
+.text-object-node.self-hidden>.text-object-row:has(.text-object-visibility-button:hover) .text-object-visibility-button,
+.text-object-node.self-hidden>.text-object-row:has(.text-object-visibility-button:focus-visible) .text-object-visibility-button {
+    background: transparent;
 }
 
 .text-object-row:has(.text-object-delete-button.confirming)::after,
@@ -763,21 +785,41 @@ body.is-resizing-inspector {
     margin-bottom: var(--settings-field-gap);
 }
 
-.text-color-panel-header {
+.text-font-panel {
     display: flex;
-    align-items: center;
-    justify-content: space-between;
-    min-height: 24px;
+    flex-direction: column;
+    gap: var(--settings-field-gap);
 }
 
-.text-color-panel-title {
-    color: var(--color-text-secondary);
+.text-font-panel>.field-group {
+    padding-inline: 0;
+    margin-bottom: 0;
 }
 
-.text-color-panel-actions {
+.text-font-override-toggle {
     display: inline-flex;
     align-items: center;
-    gap: 12px;
+    justify-content: center;
+    width: 24px;
+    height: 24px;
+    border-radius: var(--radius-sm);
+    cursor: pointer;
+}
+
+.text-font-override-toggle:hover {
+    background: var(--color-control-background-hover);
+}
+
+.text-font-override-toggle input {
+    width: 14px;
+    height: 14px;
+    min-height: 14px;
+    margin: 0;
+}
+
+.text-font-variant-grid .field-group {
+    padding-inline: 0;
+    margin-bottom: 0;
 }
 
 .text-color-add-button,
