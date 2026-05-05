@@ -5,17 +5,21 @@ import { buildFrameLayoutFields } from '../shared.js';
 
 export const galleryCaptionMatAppearanceThemes = createSolidAppearanceThemes({
     white: {
-        label: '白底',
+        label: '白色',
         colors: {
-            title: '#1A1A1A',
-            subtitle: '#222222',
+            text: {
+                title: '#000000E5',
+                subtitle: '#000000DD',
+            },
         },
     },
     black: {
-        label: '黑底',
+        label: '黑色',
         colors: {
-            title: '#F5F5F5',
-            subtitle: '#FFFFFF',
+            text: {
+                title: '#F5F5F5',
+                subtitle: '#FFFFFF',
+            },
         },
     },
 });
@@ -74,7 +78,7 @@ export const galleryCaptionMatTemplateSchema = {
                 fontWeight: 300,
                 fontStyle: 'normal',
                 colorToken: 'title',
-                color: '#1A1A1A',
+                color: '#000000E5',
                 letterSpacingScale: 0,
             },
             items: [

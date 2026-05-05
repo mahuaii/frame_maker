@@ -2,7 +2,7 @@ export function buildAppearanceField(
     themes,
     {
         key = 'colorScheme',
-        label = '颜色',
+        label = '主题',
         defaultValue,
     } = {}
 ) {
@@ -13,7 +13,7 @@ export function buildAppearanceField(
         key,
         label,
         type: 'select',
-        control: 'color-buttons',
+        control: 'theme-radio',
         defaultValue: fallbackValue,
         options: themeEntries.map(([value, theme]) => ({
             value,
@@ -21,9 +21,10 @@ export function buildAppearanceField(
             displayValue: getAppearanceOptionDisplayValue(theme),
             opacity: theme.opacity,
             swatch: theme.canvasBackground?.color
-                ?? theme.colors?.barBackground
+                ?? getThemeColor(theme, 'barBackground', 'surface')
                 ?? theme.barBackground?.overlayColor
-                ?? theme.colors?.textPrimary
+                ?? getThemeColor(theme, 'textPrimary', 'text')
+                ?? getFirstThemeColor(theme)
                 ?? '#111111',
         })),
     };
@@ -43,6 +44,32 @@ function getAppearanceOptionDisplayValue(theme = {}) {
     }
 
     return undefined;
+}
+
+function isPlainObject(value) {
+    return Boolean(value && typeof value === 'object' && !Array.isArray(value));
+}
+
+function mergeColorGroups(baseColors = {}, overrideColors = {}) {
+    const result = {};
+    const keys = new Set([
+        ...Object.keys(baseColors ?? {}),
+        ...Object.keys(overrideColors ?? {}),
+    ]);
+
+    keys.forEach((key) => {
+        const baseValue = baseColors?.[key];
+        const overrideValue = overrideColors?.[key];
+
+        result[key] = isPlainObject(baseValue) || isPlainObject(overrideValue)
+            ? {
+                ...(isPlainObject(baseValue) ? baseValue : {}),
+                ...(isPlainObject(overrideValue) ? overrideValue : {}),
+            }
+            : (overrideValue ?? baseValue);
+    });
+
+    return result;
 }
 
 function mergeAppearanceTheme(baseTheme = {}, overrideTheme = {}) {
@@ -66,12 +93,48 @@ function mergeAppearanceTheme(baseTheme = {}, overrideTheme = {}) {
             },
         } : {}),
         ...(hasColors ? {
-            colors: {
-                ...(baseTheme.colors ?? {}),
-                ...(overrideTheme.colors ?? {}),
-            },
+            colors: mergeColorGroups(baseTheme.colors, overrideTheme.colors),
         } : {}),
     };
+}
+
+function getThemeColor(theme, token, group) {
+    const colors = theme?.colors;
+    if (!isPlainObject(colors)) {
+        return null;
+    }
+
+    if (group) {
+        return isPlainObject(colors[group]) ? colors[group][token] ?? null : null;
+    }
+
+    for (const colorGroup of Object.values(colors)) {
+        if (isPlainObject(colorGroup) && colorGroup[token] !== undefined) {
+            return colorGroup[token];
+        }
+    }
+
+    return null;
+}
+
+function getFirstThemeColor(theme) {
+    const colors = theme?.colors;
+    if (!isPlainObject(colors)) {
+        return null;
+    }
+
+    for (const colorGroup of Object.values(colors)) {
+        if (!isPlainObject(colorGroup)) {
+            continue;
+        }
+
+        const firstColor = Object.values(colorGroup)[0];
+        if (firstColor) {
+            return firstColor;
+        }
+    }
+
+    return null;
 }
 
 export function createAppearanceThemes(sharedThemes = {}, themeOverrides = {}) {
@@ -113,13 +176,15 @@ export function buildColorTokenField(appearanceThemes, activeThemeKey, {
     key = 'style.colorToken',
     label = '颜色',
     defaultValue,
+    group = 'text',
 } = {}) {
     const theme = appearanceThemes?.[activeThemeKey]
         ?? Object.values(appearanceThemes ?? {})[0]
         ?? {};
-    const colors = theme.colors ?? {};
+    const colors = isPlainObject(theme.colors?.[group]) ? theme.colors[group] : {};
     const entries = Object.entries(colors);
-    const fallbackValue = defaultValue ?? entries[0]?.[0] ?? '';
+    const defaultExists = defaultValue !== undefined && entries.some(([token]) => token === defaultValue);
+    const fallbackValue = defaultExists ? defaultValue : entries[0]?.[0] ?? '';
 
     return {
         key,
@@ -141,10 +206,5 @@ export function getAppearanceColor(appearance, token, fallback = null) {
         return fallback;
     }
 
-    const colors = appearance.colors;
-    if (!colors || typeof colors !== 'object') {
-        return fallback;
-    }
-
-    return colors[token] ?? fallback;
+    return getThemeColor(appearance, token) ?? fallback;
 }

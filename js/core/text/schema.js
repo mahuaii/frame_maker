@@ -16,7 +16,9 @@ export const TEXT_ALIGNS = Object.freeze({
     end: 'end',
 });
 
-export const FRAME_REGIONS = Object.freeze(['top', 'right', 'bottom', 'left']);
+export const TEXT_ROTATIONS = Object.freeze([0, 90, 180, 270]);
+
+export const FRAME_REGIONS = Object.freeze(['top', 'right', 'bottom', 'left', 'center']);
 
 export const ANCHOR_KEYS = Object.freeze([
     'top-left',
@@ -36,7 +38,7 @@ export const DEFAULT_TEXT_STYLE = Object.freeze({
     fontWeight: 400,
     fontStyle: 'normal',
     colorToken: 'textPrimary',
-    color: '#111111',
+    color: '#000000EE',
     letterSpacingScale: 0,
     lineHeightScale: 1.12,
 });
@@ -45,6 +47,7 @@ export const DEFAULT_GROUP = Object.freeze({
     type: TEXT_ITEM_TYPES.group,
     label: '文本组',
     direction: TEXT_DIRECTIONS.vertical,
+    rotation: 0,
     align: TEXT_ALIGNS.center,
     gapScale: 0.4,
     offsetXScale: 0,
@@ -67,7 +70,7 @@ export const DEFAULT_SEPARATOR_ITEM = Object.freeze({
     visible: true,
     forceVisible: false,
     colorToken: 'separator',
-    color: '#9CA3AF',
+    color: '#0000005A',
 });
 
 export const DEFAULT_IMAGE_ITEM = Object.freeze({
@@ -105,6 +108,11 @@ function isObject(value) {
 
 function normalizeEnumValue(value, allowedValues, fallbackValue) {
     return allowedValues.includes(value) ? value : fallbackValue;
+}
+
+function normalizeRotationValue(value, fallbackValue = DEFAULT_GROUP.rotation) {
+    const numericValue = Number(value);
+    return TEXT_ROTATIONS.includes(numericValue) ? numericValue : fallbackValue;
 }
 
 function normalizeBoolean(value, fallbackValue = true) {
@@ -272,6 +280,7 @@ function normalizeGroupItem(item, fallbackId, depth) {
             Object.values(TEXT_DIRECTIONS),
             DEFAULT_GROUP.direction
         ),
+        rotation: normalizeRotationValue(item.rotation),
         align: normalizeEnumValue(
             item.align,
             Object.values(TEXT_ALIGNS),

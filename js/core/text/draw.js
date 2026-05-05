@@ -85,7 +85,33 @@ function drawItem(ctx, item, originX, originY) {
     }
 }
 
+function normalizeRotation(rotation) {
+    const numericRotation = Number(rotation);
+    return Number.isFinite(numericRotation)
+        ? ((numericRotation % 360) + 360) % 360
+        : 0;
+}
+
 export function drawGroup(ctx, group, originX = 0, originY = 0) {
+    const rotation = normalizeRotation(group.rotation);
+    const unrotatedBounds = group.unrotatedBounds ?? group.bounds ?? {
+        width: group.width ?? 0,
+        height: group.height ?? 0,
+    };
+    const width = group.width ?? group.bounds?.width ?? unrotatedBounds.width;
+    const height = group.height ?? group.bounds?.height ?? unrotatedBounds.height;
+
+    if (rotation) {
+        ctx.save();
+        ctx.translate(originX + width / 2, originY + height / 2);
+        ctx.rotate((rotation * Math.PI) / 180);
+        group.items.forEach((item) => {
+            drawItem(ctx, item, -unrotatedBounds.width / 2, -unrotatedBounds.height / 2);
+        });
+        ctx.restore();
+        return;
+    }
+
     group.items.forEach((item) => {
         drawItem(ctx, item, originX, originY);
     });

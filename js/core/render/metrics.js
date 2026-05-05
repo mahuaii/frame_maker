@@ -2,6 +2,7 @@ import { ORIGINAL_FRAME_ASPECT_RATIO, parseFrameAspectRatio } from '../templates
 import { resolveTemplateConfig } from '../templates/registry.js';
 
 const FRAME_SIDE_KEYS = ['top', 'right', 'bottom', 'left'];
+const TEXT_REGION_KEYS = ['top', 'right', 'bottom', 'left', 'center'];
 const FRAME_SIDE_FIELD_KEYS = {
     top: 'frameTop',
     right: 'frameRight',
@@ -120,6 +121,12 @@ function buildTextInsets({ imageWidth, imageHeight, textRegions, template }) {
             bottom: 0,
             left: clampInset(edgeInset, textRegions.left.width / 2),
         },
+        center: {
+            top: clampInset(edgeInset, textRegions.center.height / 2),
+            right: clampInset(edgeInset, textRegions.center.width / 2),
+            bottom: clampInset(edgeInset, textRegions.center.height / 2),
+            left: clampInset(edgeInset, textRegions.center.width / 2),
+        },
     };
 }
 
@@ -148,8 +155,8 @@ function buildRegionAnchors(contentRect) {
 }
 
 function buildTextAnchors(contentRegions) {
-    return FRAME_SIDE_KEYS.reduce((anchors, side) => {
-        anchors[side] = buildRegionAnchors(contentRegions[side]);
+    return TEXT_REGION_KEYS.reduce((anchors, region) => {
+        anchors[region] = buildRegionAnchors(contentRegions[region]);
         return anchors;
     }, {});
 }
@@ -162,8 +169,8 @@ function scalePoint(point, scale) {
 }
 
 function scaleAnchors(anchors, scale) {
-    return FRAME_SIDE_KEYS.reduce((scaled, side) => {
-        scaled[side] = Object.entries(anchors[side]).reduce((result, [key, point]) => {
+    return TEXT_REGION_KEYS.reduce((scaled, region) => {
+        scaled[region] = Object.entries(anchors[region]).reduce((result, [key, point]) => {
             result[key] = scalePoint(point, scale);
             return result;
         }, {});
@@ -290,10 +297,13 @@ export function calculateFrameMetrics(image, template, scale = 1, rawConfig = {}
             width: sidesPx.left,
             height: imageHeight,
         },
+        center: {
+            ...photoArea,
+        },
     };
     const textInsets = buildTextInsets({ imageWidth, imageHeight, textRegions, template });
-    const textContentRegions = FRAME_SIDE_KEYS.reduce((regions, side) => {
-        regions[side] = insetRegion(textRegions[side], textInsets[side]);
+    const textContentRegions = TEXT_REGION_KEYS.reduce((regions, region) => {
+        regions[region] = insetRegion(textRegions[region], textInsets[region]);
         return regions;
     }, {});
     const anchors = buildTextAnchors(textContentRegions);
@@ -323,16 +333,16 @@ export function calculateFrameMetrics(image, template, scale = 1, rawConfig = {}
             bottom: sidesPx.bottom * scale,
             left: sidesPx.left * scale,
         },
-        scaledTextRegions: FRAME_SIDE_KEYS.reduce((regions, side) => {
-            regions[side] = scaleRect(textRegions[side], scale);
+        scaledTextRegions: TEXT_REGION_KEYS.reduce((regions, region) => {
+            regions[region] = scaleRect(textRegions[region], scale);
             return regions;
         }, {}),
-        scaledTextInsets: FRAME_SIDE_KEYS.reduce((insets, side) => {
-            insets[side] = scaleInsets(textInsets[side], scale);
+        scaledTextInsets: TEXT_REGION_KEYS.reduce((insets, region) => {
+            insets[region] = scaleInsets(textInsets[region], scale);
             return insets;
         }, {}),
-        scaledTextContentRegions: FRAME_SIDE_KEYS.reduce((regions, side) => {
-            regions[side] = scaleRect(textContentRegions[side], scale);
+        scaledTextContentRegions: TEXT_REGION_KEYS.reduce((regions, region) => {
+            regions[region] = scaleRect(textContentRegions[region], scale);
             return regions;
         }, {}),
         scaledAnchors: scaleAnchors(anchors, scale),

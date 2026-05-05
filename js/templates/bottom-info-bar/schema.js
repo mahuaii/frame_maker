@@ -10,9 +10,13 @@ export const bottomInfoBarAppearanceThemes = createSolidAppearanceThemes({
             color: '#FFFFFF',
         },
         colors: {
-            barBackground: '#FFFFFF',
-            textPrimary: '#111111',
-            separator: '#9CA3AF',
+            surface: {
+                barBackground: '#FFFFFF',
+            },
+            text: {
+                textPrimary: '#000000EE',
+                separator: '#0000005A',
+            },
         },
     },
     black: {
@@ -21,9 +25,13 @@ export const bottomInfoBarAppearanceThemes = createSolidAppearanceThemes({
             color: '#111111',
         },
         colors: {
-            barBackground: '#111111',
-            textPrimary: '#F8FAFC',
-            separator: '#475569',
+            surface: {
+                barBackground: '#111111',
+            },
+            text: {
+                textPrimary: '#F8FAFC',
+                separator: '#475569',
+            },
         },
     },
 });
@@ -73,7 +81,7 @@ export const bottomInfoBarTemplateSchema = {
                 fontWeight: 700,
                 fontStyle: 'normal',
                 colorToken: 'textPrimary',
-                color: '#111111',
+                color: '#000000EE',
                 letterSpacingScale: 0,
             },
             items: [
@@ -104,7 +112,7 @@ export const bottomInfoBarTemplateSchema = {
                 fontWeight: 600,
                 fontStyle: 'normal',
                 colorToken: 'textPrimary',
-                color: '#111111',
+                color: '#000000EE',
                 letterSpacingScale: 0,
             },
             items: [
@@ -122,7 +130,7 @@ export const bottomInfoBarTemplateSchema = {
                     lengthScale: 1.1,
                     thicknessScale: 0.06,
                     colorToken: 'separator',
-                    color: '#9CA3AF',
+                    color: '#0000005A',
                     visible: true,
                 },
                 {
@@ -139,7 +147,7 @@ export const bottomInfoBarTemplateSchema = {
                     lengthScale: 1.1,
                     thicknessScale: 0.06,
                     colorToken: 'separator',
-                    color: '#9CA3AF',
+                    color: '#0000005A',
                     visible: true,
                 },
                 {
@@ -156,7 +164,7 @@ export const bottomInfoBarTemplateSchema = {
                     lengthScale: 1.1,
                     thicknessScale: 0.06,
                     colorToken: 'separator',
-                    color: '#9CA3AF',
+                    color: '#0000005A',
                     visible: true,
                 },
                 {

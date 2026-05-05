@@ -8,8 +8,12 @@ export const sharedAppearanceThemes = {
             color: '#FFFFFF',
         },
         colors: {
-            textPrimary: '#111111',
-            photoBorder: '#000000',
+            text: {
+                textPrimary: '#000000EE',
+            },
+            frame: {
+                photoBorder: '#000000',
+            },
         },
     },
     black: {
@@ -19,28 +23,40 @@ export const sharedAppearanceThemes = {
             color: '#121212',
         },
         colors: {
-            textPrimary: '#F8FAFC',
-            photoBorder: '#FFFFFF',
+            text: {
+                textPrimary: '#F8FAFC',
+            },
+            frame: {
+                photoBorder: '#FFFFFF',
+            },
         },
     },
     blur: {
         label: '彩色模糊',
         canvasBackground: {
-            type: 'solid',
-            color: '#0f172a',
+            type: 'photoBlur',
+            blur: 28,
+            saturate: 1.35,
+            brightness: 0.9,
+            overlayColor: '#000000',
+            overlayOpacity: 0.9,
         },
         barBackground: {
             type: 'photoBlur',
             blur: 28,
             saturate: 1.35,
             brightness: 0.9,
-            overlayColor: '#0f172a',
-            overlayOpacity: 0.34,
+            overlayColor: '#000000',
+            overlayOpacity: 0.8,
         },
         colors: {
-            textPrimary: '#F8FAFC',
-            textSecondary: '#CBD5E1',
-            line: '#334155',
+            text: {
+                textPrimary: '#F8FAFC',
+                textSecondary: '#CBD5E1',
+            },
+            frame: {
+                line: '#000000C3',
+            },
         },
     },
 };
@@ -60,7 +76,9 @@ export function createSolidAppearanceThemes({
                 },
             } : {}),
             colors: {
-                photoBorder: '#000000',
+                frame: {
+                    photoBorder: '#000000',
+                },
             },
         },
         black: {
@@ -72,7 +90,9 @@ export function createSolidAppearanceThemes({
                 },
             } : {}),
             colors: {
-                photoBorder: '#FFFFFF',
+                frame: {
+                    photoBorder: '#FFFFFF',
+                },
             },
         },
     };

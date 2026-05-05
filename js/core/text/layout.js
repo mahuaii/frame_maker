@@ -107,6 +107,25 @@ function layoutMeasuredItems(items, group) {
     };
 }
 
+function normalizeRotation(rotation) {
+    const numericRotation = Number(rotation);
+    return Number.isFinite(numericRotation)
+        ? ((numericRotation % 360) + 360) % 360
+        : 0;
+}
+
+function getRotatedBounds(bounds, rotation) {
+    const normalizedRotation = normalizeRotation(rotation);
+    const swapsAxes = normalizedRotation === 90 || normalizedRotation === 270;
+
+    return {
+        x: 0,
+        y: 0,
+        width: swapsAxes ? bounds.height : bounds.width,
+        height: swapsAxes ? bounds.width : bounds.height,
+    };
+}
+
 async function measureChildItem(ctx, item, inheritedStyle, group, context, depth) {
     if (!item.visible) {
         return null;
@@ -170,6 +189,7 @@ async function layoutGroup(ctx, group, inheritedStyle, context, depth) {
         ...group,
         context,
     });
+    const bounds = getRotatedBounds(layout.bounds, group.rotation);
 
     return {
         type: TEXT_ITEM_TYPES.group,
@@ -178,12 +198,14 @@ async function layoutGroup(ctx, group, inheritedStyle, context, depth) {
         region: group.region,
         anchor: group.anchor,
         direction: group.direction,
+        rotation: group.rotation,
         align: group.align,
-        width: layout.bounds.width,
-        height: layout.bounds.height,
+        width: bounds.width,
+        height: bounds.height,
         x: 0,
         y: 0,
-        bounds: layout.bounds,
+        bounds,
+        unrotatedBounds: layout.bounds,
         items: layout.items,
         style: groupStyle,
         isTopLevel: depth === 0,

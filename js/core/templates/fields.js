@@ -35,8 +35,73 @@ function normalizeSelectValue(value, field, fallbackValue) {
     return fallbackValue;
 }
 
+function clampColorChannel(value) {
+    const numericValue = Number(value);
+    if (!Number.isFinite(numericValue)) {
+        return 0;
+    }
+
+    return Math.min(Math.max(Math.round(numericValue), 0), 255);
+}
+
+function toHexChannel(value) {
+    return clampColorChannel(value).toString(16).padStart(2, '0').toUpperCase();
+}
+
+function normalizeColorAlpha(value) {
+    if (typeof value !== 'string') {
+        return 255;
+    }
+
+    const trimmedValue = value.trim();
+    const parsedValue = trimmedValue.endsWith('%')
+        ? Number.parseFloat(trimmedValue) / 100
+        : Number.parseFloat(trimmedValue);
+
+    if (!Number.isFinite(parsedValue)) {
+        return 255;
+    }
+
+    return clampColorChannel(parsedValue * 255);
+}
+
+function normalizeColorValue(value, fallbackValue = '#000000FF') {
+    if (typeof value !== 'string') {
+        return fallbackValue;
+    }
+
+    const trimmedValue = value.trim();
+    const hexMatch = trimmedValue.match(/^#?([0-9a-f]{3}|[0-9a-f]{6}|[0-9a-f]{8})$/i);
+    if (hexMatch) {
+        const rawHex = hexMatch[1].toUpperCase();
+        const expandedHex = rawHex.length === 3
+            ? rawHex.split('').map((character) => character + character).join('')
+            : rawHex;
+        const rgbHex = expandedHex.slice(0, 6);
+        const alphaHex = expandedHex.length === 8 ? expandedHex.slice(6, 8) : 'FF';
+
+        return `#${rgbHex}${alphaHex}`;
+    }
+
+    const rgbMatch = trimmedValue.match(/^rgba?\((.+)\)$/i);
+    if (rgbMatch) {
+        const parts = rgbMatch[1].split(',').map((part) => part.trim());
+        const [red, green, blue, alpha = '1'] = parts;
+
+        if (red !== undefined && green !== undefined && blue !== undefined) {
+            return `#${toHexChannel(red)}${toHexChannel(green)}${toHexChannel(blue)}${toHexChannel(normalizeColorAlpha(alpha))}`;
+        }
+    }
+
+    return fallbackValue;
+}
+
 export function getFieldDefaultValue(field) {
     if (field.defaultValue !== undefined) {
+        if (field.type === 'color') {
+            return normalizeColorValue(field.defaultValue);
+        }
+
         return field.defaultValue;
     }
 
@@ -46,7 +111,7 @@ export function getFieldDefaultValue(field) {
         case 'toggle':
             return false;
         case 'color':
-            return '#000000';
+            return '#000000FF';
         default:
             return '';
     }
@@ -67,6 +132,7 @@ export function normalizeFieldValue(field, rawValue) {
         case 'select':
             return normalizeSelectValue(rawValue, field, fallbackValue);
         case 'color':
+            return normalizeColorValue(rawValue, fallbackValue);
         case 'text':
         case 'textarea':
         default:

@@ -14,7 +14,7 @@ export function resolveStoryExifTemplateData(input) {
             ? metaPrimary.join('   ')
             : (input.customText.fallbackNote || 'EXIF unavailable'),
         secondaryMetaText: metaSecondary.join('   '),
-        primaryMetaColorKey: exif && metaPrimary.length > 0 ? 'metaPrimary' : 'metaFallback',
+        primaryMetaColorKey: 'metaPrimary',
         hasSecondaryMeta: Boolean(metaSecondary.length > 0),
         hasExif: Boolean(exif && (metaPrimary.length > 0 || metaSecondary.length > 0)),
     };

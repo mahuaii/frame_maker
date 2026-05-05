@@ -36,7 +36,7 @@ export function buildFrameLayoutFields(frame = {}, {
             label: '画幅',
             type: 'option-input',
             defaultValue: aspectRatio,
-            groupClassName: 'field-frame-gray',
+            groupClassName: 'field-frame-white',
             normalizeValue: normalizeFrameAspectRatioValue,
             parseValue: normalizeFrameAspectRatioValue,
             options: FRAME_ASPECT_RATIO_OPTIONS,

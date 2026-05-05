@@ -12,6 +12,7 @@ export {
     TEXT_ALIGNS,
     TEXT_DIRECTIONS,
     TEXT_ITEM_TYPES,
+    TEXT_ROTATIONS,
     cloneTextModel,
     createDefaultTextGroup,
     createDefaultTextItem,

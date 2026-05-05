@@ -6,21 +6,23 @@ import { buildFrameLayoutFields } from '../shared.js';
 export const storyExifAppearanceThemes = createSolidAppearanceThemes({
     white: {
         colors: {
-            title: '#111827',
-            subtitle: '#6B7280',
-            metaPrimary: '#1F2937',
-            metaSecondary: '#6B7280',
-            metaFallback: '#9CA3AF',
+            text: {
+                title: '#000000E4',
+                subtitle: '#0000008B',
+                metaPrimary: '#000000D5',
+                metaSecondary: '#0000008B',
+            },
         },
     },
     black: {
         label: '黑色',
         colors: {
-            title: '#F8FAFC',
-            subtitle: '#CBD5E1',
-            metaPrimary: '#E2E8F0',
-            metaSecondary: '#94A3B8',
-            metaFallback: '#94A3B8',
+            text: {
+                title: '#F8FAFC',
+                subtitle: '#CBD5E1',
+                metaPrimary: '#E2E8F0',
+                metaSecondary: '#94A3B8',
+            },
         },
     },
 });
@@ -70,7 +72,7 @@ export const storyExifTemplateSchema = {
                 fontWeight: 400,
                 fontStyle: 'normal',
                 colorToken: 'title',
-                color: '#111827',
+                color: '#000000E4',
                 letterSpacingScale: 0,
             },
             items: [
@@ -120,7 +122,7 @@ export const storyExifTemplateSchema = {
                 fontWeight: 400,
                 fontStyle: 'normal',
                 colorToken: 'metaPrimary',
-                color: '#1F2937',
+                color: '#000000D5',
                 letterSpacingScale: 0,
             },
             items: [

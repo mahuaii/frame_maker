@@ -6,7 +6,7 @@ import { buildFrameLayoutFields, buildThinBorderToggleField, defaultFrameFont } 
 export const simpleMatAppearanceThemes = {
     ...createSolidAppearanceThemes(),
     edgeBlur: {
-        label: '边缘氛围',
+        label: '深色模糊',
         displayValue: '模糊',
         canvasBackground: {
             type: 'edgeExtendBlur',
