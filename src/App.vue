@@ -1,3 +1,23 @@
+<script setup lang="ts">
+import { onBeforeUnmount, onMounted } from 'vue';
+import { initFrameMakerApp } from '../js/app.js';
+import { getTemplateById, templates } from '../js/templates.js';
+
+let appInstance: ReturnType<typeof initFrameMakerApp> | null = null;
+
+onMounted(() => {
+    appInstance = initFrameMakerApp({
+        templates,
+        getTemplateById,
+    });
+});
+
+onBeforeUnmount(() => {
+    appInstance?.destroy();
+    appInstance = null;
+});
+</script>
+
 <template>
     <main class="main-content">
         <section class="frame-selector" id="frame-selector">

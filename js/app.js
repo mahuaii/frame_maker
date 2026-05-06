@@ -3,7 +3,6 @@
  * 负责组装状态、控制器和全局生命周期。
  */
 
-import { templates, getTemplateById } from './templates.js';
 import { preloadRuntimeFontsInBackground } from './core/fonts/index.js';
 import {
     DEFAULT_INSPECTOR_WIDTH,
@@ -20,27 +19,7 @@ import { createExportController } from './app/export.js';
 import { createTextModelOperations } from './app/text-model-operations.js';
 import { createInspectorController } from './app/inspector/index.js';
 
-const dom = getDomRefs();
-const state = createAppState({ templates, getTemplateById });
-
-let previewController = null;
-let templateSelectorController = null;
-let uploadController = null;
-let exportController = null;
-let inspectorController = null;
-let textModelOperations = null;
-
-const actions = {
-    renderInspector: () => inspectorController.renderInspectorPanel(),
-    updatePreview: () => previewController.updatePreview(),
-    queuePreviewResize: () => previewController.queuePreviewResize(),
-    saveActivePhotoState: () => state.saveActivePhotoState(),
-    activatePhotoEntry: (entry, options) => activatePhotoEntry(entry, options),
-    updateSelectorSelection: () => templateSelectorController.updateSelectorSelection(),
-    handleExport: () => exportController.handleExport(),
-};
-
-function clampInspectorWidth(width) {
+function clampInspectorWidth(dom, width) {
     const numericWidth = Number(width);
     if (!Number.isFinite(numericWidth)) {
         return DEFAULT_INSPECTOR_WIDTH;
@@ -54,8 +33,8 @@ function clampInspectorWidth(width) {
     return Math.min(Math.max(Math.round(numericWidth), MIN_INSPECTOR_WIDTH), maxWidth);
 }
 
-function setInspectorWidth(width) {
-    const nextWidth = clampInspectorWidth(width);
+function setInspectorWidth(dom, width) {
+    const nextWidth = clampInspectorWidth(dom, width);
     dom.mainContent?.style.setProperty('--inspector-width', `${nextWidth}px`);
     dom.textEditor.style.setProperty('--inspector-width', `${nextWidth}px`);
     dom.inspectorResizer?.setAttribute('aria-valuemin', String(MIN_INSPECTOR_WIDTH));
@@ -65,7 +44,15 @@ function setInspectorWidth(width) {
     return nextWidth;
 }
 
-function activatePhotoEntry(entry, { render = true } = {}) {
+function activatePhotoEntry({
+    entry,
+    state,
+    dom,
+    templateSelectorController,
+    inspectorController,
+    previewController,
+    render = true,
+}) {
     state.activatePhotoEntry(entry);
 
     if (!entry || !render) {
@@ -80,7 +67,12 @@ function activatePhotoEntry(entry, { render = true } = {}) {
     previewController.updatePreview();
 }
 
-function bindInspectorResize() {
+function bindInspectorResize({
+    dom,
+    previewController,
+    setInspectorWidthForApp,
+    cleanupCallbacks,
+}) {
     if (!dom.inspectorResizer || !dom.textEditor) {
         return;
     }
@@ -99,7 +91,7 @@ function bindInspectorResize() {
         document.body.classList.remove('is-resizing-inspector');
     };
 
-    dom.inspectorResizer.addEventListener('pointerdown', (e) => {
+    const handlePointerDown = (e) => {
         if (e.button !== 0) {
             return;
         }
@@ -111,22 +103,19 @@ function bindInspectorResize() {
         dom.inspectorResizer.setPointerCapture(e.pointerId);
         dom.inspectorResizer.classList.add('is-dragging');
         document.body.classList.add('is-resizing-inspector');
-    });
+    };
 
-    dom.inspectorResizer.addEventListener('pointermove', (e) => {
+    const handlePointerMove = (e) => {
         if (e.pointerId !== activePointerId) {
             return;
         }
 
         const nextWidth = startWidth + startX - e.clientX;
-        setInspectorWidth(nextWidth);
+        setInspectorWidthForApp(nextWidth);
         previewController.queuePreviewResize();
-    });
+    };
 
-    dom.inspectorResizer.addEventListener('pointerup', stopResize);
-    dom.inspectorResizer.addEventListener('pointercancel', stopResize);
-
-    dom.inspectorResizer.addEventListener('keydown', (e) => {
+    const handleKeyDown = (e) => {
         if (e.key !== 'ArrowLeft' && e.key !== 'ArrowRight') {
             return;
         }
@@ -135,27 +124,41 @@ function bindInspectorResize() {
         const direction = e.key === 'ArrowLeft' ? 1 : -1;
         const step = e.shiftKey ? 32 : 12;
         const nextWidth = dom.textEditor.getBoundingClientRect().width + direction * step;
-        setInspectorWidth(nextWidth);
+        setInspectorWidthForApp(nextWidth);
         previewController.queuePreviewResize();
+    };
+
+    dom.inspectorResizer.addEventListener('pointerdown', handlePointerDown);
+    dom.inspectorResizer.addEventListener('pointermove', handlePointerMove);
+    dom.inspectorResizer.addEventListener('pointerup', stopResize);
+    dom.inspectorResizer.addEventListener('pointercancel', stopResize);
+    dom.inspectorResizer.addEventListener('keydown', handleKeyDown);
+
+    cleanupCallbacks.push(() => {
+        dom.inspectorResizer.removeEventListener('pointerdown', handlePointerDown);
+        dom.inspectorResizer.removeEventListener('pointermove', handlePointerMove);
+        dom.inspectorResizer.removeEventListener('pointerup', stopResize);
+        dom.inspectorResizer.removeEventListener('pointercancel', stopResize);
+        dom.inspectorResizer.removeEventListener('keydown', handleKeyDown);
     });
 }
 
-function createControllers() {
-    previewController = createPreviewController({
+function createControllers({ dom, state, actions, templates, getTemplateById }) {
+    const previewController = createPreviewController({
         dom,
         state,
         getTemplateById,
     });
-    exportController = createExportController({
+    const exportController = createExportController({
         state,
         getTemplateById,
     });
-    textModelOperations = createTextModelOperations({
+    const textModelOperations = createTextModelOperations({
         state,
         actions,
         getTemplateById,
     });
-    inspectorController = createInspectorController({
+    const inspectorController = createInspectorController({
         dom,
         state,
         actions,
@@ -163,46 +166,119 @@ function createControllers() {
         exportController,
         textModelOperations,
     });
-    templateSelectorController = createTemplateSelectorController({
+    const templateSelectorController = createTemplateSelectorController({
         dom,
         state,
         actions,
         templates,
         getTemplateById,
     });
-    uploadController = createUploadController({
+    const uploadController = createUploadController({
         dom,
         state,
         actions,
     });
+
+    return {
+        previewController,
+        exportController,
+        textModelOperations,
+        inspectorController,
+        templateSelectorController,
+        uploadController,
+    };
 }
 
-function bindEvents() {
-    dom.fileInput.addEventListener('change', (e) => {
+function bindEvents({
+    dom,
+    state,
+    uploadController,
+    templateSelectorController,
+    previewController,
+    setInspectorWidthForApp,
+    cleanupCallbacks,
+}) {
+    const handleFileInputChange = (e) => {
         const files = e.target.files;
         if (files && files.length > 0) {
             uploadController.handleFileSelect(files);
         }
         dom.fileInput.value = '';
-    });
+    };
+    const handleWindowResize = () => {
+        setInspectorWidthForApp(dom.textEditor.getBoundingClientRect().width);
+        previewController.updatePreview();
+    };
+    const handleBeforeUnload = () => {
+        state.releaseAllObjectUrls();
+    };
+
+    dom.fileInput.addEventListener('change', handleFileInputChange);
 
     uploadController.setupDragDrop();
     templateSelectorController.bindSelectorEvents();
-    bindInspectorResize();
-
-    window.addEventListener('resize', () => {
-        setInspectorWidth(dom.textEditor.getBoundingClientRect().width);
-        previewController.updatePreview();
+    bindInspectorResize({
+        dom,
+        previewController,
+        setInspectorWidthForApp,
+        cleanupCallbacks,
     });
 
-    window.addEventListener('beforeunload', () => {
+    window.addEventListener('resize', handleWindowResize);
+    window.addEventListener('beforeunload', handleBeforeUnload);
+
+    cleanupCallbacks.push(() => {
+        dom.fileInput.removeEventListener('change', handleFileInputChange);
+        window.removeEventListener('resize', handleWindowResize);
+        window.removeEventListener('beforeunload', handleBeforeUnload);
         state.releaseAllObjectUrls();
     });
 }
 
-function init() {
-    createControllers();
-    setInspectorWidth(DEFAULT_INSPECTOR_WIDTH);
+export function initFrameMakerApp({ templates, getTemplateById }) {
+    const dom = getDomRefs();
+    const state = createAppState({ templates, getTemplateById });
+    const cleanupCallbacks = [];
+    let previewController = null;
+    let templateSelectorController = null;
+    let uploadController = null;
+    let exportController = null;
+    let inspectorController = null;
+    let textModelOperations = null;
+    const setInspectorWidthForApp = (width) => setInspectorWidth(dom, width);
+    const actions = {
+        renderInspector: () => inspectorController.renderInspectorPanel(),
+        updatePreview: () => previewController.updatePreview(),
+        queuePreviewResize: () => previewController.queuePreviewResize(),
+        saveActivePhotoState: () => state.saveActivePhotoState(),
+        activatePhotoEntry: (entry, options = {}) => activatePhotoEntry({
+            entry,
+            state,
+            dom,
+            templateSelectorController,
+            inspectorController,
+            previewController,
+            ...options,
+        }),
+        updateSelectorSelection: () => templateSelectorController.updateSelectorSelection(),
+        handleExport: () => exportController.handleExport(),
+    };
+    const controllers = createControllers({
+        dom,
+        state,
+        actions,
+        templates,
+        getTemplateById,
+    });
+
+    previewController = controllers.previewController;
+    templateSelectorController = controllers.templateSelectorController;
+    uploadController = controllers.uploadController;
+    exportController = controllers.exportController;
+    inspectorController = controllers.inspectorController;
+    textModelOperations = controllers.textModelOperations;
+
+    setInspectorWidthForApp(DEFAULT_INSPECTOR_WIDTH);
 
     const template = getTemplateById(state.getCurrentSnapshot().selectedTemplateId);
     if (template) {
@@ -212,7 +288,15 @@ function init() {
     templateSelectorController.renderSelectorList();
     inspectorController.renderInspectorPanel();
     exportController.syncExportControls();
-    bindEvents();
+    bindEvents({
+        dom,
+        state,
+        uploadController,
+        templateSelectorController,
+        previewController,
+        setInspectorWidthForApp,
+        cleanupCallbacks,
+    });
 
     dom.canvas.style.display = 'none';
 
@@ -221,6 +305,12 @@ function init() {
             previewController.updatePreview();
         }
     });
-}
 
-init();
+    return {
+        state,
+        controllers,
+        destroy() {
+            cleanupCallbacks.splice(0).forEach((cleanup) => cleanup());
+        },
+    };
+}
