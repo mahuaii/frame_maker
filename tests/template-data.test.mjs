@@ -1,6 +1,10 @@
 import assert from 'node:assert/strict';
 import { zipSync, strToU8 } from 'fflate';
-import { templates } from '../js/templates.js';
+import {
+    getTemplateById as getSharedTemplateById,
+    getTemplates as getSharedTemplates,
+    templates,
+} from '../js/templates.js';
 import { defineDataTemplate, normalizeDataTemplatePackage } from '../js/core/templates/data-template.js';
 import { createImportedTemplateRegistry } from '../js/core/templates/imported-registry.js';
 import { exportTemplatePackage, importTemplatePackage } from '../js/core/templates/template-package.js';
@@ -70,5 +74,26 @@ const importedTwo = registry.addImportedTemplate(templates[0]);
 assert.equal(importedOne.id, `${templates[0].id}--imported-1`);
 assert.equal(importedTwo.id, `${templates[0].id}--imported-2`);
 assert.equal(registry.templates.length, 6);
+
+const adapter = await import('../src/adapters/templateAdapter.ts');
+const sharedTemplateCount = getSharedTemplates().length;
+const importedViaAdapter = adapter.addImportedTemplate(templates[0]);
+
+assert.equal(
+    getSharedTemplateById(importedViaAdapter.id),
+    importedViaAdapter,
+    'Vue template adapter should add templates to the shared legacy registry'
+);
+assert.equal(
+    adapter.getTemplateById(importedViaAdapter.id),
+    importedViaAdapter,
+    'Vue template adapter should read templates from the shared legacy registry'
+);
+assert.deepEqual(
+    adapter.getAllTemplates().map((template) => template.id),
+    getSharedTemplates().map((template) => template.id),
+    'Vue template adapter and legacy template module should expose the same template list'
+);
+assert.equal(getSharedTemplates().length, sharedTemplateCount + 1);
 
 console.log('template data tests passed');

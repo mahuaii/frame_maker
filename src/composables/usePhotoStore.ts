@@ -38,6 +38,7 @@ export function usePhotoStore() {
                 originalExif,
             };
 
+            photos.value.forEach((photo) => URL.revokeObjectURL(photo.objectUrl));
             photos.value.splice(0, photos.value.length, entry);
 
             return {

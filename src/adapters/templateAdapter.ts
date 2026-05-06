@@ -1,24 +1,26 @@
-import { defaultTemplate, templates } from '../../js/templates.js';
-import { createImportedTemplateRegistry } from '../../js/core/templates/imported-registry.js';
+import {
+    addImportedTemplate as addImportedTemplateToSharedRegistry,
+    defaultTemplate,
+    getTemplateById as getSharedTemplateById,
+    getTemplates,
+} from '../../js/templates.js';
 import { resolveTemplateConfig } from '../../js/core/templates/registry.js';
 import type { FrameTemplate } from '../types/template';
-
-const registry = createImportedTemplateRegistry([...templates]);
 
 export function getDefaultTemplate(): FrameTemplate {
     return defaultTemplate;
 }
 
 export function getAllTemplates(): FrameTemplate[] {
-    return registry.templates as FrameTemplate[];
+    return getTemplates() as FrameTemplate[];
 }
 
 export function getTemplateById(id: string | null): FrameTemplate | null {
-    return id ? registry.getTemplateById(id) as FrameTemplate ?? null : null;
+    return id ? getSharedTemplateById(id) as FrameTemplate ?? null : null;
 }
 
 export function addImportedTemplate(template: FrameTemplate): FrameTemplate {
-    return registry.addImportedTemplate(template) as FrameTemplate;
+    return addImportedTemplateToSharedRegistry(template) as FrameTemplate;
 }
 
 export function getResolvedTemplateConfig(template: FrameTemplate, rawConfig = {}) {
