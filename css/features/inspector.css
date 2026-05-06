@@ -2,8 +2,7 @@
 .inspector-action-area {
     --settings-field-gap: 8px;
 
-    position: sticky;
-    top: 0;
+    position: relative;
     z-index: 3;
     display: flex;
     flex: 0 0 auto;
@@ -28,6 +27,19 @@
     gap: 8px;
     min-height: 24px;
     margin-left: -8px;
+}
+
+.template-package-actions {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 8px;
+}
+
+.inspector-template-package-button {
+    justify-content: center;
+    min-height: 30px;
+    padding: 0 8px;
+    font-size: 12px;
 }
 
 .inspector-panel-tab {
@@ -103,7 +115,8 @@
     margin-bottom: 0;
 }
 
-.inspector-action-area+.inspector-section {
+.inspector-action-area+.inspector-section,
+.inspector-scroll-area>.inspector-section:first-child {
     border-top: none;
 }
 
@@ -119,13 +132,30 @@
     border-left: 1px solid var(--color-control-border);
     flex-shrink: 0;
     flex-wrap: nowrap;
+    min-height: 0;
     width: var(--inspector-width, var(--inspector-default-width));
-    overflow-y: auto;
+    overflow: hidden;
     scrollbar-width: none;
     -ms-overflow-style: none;
 }
 
 .text-editor::-webkit-scrollbar {
+    display: none;
+}
+
+.inspector-scroll-area {
+    display: flex;
+    flex: 1 1 auto;
+    flex-direction: column;
+    min-height: 0;
+    overflow-x: hidden;
+    overflow-y: auto;
+    overscroll-behavior-y: contain;
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+}
+
+.inspector-scroll-area::-webkit-scrollbar {
     display: none;
 }
 
@@ -1019,9 +1049,5 @@ body.is-resizing-inspector {
         width: 100%;
         border-left: none;
         border-top: 1px solid var(--color-divider);
-    }
-
-    .inspector-action-area {
-        position: sticky;
     }
 }

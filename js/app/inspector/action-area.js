@@ -166,7 +166,13 @@ function createInspectorPanelTab({ state, actions }, panelKey, label) {
     return button;
 }
 
-export function createInspectorActionArea({ state, dom, actions, exportController }) {
+export function createInspectorActionArea({
+    state,
+    dom,
+    actions,
+    exportController,
+    templatePackageActions = null,
+}) {
     const actionArea = createElement('div', {
         className: 'inspector-action-area',
     });
@@ -192,6 +198,7 @@ export function createInspectorActionArea({ state, dom, actions, exportControlle
 
     actionArea.append(
         primaryActions,
+        ...(templatePackageActions ? [templatePackageActions] : []),
         panelTabs
     );
 

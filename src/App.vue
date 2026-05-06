@@ -1,14 +1,21 @@
 <script setup lang="ts">
 import { onBeforeUnmount, onMounted } from 'vue';
 import { initFrameMakerApp } from '../js/app.js';
-import { getTemplateById, templates } from '../js/templates.js';
+import {
+    addImportedTemplate,
+    getTemplateById,
+    getTemplates,
+    templates,
+} from '../js/templates.js';
 
 let appInstance: ReturnType<typeof initFrameMakerApp> | null = null;
 
 onMounted(() => {
     appInstance = initFrameMakerApp({
         templates,
+        getTemplates,
         getTemplateById,
+        addImportedTemplate,
     });
 });
 

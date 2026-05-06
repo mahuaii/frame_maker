@@ -18,6 +18,7 @@ import { createUploadController } from './app/upload.js';
 import { createExportController } from './app/export.js';
 import { createTextModelOperations } from './app/text-model-operations.js';
 import { createInspectorController } from './app/inspector/index.js';
+import { createTemplatePackageActions } from './app/template-package-actions.js';
 
 function clampInspectorWidth(dom, width) {
     const numericWidth = Number(width);
@@ -143,7 +144,14 @@ function bindInspectorResize({
     });
 }
 
-function createControllers({ dom, state, actions, templates, getTemplateById }) {
+function createControllers({
+    dom,
+    state,
+    actions,
+    templates,
+    getTemplateById,
+    addImportedTemplate,
+}) {
     const previewController = createPreviewController({
         dom,
         state,
@@ -165,6 +173,12 @@ function createControllers({ dom, state, actions, templates, getTemplateById }) 
         getTemplateById,
         exportController,
         textModelOperations,
+        createTemplatePackageActions: () => createTemplatePackageActions({
+            state,
+            actions,
+            getTemplateById,
+            addImportedTemplate,
+        }),
     });
     const templateSelectorController = createTemplateSelectorController({
         dom,
@@ -235,9 +249,14 @@ function bindEvents({
     });
 }
 
-export function initFrameMakerApp({ templates, getTemplateById }) {
+export function initFrameMakerApp({
+    templates,
+    getTemplates = () => templates,
+    getTemplateById,
+    addImportedTemplate,
+}) {
     const dom = getDomRefs();
-    const state = createAppState({ templates, getTemplateById });
+    const state = createAppState({ templates: getTemplates(), getTemplateById });
     const cleanupCallbacks = [];
     let previewController = null;
     let templateSelectorController = null;
@@ -261,14 +280,16 @@ export function initFrameMakerApp({ templates, getTemplateById }) {
             ...options,
         }),
         updateSelectorSelection: () => templateSelectorController.updateSelectorSelection(),
+        renderSelectorList: () => templateSelectorController.renderSelectorList(),
         handleExport: () => exportController.handleExport(),
     };
     const controllers = createControllers({
         dom,
         state,
         actions,
-        templates,
+        templates: getTemplates(),
         getTemplateById,
+        addImportedTemplate,
     });
 
     previewController = controllers.previewController;

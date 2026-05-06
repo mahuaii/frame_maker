@@ -10,6 +10,7 @@ export function createInspectorController({
     getTemplateById,
     exportController,
     textModelOperations,
+    createTemplatePackageActions,
 }) {
     function renderInspectorPanel() {
         const {
@@ -25,10 +26,16 @@ export function createInspectorController({
             dom,
             actions,
             exportController,
+            templatePackageActions: typeof createTemplatePackageActions === 'function'
+                ? createTemplatePackageActions()
+                : null,
         }));
+        const scrollArea = document.createElement('div');
+        scrollArea.className = 'inspector-scroll-area';
+        dom.textEditor.appendChild(scrollArea);
 
         if (activeInspectorPanel === 'batch') {
-            dom.textEditor.appendChild(createBatchPhotoPanel({
+            scrollArea.appendChild(createBatchPhotoPanel({
                 state,
                 actions,
             }));
@@ -38,7 +45,7 @@ export function createInspectorController({
         if (!template) return;
 
         if (activeInspectorPanel === 'text') {
-            dom.textEditor.appendChild(createTextModelEditorPanel({
+            scrollArea.appendChild(createTextModelEditorPanel({
                 template,
                 state,
                 dom,
@@ -48,7 +55,7 @@ export function createInspectorController({
             return;
         }
 
-        appendBasicInspectorPanel(dom.textEditor, {
+        appendBasicInspectorPanel(scrollArea, {
             template,
             state,
             actions,

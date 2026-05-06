@@ -12,10 +12,14 @@ export function createTemplateSelectorController({ dom, state, actions, template
         thumbnailImg.alt = template.id;
         thumbnailImg.width = THUMBNAIL_MAX_WIDTH;
         thumbnailImg.height = THUMBNAIL_MAX_HEIGHT;
-        const thumbnailSources = [
-            `thumbnails/${template.id}_thumbnail.png?v=${ASSET_VERSION}`,
-            `thumbnails/${template.id}_thumbnail.jpg?v=${ASSET_VERSION}`,
-        ];
+        const thumbnailPath = template.assets?.thumbnail;
+        const importedThumbnail = thumbnailPath ? template.importedAssets?.[thumbnailPath] : null;
+        const thumbnailSources = importedThumbnail
+            ? [importedThumbnail]
+            : [
+                `thumbnails/${template.id}_thumbnail.png?v=${ASSET_VERSION}`,
+                `thumbnails/${template.id}_thumbnail.jpg?v=${ASSET_VERSION}`,
+            ];
         let sourceIndex = 0;
 
         thumbnailImg.addEventListener('error', () => {
