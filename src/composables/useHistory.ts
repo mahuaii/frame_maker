@@ -19,6 +19,14 @@ export function useHistory<T>(initialState: T, limit = 50) {
         present.value = cloneState(nextState);
     }
 
+    function replacePresentShallow(nextState: T) {
+        present.value = nextState;
+    }
+
+    function mutatePresent(mutator: (state: T) => void) {
+        mutator(present.value);
+    }
+
     function undo() {
         const previous = past.value[past.value.length - 1];
         if (!previous) return;
@@ -45,6 +53,8 @@ export function useHistory<T>(initialState: T, limit = 50) {
         canRedo: computed(() => future.value.length > 0),
         commit,
         replacePresent,
+        replacePresentShallow,
+        mutatePresent,
         undo,
         redo,
     };

@@ -2,6 +2,7 @@ export type PhotoEntry = {
     id: string;
     file: File;
     objectUrl: string;
+    thumbnailUrl: string;
     image: HTMLImageElement;
     width: number;
     height: number;

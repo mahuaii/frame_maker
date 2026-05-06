@@ -5,6 +5,7 @@ import {
 import { renderTemplateFrame } from '../../js/core/render/runtime.js';
 import type { PhotoEntry } from '../types/photo';
 import type { FrameTemplate } from '../types/template';
+import type { TextModel } from '../types/text';
 
 export async function renderPreviewCanvas({
     canvas,
@@ -12,6 +13,7 @@ export async function renderPreviewCanvas({
     template,
     fieldValues,
     exifOverrides,
+    textModel,
     container,
 }: {
     canvas: HTMLCanvasElement;
@@ -19,6 +21,7 @@ export async function renderPreviewCanvas({
     template: FrameTemplate;
     fieldValues: Record<string, unknown>;
     exifOverrides: Record<string, string>;
+    textModel?: TextModel;
     container: HTMLElement;
 }) {
     const scale = calculatePreviewScale(
@@ -34,6 +37,7 @@ export async function renderPreviewCanvas({
         scale,
         photo,
         exifOverrides,
+        textModel,
         mode: 'preview',
     });
 }

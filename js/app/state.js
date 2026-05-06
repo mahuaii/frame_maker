@@ -226,7 +226,7 @@ export function createAppState({ templates, getTemplateById }) {
         }
     }
 
-    function createPhotoEntry({ file, image, objectUrl, photo, exifOverrideSnapshot }) {
+    function createPhotoEntry({ file, image, objectUrl, thumbnailUrl, photo, exifOverrideSnapshot }) {
         const template = getTemplateById(selectedTemplateId) ?? templates[0];
         const entryFieldValuesById = new Map();
         const entryTextModelsByTemplateId = new Map();
@@ -244,6 +244,7 @@ export function createAppState({ templates, getTemplateById }) {
             file,
             image,
             objectUrl,
+            thumbnailUrl: thumbnailUrl || objectUrl,
             photo,
             selectedForExport: true,
             selectedTemplateId: template?.id ?? selectedTemplateId,

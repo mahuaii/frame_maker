@@ -3,6 +3,10 @@ import {
     createPhotoSource,
     extractExifData,
 } from '../renderer.js';
+import {
+    createImageThumbnailObjectUrl,
+    resolveThumbnailBackgroundColor,
+} from '../core/render/thumbnail.js';
 import { createElement } from '../ui/controls.js';
 import {
     UPLOAD_NOTICE_DURATION,
@@ -105,8 +109,27 @@ export function createUploadController({ dom, state, actions }) {
             const objectUrl = URL.createObjectURL(file);
             state.registerObjectUrl(objectUrl);
 
-            image.onload = () => {
-                resolve({ file, image, objectUrl });
+            image.onload = async () => {
+                let thumbnailUrl = objectUrl;
+
+                try {
+                    thumbnailUrl = await createImageThumbnailObjectUrl(image, {
+                        backgroundColor: resolveThumbnailBackgroundColor([
+                            '--color-bg-preview',
+                            '--color-bg-elevated',
+                        ]),
+                    });
+                    state.registerObjectUrl(thumbnailUrl);
+                } catch (error) {
+                    console.warn('Failed to create thumbnail image.', error);
+                }
+
+                resolve({
+                    file,
+                    image,
+                    objectUrl,
+                    thumbnailUrl,
+                });
             };
             image.onerror = () => {
                 state.releaseObjectUrl(objectUrl);

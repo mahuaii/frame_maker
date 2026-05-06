@@ -23,6 +23,14 @@ export type FrameTemplate = {
     label?: string;
     fields: TemplateField[];
     defaultConfig: Record<string, unknown>;
+    textGroups?: unknown[];
+    appearanceFieldKey?: string;
+    appearanceDefaultKey?: string;
+    appearanceThemes?: Record<string, {
+        label?: string;
+        displayValue?: string;
+        colors?: Record<string, Record<string, string>>;
+    }>;
     assets?: Record<string, string>;
     importedAssets?: Record<string, string>;
 };

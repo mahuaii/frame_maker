@@ -1,11 +1,35 @@
-import { computed } from 'vue';
+import { computed, ref } from 'vue';
 import { useHistory } from './useHistory';
+import {
+    cloneEditorTextModel,
+    cloneJson,
+    collectTextModelRecordObjectUrls,
+    createTemplateTextModel,
+    createTextColorPaletteItem,
+    ensureSelectedTextObjectId,
+    findTextObjectById,
+    getColorOptionValue,
+    getTextColorDefaultOption,
+    getTextObjectEffectiveColor,
+    moveTextObjectById,
+    normalizeColorValue,
+    normalizeTextImageSource,
+    setTextObjectFieldValue,
+    setTextObjectFontId,
+} from '../utils/textModelEditor';
+import {
+    createDefaultTextGroup,
+    createDefaultTextItem,
+} from '../../js/core/text/index.js';
 import type { CopiedPhotoSettings, EditableState, PhotoEditState } from '../types/editor';
 import type { FrameTemplate } from '../types/template';
-
-function cloneRecord<T>(value: T): T {
-    return JSON.parse(JSON.stringify(value));
-}
+import type {
+    TextColorPaletteItem,
+    TextImageSource,
+    TextItemType,
+    TextModel,
+    TextObjectDropPosition,
+} from '../types/text';
 
 function createPhotoEditState(
     template: FrameTemplate,
@@ -15,10 +39,16 @@ function createPhotoEditState(
     return {
         selectedTemplateId: template.id,
         fieldValuesByTemplateId: {
-            [template.id]: cloneRecord(initialValues),
+            [template.id]: cloneJson(initialValues),
         },
-        exifOverrides: cloneRecord(exifOverrides),
-        initialExifOverrides: cloneRecord(exifOverrides),
+        textModelsByTemplateId: {
+            [template.id]: createTemplateTextModel(template),
+        },
+        textColorPalettesByTemplateId: {
+            [template.id]: [],
+        },
+        exifOverrides: cloneJson(exifOverrides),
+        initialExifOverrides: cloneJson(exifOverrides),
         selectedForExport: true,
     };
 }
@@ -30,6 +60,8 @@ export function useEditorState(defaultTemplate: FrameTemplate, initialValues: Re
         fallbackState: createPhotoEditState(defaultTemplate, initialValues, {}),
         copiedSettings: null,
     });
+    const selectedTextObjectId = ref<string | null>(null);
+    const textObjectUrlRegistry = new Set<string>();
 
     const state = computed(() => history.present.value);
     const activePhotoState = computed(() => (
@@ -38,6 +70,70 @@ export function useEditorState(defaultTemplate: FrameTemplate, initialValues: Re
             : state.value.fallbackState
     ));
 
+    function collectReferencedTextObjectUrls() {
+        const urls = new Set<string>();
+        const visitPhotoState = (photoState?: PhotoEditState | null) => {
+            if (!photoState) {
+                return;
+            }
+
+            collectTextModelRecordObjectUrls(photoState.textModelsByTemplateId).forEach((url) => urls.add(url));
+        };
+        const visitEditableState = (editableState?: EditableState | null) => {
+            if (!editableState) {
+                return;
+            }
+
+            visitPhotoState(editableState.fallbackState);
+            Object.values(editableState.photoStatesById).forEach(visitPhotoState);
+            if (editableState.copiedSettings) {
+                collectTextModelRecordObjectUrls(editableState.copiedSettings.textModelsByTemplateId)
+                    .forEach((url) => urls.add(url));
+            }
+        };
+
+        visitEditableState(history.present.value);
+        history.past.value.forEach(visitEditableState);
+        history.future.value.forEach(visitEditableState);
+
+        return urls;
+    }
+
+    function releaseObjectUrl(objectUrl: string) {
+        URL.revokeObjectURL(objectUrl);
+        textObjectUrlRegistry.delete(objectUrl);
+    }
+
+    function releaseUnusedTextObjectUrls() {
+        const referencedUrls = collectReferencedTextObjectUrls();
+
+        Array.from(textObjectUrlRegistry).forEach((objectUrl) => {
+            if (!referencedUrls.has(objectUrl)) {
+                releaseObjectUrl(objectUrl);
+            }
+        });
+    }
+
+    function releaseAllTextObjectUrls() {
+        Array.from(textObjectUrlRegistry).forEach(releaseObjectUrl);
+    }
+
+    function registerTextObjectUrl(objectUrl: string | null | undefined) {
+        if (objectUrl) {
+            textObjectUrlRegistry.add(objectUrl);
+        }
+    }
+
+    function commitState(nextState: EditableState) {
+        history.commit(nextState);
+        releaseUnusedTextObjectUrls();
+    }
+
+    function replacePresentShallow(nextState: EditableState) {
+        history.replacePresentShallow(nextState);
+        releaseUnusedTextObjectUrls();
+    }
+
     function withTemplateValues(
         photoState: PhotoEditState,
         template: FrameTemplate,
@@ -45,20 +141,46 @@ export function useEditorState(defaultTemplate: FrameTemplate, initialValues: Re
     ) {
         return {
             ...photoState.fieldValuesByTemplateId,
-            [template.id]: photoState.fieldValuesByTemplateId[template.id] ?? fallbackValues,
+            [template.id]: photoState.fieldValuesByTemplateId[template.id] ?? cloneJson(fallbackValues),
+        };
+    }
+
+    function getInitialTemplateTextModel(template: FrameTemplate) {
+        return createTemplateTextModel(template);
+    }
+
+    function getTextModelFromState(photoState: PhotoEditState, template: FrameTemplate) {
+        return photoState.textModelsByTemplateId[template.id] ?? getInitialTemplateTextModel(template);
+    }
+
+    function getTextColorPaletteFromState(photoState: PhotoEditState, template: FrameTemplate) {
+        return photoState.textColorPalettesByTemplateId[template.id] ?? [];
+    }
+
+    function withTemplateTextModel(photoState: PhotoEditState, template: FrameTemplate) {
+        return {
+            ...photoState.textModelsByTemplateId,
+            [template.id]: photoState.textModelsByTemplateId[template.id] ?? getInitialTemplateTextModel(template),
+        };
+    }
+
+    function withTemplateTextColorPalette(photoState: PhotoEditState, template: FrameTemplate) {
+        return {
+            ...photoState.textColorPalettesByTemplateId,
+            [template.id]: photoState.textColorPalettesByTemplateId[template.id] ?? [],
         };
     }
 
     function updatePhotoState(photoId: string | null, patcher: (photoState: PhotoEditState) => PhotoEditState) {
         if (!photoId || !state.value.photoStatesById[photoId]) {
-            history.commit({
+            commitState({
                 ...state.value,
                 fallbackState: patcher(state.value.fallbackState),
             });
             return;
         }
 
-        history.commit({
+        commitState({
             ...state.value,
             photoStatesById: {
                 ...state.value.photoStatesById,
@@ -67,9 +189,58 @@ export function useEditorState(defaultTemplate: FrameTemplate, initialValues: Re
         });
     }
 
+    function commitActiveTemplateTextState(
+        template: FrameTemplate,
+        mutator: (textModel: TextModel, palette: TextColorPaletteItem[]) => false | void,
+        { nextSelectedId }: { nextSelectedId?: string | null } = {}
+    ) {
+        const photoId = state.value.activePhotoId;
+        const targetState = photoId
+            ? state.value.photoStatesById[photoId] ?? state.value.fallbackState
+            : state.value.fallbackState;
+        const textModel = cloneEditorTextModel(getTextModelFromState(targetState, template));
+        const palette = cloneJson(getTextColorPaletteFromState(targetState, template));
+        const result = mutator(textModel, palette);
+
+        if (result === false) {
+            return false;
+        }
+
+        const nextPhotoState: PhotoEditState = {
+            ...targetState,
+            textModelsByTemplateId: {
+                ...targetState.textModelsByTemplateId,
+                [template.id]: cloneEditorTextModel(textModel),
+            },
+            textColorPalettesByTemplateId: {
+                ...targetState.textColorPalettesByTemplateId,
+                [template.id]: palette,
+            },
+        };
+        const nextState = photoId && state.value.photoStatesById[photoId]
+            ? {
+                ...state.value,
+                photoStatesById: {
+                    ...state.value.photoStatesById,
+                    [photoId]: nextPhotoState,
+                },
+            }
+            : {
+                ...state.value,
+                fallbackState: nextPhotoState,
+            };
+
+        commitState(nextState);
+        selectedTextObjectId.value = ensureSelectedTextObjectId(
+            textModel,
+            nextSelectedId !== undefined ? nextSelectedId : selectedTextObjectId.value
+        );
+        return true;
+    }
+
     function addPhoto(photoId: string, exifOverrides: Record<string, string>) {
         const photoState = createPhotoEditState(defaultTemplate, initialValues, exifOverrides);
-        history.replacePresent({
+        replacePresentShallow({
             ...state.value,
             activePhotoId: state.value.activePhotoId ?? photoId,
             photoStatesById: {
@@ -84,17 +255,25 @@ export function useEditorState(defaultTemplate: FrameTemplate, initialValues: Re
             return;
         }
 
-        history.replacePresent({
+        if (state.value.activePhotoId === photoId) {
+            return;
+        }
+
+        selectedTextObjectId.value = null;
+        replacePresentShallow({
             ...state.value,
             activePhotoId: photoId,
         });
     }
 
     function selectTemplate(template: FrameTemplate, fallbackValues: Record<string, unknown>) {
+        selectedTextObjectId.value = null;
         updatePhotoState(state.value.activePhotoId, (photoState) => ({
             ...photoState,
             selectedTemplateId: template.id,
             fieldValuesByTemplateId: withTemplateValues(photoState, template, fallbackValues),
+            textModelsByTemplateId: withTemplateTextModel(photoState, template),
+            textColorPalettesByTemplateId: withTemplateTextColorPalette(photoState, template),
         }));
     }
 
@@ -103,12 +282,21 @@ export function useEditorState(defaultTemplate: FrameTemplate, initialValues: Re
     }
 
     function selectImportedTemplate(template: FrameTemplate, fallbackValues: Record<string, unknown>) {
+        selectedTextObjectId.value = null;
         updatePhotoState(state.value.activePhotoId, (photoState) => ({
             ...photoState,
             selectedTemplateId: template.id,
             fieldValuesByTemplateId: {
                 ...photoState.fieldValuesByTemplateId,
-                [template.id]: fallbackValues,
+                [template.id]: cloneJson(fallbackValues),
+            },
+            textModelsByTemplateId: {
+                ...photoState.textModelsByTemplateId,
+                [template.id]: getInitialTemplateTextModel(template),
+            },
+            textColorPalettesByTemplateId: {
+                ...photoState.textColorPalettesByTemplateId,
+                [template.id]: [],
             },
         }));
     }
@@ -212,15 +400,12 @@ export function useEditorState(defaultTemplate: FrameTemplate, initialValues: Re
             return;
         }
 
-        history.replacePresent({
-            ...state.value,
-            photoStatesById: {
-                ...state.value.photoStatesById,
-                [photoId]: {
-                    ...photoState,
-                    selectedForExport,
-                },
-            },
+        if (photoState.selectedForExport === selectedForExport) {
+            return;
+        }
+
+        history.mutatePresent((draft) => {
+            draft.photoStatesById[photoId].selectedForExport = selectedForExport;
         });
     }
 
@@ -228,12 +413,13 @@ export function useEditorState(defaultTemplate: FrameTemplate, initialValues: Re
         const photoState = activePhotoState.value;
         const copiedSettings: CopiedPhotoSettings = {
             selectedTemplateId: photoState.selectedTemplateId,
-            fieldValuesByTemplateId: cloneRecord(photoState.fieldValuesByTemplateId),
+            fieldValuesByTemplateId: cloneJson(photoState.fieldValuesByTemplateId),
+            textModelsByTemplateId: cloneJson(photoState.textModelsByTemplateId),
+            textColorPalettesByTemplateId: cloneJson(photoState.textColorPalettesByTemplateId),
         };
 
-        history.replacePresent({
-            ...state.value,
-            copiedSettings,
+        history.mutatePresent((draft) => {
+            draft.copiedSettings = copiedSettings;
         });
     }
 
@@ -243,36 +429,342 @@ export function useEditorState(defaultTemplate: FrameTemplate, initialValues: Re
             return;
         }
 
+        selectedTextObjectId.value = null;
         updatePhotoState(state.value.activePhotoId, (photoState) => ({
             ...photoState,
             selectedTemplateId: copiedSettings.selectedTemplateId,
-            fieldValuesByTemplateId: cloneRecord(copiedSettings.fieldValuesByTemplateId),
+            fieldValuesByTemplateId: cloneJson(copiedSettings.fieldValuesByTemplateId),
+            textModelsByTemplateId: cloneJson(copiedSettings.textModelsByTemplateId),
+            textColorPalettesByTemplateId: cloneJson(copiedSettings.textColorPalettesByTemplateId),
         }));
     }
 
     function applyActivePhotoSettingsToAll() {
         const sourceState = activePhotoState.value;
+        selectedTextObjectId.value = null;
         const nextPhotoStates = Object.fromEntries(
             Object.entries(state.value.photoStatesById).map(([photoId, photoState]) => [
                 photoId,
                 {
                     ...photoState,
                     selectedTemplateId: sourceState.selectedTemplateId,
-                    fieldValuesByTemplateId: cloneRecord(sourceState.fieldValuesByTemplateId),
+                    fieldValuesByTemplateId: cloneJson(sourceState.fieldValuesByTemplateId),
+                    textModelsByTemplateId: cloneJson(sourceState.textModelsByTemplateId),
+                    textColorPalettesByTemplateId: cloneJson(sourceState.textColorPalettesByTemplateId),
                 },
             ])
         );
 
-        history.commit({
+        commitState({
             ...state.value,
             photoStatesById: nextPhotoStates,
         });
+    }
+
+    function getTextModel(template: FrameTemplate) {
+        return getTextModelFromState(activePhotoState.value, template);
+    }
+
+    function getTextColorPalette(template: FrameTemplate) {
+        return getTextColorPaletteFromState(activePhotoState.value, template);
+    }
+
+    function ensureSelectedTextObject(template: FrameTemplate) {
+        selectedTextObjectId.value = ensureSelectedTextObjectId(getTextModel(template), selectedTextObjectId.value);
+        return selectedTextObjectId.value;
+    }
+
+    function setSelectedTextObject(objectId: string | null) {
+        selectedTextObjectId.value = objectId;
+    }
+
+    function resetTextModel(template: FrameTemplate) {
+        const textModel = getInitialTemplateTextModel(template);
+        commitActiveTemplateTextState(template, (nextTextModel, palette) => {
+            nextTextModel.splice(0, nextTextModel.length, ...textModel);
+            palette.splice(0, palette.length);
+        }, {
+            nextSelectedId: textModel[0]?.id ?? null,
+        });
+    }
+
+    function addRootTextGroup(template: FrameTemplate) {
+        const group = createDefaultTextGroup();
+        commitActiveTemplateTextState(template, (textModel) => {
+            textModel.push(group);
+        }, {
+            nextSelectedId: group.id,
+        });
+    }
+
+    function addTextObject(template: FrameTemplate, groupId: string, type: TextItemType) {
+        let addedId: string | null = null;
+        const committed = commitActiveTemplateTextState(template, (textModel) => {
+            const current = findTextObjectById(textModel, groupId);
+            if (!current || current.item.type !== 'group') {
+                return false;
+            }
+
+            const item = (createDefaultTextItem as (itemType: TextItemType) => any)(type);
+            current.item.items = Array.isArray(current.item.items) ? current.item.items : [];
+            current.item.items.push(item);
+            addedId = item.id;
+        });
+
+        if (committed && addedId) {
+            selectedTextObjectId.value = addedId;
+        }
+    }
+
+    function toggleTextObjectVisibility(template: FrameTemplate, objectId: string) {
+        commitActiveTemplateTextState(template, (textModel) => {
+            const current = findTextObjectById(textModel, objectId);
+            if (!current) {
+                return false;
+            }
+
+            current.item.visible = current.item.visible === false;
+        });
+    }
+
+    function deleteTextObject(template: FrameTemplate, objectId: string) {
+        let nextSelectedId: string | null | undefined;
+        const selectedId = selectedTextObjectId.value;
+        const committed = commitActiveTemplateTextState(template, (textModel) => {
+            const current = findTextObjectById(textModel, objectId);
+            if (!current) {
+                return false;
+            }
+
+            const shouldReplaceSelection = selectedId === objectId
+                || Boolean(selectedId && current.item.type === 'group'
+                    && current.item.items?.some((child) => findTextObjectById([child], selectedId)));
+
+            current.siblings.splice(current.index, 1);
+
+            if (shouldReplaceSelection) {
+                nextSelectedId = current.siblings[Math.min(current.index, current.siblings.length - 1)]?.id
+                    ?? current.parent?.id
+                    ?? null;
+            }
+        });
+
+        if (committed && nextSelectedId !== undefined) {
+            selectedTextObjectId.value = nextSelectedId;
+        }
+    }
+
+    function moveTextObject(
+        template: FrameTemplate,
+        sourceId: string,
+        targetId: string,
+        position: TextObjectDropPosition
+    ) {
+        commitActiveTemplateTextState(template, (textModel) => (
+            moveTextObjectById(textModel, sourceId, targetId, position) ? undefined : false
+        ), {
+            nextSelectedId: sourceId,
+        });
+    }
+
+    function updateTextObjectField(template: FrameTemplate, objectId: string, fieldKey: string, nextValue: unknown) {
+        commitActiveTemplateTextState(template, (textModel) => {
+            const current = findTextObjectById(textModel, objectId);
+            if (!current) {
+                return false;
+            }
+
+            if (fieldKey === 'style.fontId') {
+                setTextObjectFontId(current.item, String(nextValue));
+                return;
+            }
+
+            setTextObjectFieldValue(current.item, fieldKey, nextValue);
+        }, {
+            nextSelectedId: objectId,
+        });
+    }
+
+    function replaceTextImageSource(
+        template: FrameTemplate,
+        objectId: string,
+        source: TextImageSource | null
+    ) {
+        const normalizedSource = normalizeTextImageSource(source);
+        if (normalizedSource?.type === 'objectUrl') {
+            registerTextObjectUrl(normalizedSource.src);
+        }
+
+        const committed = commitActiveTemplateTextState(template, (textModel) => {
+            const current = findTextObjectById(textModel, objectId);
+            if (!current || current.item.type !== 'image') {
+                return false;
+            }
+
+            current.item.source = normalizedSource;
+        }, {
+            nextSelectedId: objectId,
+        });
+
+        if (!committed && normalizedSource?.type === 'objectUrl') {
+            releaseObjectUrl(normalizedSource.src);
+        }
+    }
+
+    function replaceTextImageFile(template: FrameTemplate, objectId: string, file: File) {
+        const objectUrl = URL.createObjectURL(file);
+        replaceTextImageSource(template, objectId, {
+            type: 'objectUrl',
+            src: objectUrl,
+            name: file.name,
+        });
+    }
+
+    function clearTextImageSource(template: FrameTemplate, objectId: string) {
+        replaceTextImageSource(template, objectId, null);
+    }
+
+    function selectTextColor(
+        template: FrameTemplate,
+        objectId: string,
+        tokenFieldKey: string,
+        colorFieldKey: string,
+        token: string,
+        color: string
+    ) {
+        commitActiveTemplateTextState(template, (textModel) => {
+            const current = findTextObjectById(textModel, objectId);
+            if (!current) {
+                return false;
+            }
+
+            setTextObjectFieldValue(current.item, tokenFieldKey, token);
+            setTextObjectFieldValue(current.item, colorFieldKey, normalizeColorValue(color));
+        }, {
+            nextSelectedId: objectId,
+        });
+    }
+
+    function addTextColor(
+        template: FrameTemplate,
+        objectId: string,
+        tokenFieldKey: string,
+        colorFieldKey: string,
+        color: string
+    ) {
+        const item = createTextColorPaletteItem(color);
+        commitActiveTemplateTextState(template, (textModel, palette) => {
+            const current = findTextObjectById(textModel, objectId);
+            if (!current) {
+                return false;
+            }
+
+            palette.push(item);
+            setTextObjectFieldValue(current.item, tokenFieldKey, '');
+            setTextObjectFieldValue(current.item, colorFieldKey, normalizeColorValue(item.value));
+        }, {
+            nextSelectedId: objectId,
+        });
+    }
+
+    function updateTextColor(
+        template: FrameTemplate,
+        objectId: string,
+        paletteId: string,
+        tokenFieldKey: string,
+        colorFieldKey: string,
+        color: string
+    ) {
+        const nextColor = normalizeColorValue(color);
+        commitActiveTemplateTextState(template, (textModel, palette) => {
+            const current = findTextObjectById(textModel, objectId);
+            if (!current) {
+                return false;
+            }
+
+            const paletteItem = palette.find((item) => item.id === paletteId);
+            if (!paletteItem) {
+                return false;
+            }
+
+            paletteItem.value = nextColor;
+            setTextObjectFieldValue(current.item, tokenFieldKey, '');
+            setTextObjectFieldValue(current.item, colorFieldKey, nextColor);
+        }, {
+            nextSelectedId: objectId,
+        });
+    }
+
+    function removeTextColor(
+        template: FrameTemplate,
+        objectId: string,
+        paletteId: string,
+        tokenFieldKey: string,
+        colorFieldKey: string,
+        selected: boolean,
+        defaultToken: string,
+        defaultColor: string
+    ) {
+        commitActiveTemplateTextState(template, (textModel, palette) => {
+            const current = findTextObjectById(textModel, objectId);
+            if (!current) {
+                return false;
+            }
+
+            const index = palette.findIndex((item) => item.id === paletteId);
+            if (index < 0) {
+                return false;
+            }
+
+            palette.splice(index, 1);
+            if (selected) {
+                setTextObjectFieldValue(current.item, tokenFieldKey, defaultToken);
+                setTextObjectFieldValue(current.item, colorFieldKey, normalizeColorValue(defaultColor));
+            }
+        }, {
+            nextSelectedId: objectId,
+        });
+    }
+
+    function addCurrentTextColor(template: FrameTemplate, objectId: string, tokenField: any, colorField: any) {
+        const current = findTextObjectById(getTextModel(template), objectId);
+        if (!current) {
+            return;
+        }
+
+        addTextColor(
+            template,
+            objectId,
+            tokenField.key,
+            colorField.key,
+            getTextObjectEffectiveColor(current.item, tokenField, colorField)
+        );
+    }
+
+    function selectDefaultTextColor(template: FrameTemplate, objectId: string, tokenField: any, colorField: any) {
+        const option = getTextColorDefaultOption(tokenField);
+        if (!option) {
+            return;
+        }
+
+        selectTextColor(template, objectId, tokenField.key, colorField.key, option.value, getColorOptionValue(option));
+    }
+
+    function undo() {
+        history.undo();
+        selectedTextObjectId.value = null;
+    }
+
+    function redo() {
+        history.redo();
+        selectedTextObjectId.value = null;
     }
 
     return {
         ...history,
         state,
         activePhotoState,
+        selectedTextObjectId,
         addPhoto,
         setActivePhoto,
         selectTemplate,
@@ -287,5 +779,30 @@ export function useEditorState(defaultTemplate: FrameTemplate, initialValues: Re
         copyActivePhotoSettings,
         pasteSettingsToActivePhoto,
         applyActivePhotoSettingsToAll,
+        getInitialTemplateTextModel,
+        getTextModel,
+        getTextModelFromState,
+        getTextColorPalette,
+        ensureSelectedTextObject,
+        setSelectedTextObject,
+        resetTextModel,
+        addRootTextGroup,
+        addTextObject,
+        toggleTextObjectVisibility,
+        deleteTextObject,
+        moveTextObject,
+        updateTextObjectField,
+        replaceTextImageFile,
+        clearTextImageSource,
+        selectTextColor,
+        addTextColor,
+        updateTextColor,
+        removeTextColor,
+        addCurrentTextColor,
+        selectDefaultTextColor,
+        registerTextObjectUrl,
+        releaseAllTextObjectUrls,
+        undo,
+        redo,
     };
 }

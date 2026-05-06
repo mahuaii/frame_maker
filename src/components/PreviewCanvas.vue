@@ -3,17 +3,19 @@ import { ref, toRefs } from 'vue';
 import { useRenderer } from '../composables/useRenderer';
 import type { PhotoEntry } from '../types/photo';
 import type { FrameTemplate } from '../types/template';
+import type { TextModel } from '../types/text';
 
 const props = defineProps<{
     photo: PhotoEntry | null;
     template: FrameTemplate | null;
     fieldValues: Record<string, unknown>;
     exifOverrides: Record<string, string>;
+    textModel: TextModel;
 }>();
 
 const canvasRef = ref<HTMLCanvasElement | null>(null);
 const containerRef = ref<HTMLElement | null>(null);
-const { photo, template, fieldValues, exifOverrides } = toRefs(props);
+const { photo, template, fieldValues, exifOverrides, textModel } = toRefs(props);
 
 useRenderer({
     canvasRef,
@@ -22,6 +24,7 @@ useRenderer({
     template,
     fieldValues,
     exifOverrides,
+    textModel,
 });
 </script>
 

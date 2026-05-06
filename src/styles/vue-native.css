@@ -395,6 +395,42 @@
     margin: 0;
 }
 
+.vue-native-app .text-editor-panel {
+    gap: 0;
+}
+
+.vue-native-app .text-editor-panel .secondary-button {
+    width: auto;
+    min-height: 28px;
+    padding: 0 9px;
+    font-size: 12px;
+}
+
+.vue-native-app .text-object-tree-header .secondary-button,
+.vue-native-app .text-object-action-bar .secondary-button {
+    width: auto;
+}
+
+.vue-native-app .text-object-delete-button,
+.vue-native-app .text-object-visibility-button {
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0;
+}
+
+.vue-native-app .text-editor-panel .inspector-section {
+    padding: 0;
+    border-bottom: 0;
+}
+
+.vue-native-app .text-editor-panel .inspector-section-header {
+    min-height: 28px;
+}
+
+.vue-native-app .text-editor-panel .inspector-section-title {
+    margin: 0;
+}
+
 .vue-native-app .error-message {
     position: absolute;
     left: 18px;

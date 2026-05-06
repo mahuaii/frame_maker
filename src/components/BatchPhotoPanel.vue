@@ -60,11 +60,20 @@ function formatDimensions(photo: PhotoEntry) {
             <article
                 v-for="photo in photos"
                 :key="photo.id"
+                v-memo="[
+                    photo.id === activePhotoId,
+                    photoStatesById[photo.id]?.selectedForExport,
+                    photo.thumbnailUrl,
+                    photo.objectUrl,
+                    photo.name,
+                    photo.width,
+                    photo.height
+                ]"
                 class="batch-photo-card"
                 :class="{ 'is-active': photo.id === activePhotoId }"
             >
                 <button type="button" class="batch-photo-select" @click="emit('selectPhoto', photo.id)">
-                    <img :src="photo.objectUrl" alt="">
+                    <img :src="photo.thumbnailUrl || photo.objectUrl" alt="">
                     <span class="batch-photo-info">
                         <strong>{{ photo.name ?? '未命名照片' }}</strong>
                         <span>{{ formatDimensions(photo) }}</span>

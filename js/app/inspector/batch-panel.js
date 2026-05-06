@@ -101,7 +101,7 @@ function createBatchPhotoCard(context, entry) {
         attributes: {
             alt: '',
             'aria-hidden': 'true',
-            src: entry.objectUrl,
+            src: entry.thumbnailUrl || entry.objectUrl,
         },
     });
     const name = createElement('span', {

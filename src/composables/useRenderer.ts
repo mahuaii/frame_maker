@@ -2,6 +2,7 @@ import { nextTick, onBeforeUnmount, ref, watch, type Ref } from 'vue';
 import { renderPreviewCanvas } from '../adapters/rendererAdapter';
 import type { PhotoEntry } from '../types/photo';
 import type { FrameTemplate } from '../types/template';
+import type { TextModel } from '../types/text';
 
 export function useRenderer({
     canvasRef,
@@ -10,6 +11,7 @@ export function useRenderer({
     template,
     fieldValues,
     exifOverrides,
+    textModel,
 }: {
     canvasRef: Ref<HTMLCanvasElement | null>;
     containerRef: Ref<HTMLElement | null>;
@@ -17,6 +19,7 @@ export function useRenderer({
     template: Ref<FrameTemplate | null>;
     fieldValues: Ref<Record<string, unknown>>;
     exifOverrides: Ref<Record<string, string>>;
+    textModel: Ref<TextModel>;
 }) {
     const isRendering = ref(false);
     let resizeObserver: ResizeObserver | null = null;
@@ -41,6 +44,7 @@ export function useRenderer({
                 template: currentTemplate,
                 fieldValues: fieldValues.value,
                 exifOverrides: exifOverrides.value,
+                textModel: textModel.value,
                 container,
             });
         } finally {
@@ -48,7 +52,7 @@ export function useRenderer({
         }
     }
 
-    watch([photo, template, fieldValues, exifOverrides], render, {
+    watch([photo, template, fieldValues, exifOverrides, textModel], render, {
         deep: true,
         immediate: true,
     });

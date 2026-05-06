@@ -4,6 +4,9 @@ import {
     createPhotoSource,
     extractExifData,
 } from '../adapters/exifAdapter';
+import {
+    createImageThumbnailObjectUrl,
+} from '../../js/core/render/thumbnail.js';
 import type { PhotoEntry } from '../types/photo';
 
 function loadImage(objectUrl: string): Promise<HTMLImageElement> {
@@ -20,15 +23,23 @@ export function usePhotoStore() {
 
     async function addPhoto(file: File) {
         const objectUrl = URL.createObjectURL(file);
+        let thumbnailUrl = objectUrl;
 
         try {
             const image = await loadImage(objectUrl);
+            try {
+                thumbnailUrl = await createImageThumbnailObjectUrl(image);
+            } catch (error) {
+                console.warn('Failed to create thumbnail image.', error);
+            }
+
             const photoSource = createPhotoSource({ file, image });
             const originalExif = await extractExifData(photoSource);
             const entry: PhotoEntry = {
                 id: `${Date.now()}-${Math.random().toString(36).slice(2)}`,
                 file,
                 objectUrl,
+                thumbnailUrl,
                 image,
                 width: photoSource.width,
                 height: photoSource.height,
@@ -46,6 +57,9 @@ export function usePhotoStore() {
             };
         } catch (error) {
             URL.revokeObjectURL(objectUrl);
+            if (thumbnailUrl !== objectUrl) {
+                URL.revokeObjectURL(thumbnailUrl);
+            }
             throw error;
         }
     }
@@ -73,7 +87,12 @@ export function usePhotoStore() {
     }
 
     function clear() {
-        photos.value.forEach((photo) => URL.revokeObjectURL(photo.objectUrl));
+        const objectUrls = new Set<string>();
+        photos.value.forEach((photo) => {
+            objectUrls.add(photo.objectUrl);
+            objectUrls.add(photo.thumbnailUrl);
+        });
+        objectUrls.forEach((objectUrl) => URL.revokeObjectURL(objectUrl));
         photos.value = [];
     }
 

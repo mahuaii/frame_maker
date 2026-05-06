@@ -188,6 +188,27 @@ function getTextGroupUsesFontOverride(item) {
     return false;
 }
 
+function getTextObjectAncestors(items = [], objectId, ancestors = []) {
+    for (const item of items) {
+        if (item.id === objectId) {
+            return ancestors;
+        }
+
+        if (item.type === 'group') {
+            const childAncestors = getTextObjectAncestors(item.items ?? [], objectId, [...ancestors, item]);
+            if (childAncestors) {
+                return childAncestors;
+            }
+        }
+    }
+
+    return null;
+}
+
+function hasAncestorFontOverride(items = [], objectId) {
+    return (getTextObjectAncestors(items, objectId) ?? []).some((item) => getTextGroupUsesFontOverride(item));
+}
+
 function getTextObjectFontWeight(item, fontId = getTextObjectFontId(item)) {
     return normalizeFontWeightForFont(
         getPathValue(item, 'style.fontWeight') ?? DEFAULT_TEXT_OBJECT_FONT_WEIGHT,
@@ -261,12 +282,14 @@ function buildTextObjectStyleFields(template, activeAppearanceKey, fontFields, {
     ];
 }
 
-function buildTextObjectFieldDefinitions(item, depth, template, state) {
+function buildTextObjectFieldDefinitions(item, depth, template, state, {
+    inheritedFontOverride = false,
+} = {}) {
     const { fieldValues } = state.getCurrentSnapshot();
     const activeAppearanceKey = resolveTemplateAppearance(template, fieldValues).key;
     const fontId = getTextObjectFontId(item);
     const usesFontOverride = item.type === 'group' ? getTextGroupUsesFontOverride(item) : false;
-    const fontFields = [
+    const fontFields = inheritedFontOverride ? [] : [
         {
             key: 'style.fontId',
             label: '字体',
@@ -1258,7 +1281,10 @@ function createImageSourceControl(context, item) {
 export function createTextObjectFields(context, selected) {
     const { template, state } = context;
     const { item, depth } = selected;
-    const fields = buildTextObjectFieldDefinitions(item, depth, template, state);
+    const textModel = state.getTemplateTextModel(template);
+    const fields = buildTextObjectFieldDefinitions(item, depth, template, state, {
+        inheritedFontOverride: hasAncestorFontOverride(textModel, item.id),
+    });
     const values = buildTextObjectFieldValues(item, fields);
     const fieldOptions = {
         values,

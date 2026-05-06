@@ -4,6 +4,7 @@ import { getBaseFrameDimensions } from './rendererAdapter';
 import type { ExportSettings } from '../types/editor';
 import type { PhotoEntry } from '../types/photo';
 import type { FrameTemplate } from '../types/template';
+import type { TextModel } from '../types/text';
 
 function getExtensionForMimeType(mimeType: string) {
     if (mimeType === 'image/png') return 'png';
@@ -38,12 +39,14 @@ export async function exportCurrentPhoto({
     template,
     fieldValues,
     exifOverrides,
+    textModel,
     settings,
 }: {
     photo: PhotoEntry;
     template: FrameTemplate;
     fieldValues: Record<string, unknown>;
     exifOverrides: Record<string, string>;
+    textModel?: TextModel;
     settings: ExportSettings;
 }) {
     const baseDimensions = getBaseFrameDimensions(photo, template, fieldValues);
@@ -59,6 +62,7 @@ export async function exportCurrentPhoto({
         scale: 1,
         photo,
         exifOverrides,
+        textModel,
         mode: 'export',
         global: {
             resize,
