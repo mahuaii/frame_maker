@@ -38,8 +38,7 @@ export function usePhotoStore() {
                 originalExif,
             };
 
-            photos.value.forEach((photo) => URL.revokeObjectURL(photo.objectUrl));
-            photos.value.splice(0, photos.value.length, entry);
+            photos.value = [...photos.value, entry];
 
             return {
                 entry,
@@ -49,6 +48,24 @@ export function usePhotoStore() {
             URL.revokeObjectURL(objectUrl);
             throw error;
         }
+    }
+
+    async function addPhotos(files: File[]) {
+        const loaded = [];
+
+        for (const file of files) {
+            try {
+                loaded.push(await addPhoto(file));
+            } catch (error) {
+                console.warn('Failed to load image file.', error);
+            }
+        }
+
+        if (loaded.length === 0) {
+            throw new Error('图片加载失败');
+        }
+
+        return loaded;
     }
 
     function getPhotoById(id: string | null) {
@@ -65,6 +82,7 @@ export function usePhotoStore() {
     return {
         photos,
         addPhoto,
+        addPhotos,
         getPhotoById,
         clear,
     };

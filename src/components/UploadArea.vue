@@ -23,9 +23,9 @@ function pickFiles(files: FileList | null) {
         @dragleave.prevent="emit('dragState', false)"
         @drop.prevent="(event) => { emit('dragState', false); pickFiles(event.dataTransfer?.files ?? null); }"
     >
-        <input type="file" accept="image/*" hidden @change="pickFiles(($event.target as HTMLInputElement).files)" />
+        <input type="file" accept="image/*" multiple hidden @change="pickFiles(($event.target as HTMLInputElement).files)" />
         <span class="upload-icon" aria-hidden="true"></span>
         <span class="upload-title">拖拽或点击上传照片</span>
-        <span class="upload-hint">支持 JPG / PNG / WebP，批量选择时只使用第一张</span>
+        <span class="upload-hint">支持 JPG / PNG / WebP，可一次选择多张</span>
     </label>
 </template>

@@ -7,12 +7,15 @@ const props = defineProps<{
     template: FrameTemplate;
     values: Record<string, unknown>;
     exifOverrides: Record<string, string>;
+    defaultValues: Record<string, unknown>;
 }>();
 
 const emit = defineEmits<{
     updateField: [key: string, value: unknown];
     draftField: [key: string, value: unknown];
     updateExif: [key: string, value: string];
+    resetLayout: [];
+    resetExif: [];
 }>();
 
 const textDrafts = reactive<Record<string, unknown>>({});
@@ -27,6 +30,9 @@ const appearanceFields = computed(() => visibleFields.value.filter((field) => (
 const textFields = computed(() => visibleFields.value.filter((field) => (
     !layoutFields.value.includes(field) && !appearanceFields.value.includes(field)
 )));
+const layoutFieldsWithDefaults = computed(() => (
+    layoutFields.value.filter((field) => props.defaultValues[field.key] !== undefined)
+));
 
 watch(() => props.values, () => {
     Object.keys(textDrafts).forEach((key) => {
@@ -63,7 +69,17 @@ function commitDraft(field: TemplateField) {
 <template>
     <aside class="inspector-panel">
         <section class="panel-section">
-            <h2>版式</h2>
+            <header class="panel-section-header">
+                <h2>版式</h2>
+                <button
+                    class="section-reset-button"
+                    type="button"
+                    :disabled="layoutFieldsWithDefaults.length === 0"
+                    @click="emit('resetLayout')"
+                >
+                    重置
+                </button>
+            </header>
             <div v-for="field in layoutFields" :key="field.key" class="field-group">
                 <label :for="field.key">{{ field.label }}</label>
                 <select
@@ -141,7 +157,12 @@ function commitDraft(field: TemplateField) {
         </section>
 
         <section class="panel-section">
-            <h2>拍摄信息</h2>
+            <header class="panel-section-header">
+                <h2>拍摄信息</h2>
+                <button class="section-reset-button" type="button" @click="emit('resetExif')">
+                    重置
+                </button>
+            </header>
             <div v-for="field in EDITABLE_EXIF_FIELDS" :key="field.key" class="field-group">
                 <label :for="`exif-${field.key}`">{{ field.label }}</label>
                 <input

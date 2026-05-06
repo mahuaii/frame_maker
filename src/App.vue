@@ -7,13 +7,16 @@ import {
     getTemplates,
     templates,
 } from '../js/templates.js';
+import BatchPhotoPanel from './components/BatchPhotoPanel.vue';
 import ExportPanel from './components/ExportPanel.vue';
 import InspectorPanel from './components/InspectorPanel.vue';
 import PreviewCanvas from './components/PreviewCanvas.vue';
 import TemplateList from './components/TemplateList.vue';
+import TemplatePackageActions from './components/TemplatePackageActions.vue';
 import UndoRedoToolbar from './components/UndoRedoToolbar.vue';
 import UploadArea from './components/UploadArea.vue';
 import { downloadBlob, exportCurrentPhoto } from './adapters/exportAdapter';
+import { exportTemplateZip, importTemplateZip } from './adapters/templatePackageAdapter';
 import { useEditorState } from './composables/useEditorState';
 import { usePhotoStore } from './composables/usePhotoStore';
 import { useTemplateStore } from './composables/useTemplateStore';
@@ -42,20 +45,30 @@ const uiState = reactive({
     errorMessage: null as string | null,
 });
 
-const selectedTemplate = computed(() => (
-    templateStore.findTemplate(editor.state.value.selectedTemplateId)
-));
 const availableTemplates = templateStore.templates;
 const canUndo = editor.canUndo;
 const canRedo = editor.canRedo;
+const photos = photoStore.photos;
 const activePhoto = computed(() => (
     photoStore.getPhotoById(editor.state.value.activePhotoId)
 ));
+const activePhotoEditState = editor.activePhotoState;
+const selectedTemplateId = computed(() => activePhotoEditState.value.selectedTemplateId);
+const selectedTemplate = computed(() => (
+    templateStore.findTemplate(selectedTemplateId.value)
+));
+const selectedExportPhotos = computed(() => (
+    photoStore.photos.value.filter((photo) => (
+        editor.state.value.photoStatesById[photo.id]?.selectedForExport
+    ))
+));
 const currentFieldValues = computed(() => (
-    editor.state.value.fieldValuesByTemplateId[selectedTemplate.value.id]
+    activePhotoEditState.value.fieldValuesByTemplateId[selectedTemplate.value.id]
         ?? templateStore.getInitialTemplateValues(selectedTemplate.value)
 ));
-const exifOverrides = computed(() => editor.state.value.exifOverrides);
+const defaultFieldValues = computed(() => templateStore.getInitialTemplateValues(selectedTemplate.value));
+const exifOverrides = computed(() => activePhotoEditState.value.exifOverrides);
+const layoutFieldKeys = ['frameTop', 'frameRight', 'frameBottom', 'frameLeft', 'frameBorderWidth', 'frameAspectRatio'];
 
 onMounted(() => {
     if (isVueNativeMode) {
@@ -75,25 +88,22 @@ onBeforeUnmount(() => {
     appInstance = null;
 });
 
-function getFirstFile(files: FileList | File[]) {
-    return Array.from(files)[0] ?? null;
-}
-
 async function handleUpload(files: FileList | File[]) {
-    const file = getFirstFile(files);
-    if (!file) {
-        return;
-    }
-
-    uiState.errorMessage = null;
-    if (file.type && !file.type.startsWith('image/')) {
+    const imageFiles = Array.from(files).filter((file) => (
+        file.type ? file.type.startsWith('image/') : true
+    ));
+    if (imageFiles.length === 0) {
         uiState.errorMessage = '请选择图片文件';
         return;
     }
 
+    uiState.errorMessage = null;
+
     try {
-        const { entry, exifOverrides } = await photoStore.addPhoto(file);
-        editor.setActivePhoto(entry.id, exifOverrides);
+        const loadedPhotos = await photoStore.addPhotos(imageFiles);
+        loadedPhotos.forEach(({ entry, exifOverrides }) => {
+            editor.addPhoto(entry.id, exifOverrides);
+        });
     } catch (error) {
         uiState.errorMessage = error instanceof Error ? error.message : '图片加载失败';
     }
@@ -107,10 +117,35 @@ function updateExportSettings(settings: ExportSettings) {
     exportSettings.value = settings;
 }
 
+async function handleImportTemplate(file: File) {
+    uiState.errorMessage = null;
+    try {
+        const { template } = await importTemplateZip(file);
+        const importedTemplate = templateStore.registerImportedTemplate(template);
+        editor.selectImportedTemplate(
+            importedTemplate,
+            templateStore.getInitialTemplateValues(importedTemplate)
+        );
+    } catch (error) {
+        uiState.errorMessage = error instanceof Error ? error.message : '模板导入失败';
+    }
+}
+
+async function handleExportTemplate() {
+    uiState.errorMessage = null;
+    try {
+        const { blob, filename } = await exportTemplateZip(selectedTemplate.value);
+        downloadBlob(blob, filename);
+    } catch (error) {
+        uiState.errorMessage = error instanceof Error ? error.message : '模板导出失败';
+    }
+}
+
 async function handleExport() {
-    const photo = activePhoto.value;
-    const template = selectedTemplate.value;
-    if (!photo || !template || uiState.isExporting) {
+    const photosToExport = selectedExportPhotos.value.length > 0
+        ? selectedExportPhotos.value
+        : activePhoto.value ? [activePhoto.value] : [];
+    if (photosToExport.length === 0 || uiState.isExporting) {
         return;
     }
 
@@ -118,14 +153,20 @@ async function handleExport() {
     uiState.errorMessage = null;
 
     try {
-        const { blob, filename } = await exportCurrentPhoto({
-            photo,
-            template,
-            fieldValues: currentFieldValues.value,
-            exifOverrides: exifOverrides.value,
-            settings: exportSettings.value,
-        });
-        downloadBlob(blob, filename);
+        for (const photo of photosToExport) {
+            const photoState = editor.state.value.photoStatesById[photo.id] ?? activePhotoEditState.value;
+            const template = templateStore.findTemplate(photoState.selectedTemplateId);
+            const fieldValues = photoState.fieldValuesByTemplateId[template.id]
+                ?? templateStore.getInitialTemplateValues(template);
+            const { blob, filename } = await exportCurrentPhoto({
+                photo,
+                template,
+                fieldValues,
+                exifOverrides: photoState.exifOverrides,
+                settings: exportSettings.value,
+            });
+            downloadBlob(blob, filename);
+        }
     } catch (error) {
         uiState.errorMessage = error instanceof Error ? error.message : '导出图片失败';
     } finally {
@@ -138,7 +179,7 @@ async function handleExport() {
     <main v-if="isVueNativeMode" class="vue-native-app">
         <TemplateList
             :templates="availableTemplates"
-            :selected-template-id="selectedTemplate.id"
+            :selected-template-id="selectedTemplateId"
             @select="selectTemplate"
         />
 
@@ -170,9 +211,28 @@ async function handleExport() {
                 :template="selectedTemplate"
                 :values="currentFieldValues"
                 :exif-overrides="exifOverrides"
+                :default-values="defaultFieldValues"
                 @update-field="(key, value) => editor.updateField(selectedTemplate.id, key, value)"
                 @draft-field="(key, value) => editor.replaceFieldDraft(selectedTemplate.id, key, value)"
                 @update-exif="editor.updateExif"
+                @reset-layout="editor.resetLayoutFields(selectedTemplate, layoutFieldKeys, defaultFieldValues)"
+                @reset-exif="editor.resetExif"
+            />
+            <BatchPhotoPanel
+                :photos="photos"
+                :active-photo-id="editor.state.value.activePhotoId"
+                :photo-states-by-id="editor.state.value.photoStatesById"
+                :copied-settings-available="Boolean(editor.state.value.copiedSettings)"
+                @select-photo="editor.setActivePhoto"
+                @toggle-export="editor.setPhotoExportSelection"
+                @copy-settings="editor.copyActivePhotoSettings"
+                @paste-settings="editor.pasteSettingsToActivePhoto"
+                @apply-settings-to-all="editor.applyActivePhotoSettingsToAll"
+            />
+            <TemplatePackageActions
+                :template="selectedTemplate"
+                @import-template="handleImportTemplate"
+                @export-template="handleExportTemplate"
             />
             <ExportPanel
                 :settings="exportSettings"

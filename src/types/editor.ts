@@ -6,11 +6,24 @@ export type ExportSettings = {
     jpegQuality: number;
 };
 
-export type EditableState = {
-    activePhotoId: string | null;
+export type PhotoEditState = {
     selectedTemplateId: string;
     fieldValuesByTemplateId: Record<string, Record<string, unknown>>;
     exifOverrides: Record<string, string>;
+    initialExifOverrides: Record<string, string>;
+    selectedForExport: boolean;
+};
+
+export type CopiedPhotoSettings = {
+    selectedTemplateId: string;
+    fieldValuesByTemplateId: Record<string, Record<string, unknown>>;
+};
+
+export type EditableState = {
+    activePhotoId: string | null;
+    photoStatesById: Record<string, PhotoEditState>;
+    fallbackState: PhotoEditState;
+    copiedSettings: CopiedPhotoSettings | null;
 };
 
 export type UiState = {

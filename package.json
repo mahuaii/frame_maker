@@ -7,7 +7,8 @@
     "dev": "vite --host 0.0.0.0",
     "build": "vue-tsc --noEmit && vite build",
     "preview": "vite preview --host 0.0.0.0",
-    "test:templates": "node tests/template-data.test.mjs"
+    "test:templates": "node tests/template-data.test.mjs",
+    "test:vue-state": "node tests/vue-state.test.mjs"
   },
   "dependencies": {
     "@vitejs/plugin-vue": "^5.2.3",

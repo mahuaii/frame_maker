@@ -204,6 +204,30 @@
     font-weight: 680;
 }
 
+.vue-native-app .panel-section-header {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+    justify-content: space-between;
+    min-width: 0;
+}
+
+.vue-native-app .panel-section-header span {
+    color: var(--color-text-secondary);
+    font-size: 12px;
+    white-space: nowrap;
+}
+
+.vue-native-app .section-reset-button {
+    min-height: 26px;
+    padding: 0 8px;
+    border: 1px solid var(--color-divider);
+    border-radius: var(--radius-sm);
+    background: var(--color-white);
+    color: var(--color-text-secondary);
+    font-size: 12px;
+}
+
 .vue-native-app .field-group {
     display: grid;
     gap: 6px;
@@ -280,6 +304,95 @@
     display: grid;
     grid-template-columns: 1fr 1fr;
     gap: 8px;
+}
+
+.vue-native-app .batch-actions {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 6px;
+}
+
+.vue-native-app .batch-photo-list {
+    display: grid;
+    gap: 8px;
+}
+
+.vue-native-app .batch-photo-card {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: 8px;
+    align-items: center;
+    padding: 8px;
+    border: 1px solid var(--color-divider);
+    border-radius: var(--radius-md);
+    background: var(--color-bg-secondary);
+}
+
+.vue-native-app .batch-photo-card.is-active {
+    border-color: var(--color-text-primary);
+    background: var(--color-white);
+}
+
+.vue-native-app .batch-photo-select {
+    display: grid;
+    grid-template-columns: 42px minmax(0, 1fr);
+    gap: 8px;
+    align-items: center;
+    min-width: 0;
+    padding: 0;
+    border: 0;
+    background: transparent;
+    color: var(--color-text-primary);
+    text-align: left;
+}
+
+.vue-native-app .batch-photo-select img {
+    width: 42px;
+    height: 42px;
+    object-fit: cover;
+    border-radius: var(--radius-sm);
+    background: var(--color-bg-elevated);
+}
+
+.vue-native-app .batch-photo-info {
+    display: grid;
+    gap: 3px;
+    min-width: 0;
+}
+
+.vue-native-app .batch-photo-info strong,
+.vue-native-app .batch-photo-info span {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.vue-native-app .batch-photo-info strong {
+    font-size: 12px;
+    font-weight: 620;
+}
+
+.vue-native-app .batch-photo-info span,
+.vue-native-app .batch-empty {
+    color: var(--color-text-secondary);
+    font-size: 12px;
+}
+
+.vue-native-app .batch-export-toggle {
+    display: flex;
+    gap: 5px;
+    align-items: center;
+    color: var(--color-text-secondary);
+    font-size: 12px;
+}
+
+.vue-native-app .batch-export-toggle input {
+    width: auto;
+    min-height: 0;
+}
+
+.vue-native-app .batch-empty {
+    margin: 0;
 }
 
 .vue-native-app .error-message {
