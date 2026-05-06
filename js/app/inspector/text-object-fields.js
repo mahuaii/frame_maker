@@ -604,22 +604,42 @@ function createTextFontPanel(fields, fieldOptions) {
     });
 }
 
-function createTextFontOverrideAction(fields, fieldOptions) {
-    const overrideField = fields.find((field) => field.key === 'style.fontOverride');
-    if (!overrideField) {
+function createTextSectionCheckboxAction(fields, fieldOptions, fieldKey, label, title = label) {
+    const field = fields.find((item) => item.key === fieldKey);
+    if (!field) {
         return null;
     }
 
-    const input = createFieldInput(overrideField, fieldOptions);
+    const input = createFieldInput(field, fieldOptions);
 
     return createElement('label', {
-        className: 'text-font-override-toggle',
+        className: 'text-section-checkbox-action checkbox-field',
         attributes: {
-            title: '字体覆盖',
-            'aria-label': '字体覆盖',
+            title,
+            'aria-label': title,
         },
-        children: [input],
+        children: [
+            createElement('span', {
+                className: 'text-section-checkbox-action-label',
+                textContent: label,
+            }),
+            input,
+        ],
     });
+}
+
+function createTextFontOverrideAction(fields, fieldOptions) {
+    return createTextSectionCheckboxAction(
+        fields,
+        fieldOptions,
+        'style.fontOverride',
+        '覆盖',
+        '字体覆盖'
+    );
+}
+
+function createTextSeparatorForceVisibleAction(fields, fieldOptions) {
+    return createTextSectionCheckboxAction(fields, fieldOptions, 'forceVisible', '强制显示');
 }
 
 function createTextGroupAnchorLayout(fields, fieldOptions) {
@@ -966,6 +986,7 @@ function appendTextObjectLayoutFields(content, fields, fieldOptions, {
     rootGroup = false,
 } = {}) {
     const anchorLayoutFieldKeys = new Set(['region', 'anchor']);
+    const headerActionFieldKeys = new Set(['forceVisible']);
     const pairedFieldKeyGroups = [
         ['rotation', 'align'],
         ['direction', 'gapScale'],
@@ -981,6 +1002,10 @@ function appendTextObjectLayoutFields(content, fields, fieldOptions, {
         }
 
         if (rootGroup && anchorLayoutFieldKeys.has(field.key)) {
+            return;
+        }
+
+        if (headerActionFieldKeys.has(field.key)) {
             return;
         }
 
@@ -1070,7 +1095,10 @@ function createTextObjectSectionedFieldList(context, item, fields, fieldOptions,
         fieldOptions,
         (sectionContent, sectionFields, options) => appendTextObjectLayoutFields(sectionContent, sectionFields, options, {
             rootGroup,
-        })
+        }),
+        item.type === 'separator'
+            ? createTextSeparatorForceVisibleAction(layoutFields, fieldOptions)
+            : null
     );
     const fontSection = createTextObjectFieldSection(
         '字体',

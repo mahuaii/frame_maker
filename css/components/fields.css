@@ -534,7 +534,7 @@
     margin: 0;
     appearance: none;
     border: 1px solid var(--color-field-border);
-    border-radius: var(--field-radius);
+    border-radius: var(--field-radius, 5px);
     background: var(--color-control-background-muted);
     cursor: pointer;
     outline: none;

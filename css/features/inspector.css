@@ -464,6 +464,10 @@ body.is-resizing-inspector {
     padding-top: 0;
 }
 
+.text-object-sectioned-fields>.inspector-section:first-child .text-section-checkbox-action {
+    align-self: flex-start;
+}
+
 .text-object-tree-header {
     display: flex;
     align-items: center;
@@ -796,25 +800,20 @@ body.is-resizing-inspector {
     margin-bottom: 0;
 }
 
-.text-font-override-toggle {
+.text-section-checkbox-action {
     display: inline-flex;
     align-items: center;
-    justify-content: center;
-    width: 24px;
-    height: 24px;
-    border-radius: var(--radius-sm);
-    cursor: pointer;
+    gap: var(--spacing-2);
+    min-height: 18px;
 }
 
-.text-font-override-toggle:hover {
-    background: var(--color-control-background-hover);
-}
-
-.text-font-override-toggle input {
-    width: 14px;
-    height: 14px;
-    min-height: 14px;
-    margin: 0;
+.text-section-checkbox-action-label {
+    font-size: 9px;
+    font-weight: 500;
+    line-height: 1;
+    letter-spacing: 0;
+    color: var(--color-text-secondary);
+    white-space: nowrap;
 }
 
 .text-font-variant-grid .field-group {
