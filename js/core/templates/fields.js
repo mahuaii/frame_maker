@@ -124,6 +124,10 @@ export function normalizeFieldValue(field, rawValue) {
         return field.normalizeValue(rawValue, fallbackValue, field);
     }
 
+    if (field.normalizeValueKey && FIELD_VALUE_NORMALIZERS[field.normalizeValueKey]) {
+        return FIELD_VALUE_NORMALIZERS[field.normalizeValueKey](rawValue, fallbackValue, field);
+    }
+
     switch (field.type) {
         case 'number':
             return normalizeNumberValue(rawValue, fallbackValue);
@@ -140,6 +144,18 @@ export function normalizeFieldValue(field, rawValue) {
     }
 }
 
+export function parseFieldInputValue(field, rawValue, currentValue) {
+    if (typeof field.parseValue === 'function') {
+        return field.parseValue(rawValue, currentValue, field);
+    }
+
+    if (field.parseValueKey && FIELD_VALUE_NORMALIZERS[field.parseValueKey]) {
+        return FIELD_VALUE_NORMALIZERS[field.parseValueKey](rawValue, currentValue, field);
+    }
+
+    return rawValue;
+}
+
 export function buildDefaultConfig(fields) {
     return fields.reduce((config, field) => {
         config[field.key] = getFieldDefaultValue(field);
@@ -153,3 +169,9 @@ export function normalizeTemplateConfig(fields, rawConfig = {}) {
         return config;
     }, {});
 }
+import { normalizeFrameAspectRatioValue, normalizeFrameBorderWidth } from './frame-layout.js';
+
+const FIELD_VALUE_NORMALIZERS = Object.freeze({
+    frameAspectRatio: normalizeFrameAspectRatioValue,
+    frameBorderWidth: normalizeFrameBorderWidth,
+});

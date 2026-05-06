@@ -30,6 +30,14 @@ function resolveTextContent(item, context) {
         return resolvedContent;
     }
 
+    if (item.hideWhenEmptyToken && tokenResult.hasTokens) {
+        return null;
+    }
+
+    if (item.fallbackContent !== undefined) {
+        return item.fallbackContent;
+    }
+
     return EMPTY_TEXT_FALLBACK;
 }
 

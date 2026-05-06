@@ -53,6 +53,9 @@ export const storyExifTemplateSchema = {
     appearanceDefaultKey: 'black',
     appearanceThemes: storyExifAppearanceThemes,
     frame: storyExifFrame,
+    assets: {
+        thumbnail: 'assets/thumbnail.jpg',
+    },
     textGroups: [
         {
             id: 'story-title-group',
@@ -131,6 +134,7 @@ export const storyExifTemplateSchema = {
                     type: 'text',
                     label: '主参数',
                     content: '{{metaPrimary}}',
+                    fallbackContent: 'EXIF unavailable',
                     visible: true,
                     style: {
                         colorToken: 'metaPrimary',
@@ -141,6 +145,7 @@ export const storyExifTemplateSchema = {
                     type: 'text',
                     label: '次参数',
                     content: '{{metaSecondary}}',
+                    hideWhenEmptyToken: true,
                     visible: true,
                     style: {
                         colorToken: 'metaSecondary',

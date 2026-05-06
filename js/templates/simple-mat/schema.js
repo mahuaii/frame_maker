@@ -52,7 +52,20 @@ export const simpleMatTemplateSchema = {
     appearanceDefaultKey: 'black',
     appearanceThemes: simpleMatAppearanceThemes,
     frame: simpleMatFrame,
+    assets: {
+        thumbnail: 'assets/thumbnail.jpg',
+    },
     textGroups: [],
+    overlays: [
+        {
+            type: 'photoBorder',
+            enabledConfigKey: 'showThinBorder',
+            colorToken: 'photoBorder',
+            fallbackColor: '#000000',
+            widthRatio: 0.0022,
+            shape: 'beveled',
+        },
+    ],
     defaultConfig: buildDefaultConfig(simpleMatTemplateFields),
     fields: simpleMatTemplateFields,
 };

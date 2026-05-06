@@ -59,6 +59,9 @@ export const galleryCaptionMatTemplateSchema = {
     appearanceDefaultKey: 'white',
     appearanceThemes: galleryCaptionMatAppearanceThemes,
     frame: galleryCaptionMatFrame,
+    assets: {
+        thumbnail: 'assets/thumbnail.jpg',
+    },
     textGroups: [
         {
             id: 'caption',
@@ -109,6 +112,16 @@ export const galleryCaptionMatTemplateSchema = {
                     },
                 },
             ],
+        },
+    ],
+    overlays: [
+        {
+            type: 'photoBorder',
+            enabledConfigKey: 'showThinBorder',
+            colorToken: 'photoBorder',
+            fallbackColor: '#000000',
+            widthRatio: 0.0022,
+            shape: 'beveled',
         },
     ],
     defaultConfig: buildDefaultConfig(galleryCaptionMatTemplateFields),

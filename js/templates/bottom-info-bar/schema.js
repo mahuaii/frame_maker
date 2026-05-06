@@ -62,6 +62,9 @@ export const bottomInfoBarTemplateSchema = {
     appearanceDefaultKey: 'white',
     appearanceThemes: bottomInfoBarAppearanceThemes,
     frame: bottomInfoBarFrame,
+    assets: {
+        thumbnail: 'assets/thumbnail.jpg',
+    },
     textGroups: [
         {
             id: 'bottom-info-camera',

@@ -224,6 +224,10 @@ function normalizeTextItem(item, fallbackId) {
         type: TEXT_ITEM_TYPES.text,
         label: normalizeString(item.label, DEFAULT_TEXT_ITEM.label),
         content: normalizeString(item.content ?? item.text, DEFAULT_TEXT_ITEM.content),
+        fallbackContent: item.fallbackContent === undefined
+            ? undefined
+            : normalizeString(item.fallbackContent, ''),
+        hideWhenEmptyToken: normalizeBoolean(item.hideWhenEmptyToken, false),
         visible: normalizeBoolean(item.visible, DEFAULT_TEXT_ITEM.visible),
         style: normalizeTextItemStyle(item),
     };

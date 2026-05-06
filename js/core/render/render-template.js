@@ -3,6 +3,7 @@ import { resolveTemplateAppearance, resolveTemplateConfig } from '../templates/r
 import { buildTemplateResolveInput, createGlobalRenderSettings } from './input.js';
 import { copyCanvasInto, setupCanvas } from './canvas.js';
 import { calculateFrameMetrics } from './metrics.js';
+import { renderDeclarativeOverlays } from './overlays.js';
 import { applyGlobalPostProcessing } from './post-processing.js';
 import { drawSurfaceBackground } from './surface.js';
 import { createRuntimeHelpers } from './text-runtime.js';
@@ -89,7 +90,9 @@ export async function renderTemplateFrame(canvas, image, template, rawConfig, op
 
     await renderTextModel(ctx, renderArgs);
 
-    if (typeof template.renderOverlay === 'function') {
+    renderDeclarativeOverlays(ctx, renderArgs);
+
+    if (!template.overlays?.length && typeof template.renderOverlay === 'function') {
         template.renderOverlay(ctx, renderArgs);
     }
 

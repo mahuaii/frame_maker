@@ -1,10 +1,6 @@
-import { defineTemplate } from '../../core/templates/registry.js';
-import { renderGalleryCaptionMatTemplate } from './render.js';
+import { defineDataTemplate } from '../../core/templates/data-template.js';
 import { galleryCaptionMatTemplateSchema } from './schema.js';
 
-const galleryCaptionMatTemplate = defineTemplate({
-    ...galleryCaptionMatTemplateSchema,
-    renderOverlay: renderGalleryCaptionMatTemplate,
-});
+const galleryCaptionMatTemplate = defineDataTemplate(galleryCaptionMatTemplateSchema);
 
 export default galleryCaptionMatTemplate;

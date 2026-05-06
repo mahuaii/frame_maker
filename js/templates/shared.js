@@ -2,8 +2,6 @@ import { DEFAULT_FONT_IDS, FONT_FAMILIES, getFontFieldOptions } from '../core/fo
 import {
     FRAME_ASPECT_RATIO_OPTIONS,
     FREE_FRAME_ASPECT_RATIO,
-    normalizeFrameAspectRatioValue,
-    normalizeFrameBorderWidth,
 } from '../core/templates/frame-layout.js';
 
 export const defaultFrameFont = {
@@ -83,8 +81,8 @@ export function buildFrameLayoutFields(frame = {}, {
             type: 'option-input',
             defaultValue: aspectRatio,
             groupClassName: 'field-frame-white',
-            normalizeValue: normalizeFrameAspectRatioValue,
-            parseValue: normalizeFrameAspectRatioValue,
+            normalizeValueKey: 'frameAspectRatio',
+            parseValueKey: 'frameAspectRatio',
             options: FRAME_ASPECT_RATIO_OPTIONS,
         },
         {
@@ -97,7 +95,7 @@ export function buildFrameLayoutFields(frame = {}, {
             step: 0.1,
             inputMode: 'decimal',
             defaultValue: borderWidth,
-            normalizeValue: normalizeFrameBorderWidth,
+            normalizeValueKey: 'frameBorderWidth',
             ...buildFrameBorderPrefixIcon(),
         },
         ...frameSideControlOrder.map((control) => {

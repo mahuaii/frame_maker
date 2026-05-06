@@ -1,10 +1,6 @@
-import { defineTemplate } from '../../core/templates/registry.js';
-import { renderSimpleMatTemplate } from './render.js';
+import { defineDataTemplate } from '../../core/templates/data-template.js';
 import { simpleMatTemplateSchema } from './schema.js';
 
-const simpleMatTemplate = defineTemplate({
-    ...simpleMatTemplateSchema,
-    renderOverlay: renderSimpleMatTemplate,
-});
+const simpleMatTemplate = defineDataTemplate(simpleMatTemplateSchema);
 
 export default simpleMatTemplate;

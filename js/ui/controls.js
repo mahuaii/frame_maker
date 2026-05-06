@@ -1,3 +1,5 @@
+import { parseFieldInputValue } from '../core/templates/fields.js';
+
 export const RESET_ICON_PATHS = [
     'M3.2 8a4.8 4.8 0 1 0 1.406-3.394',
     'M3.2 3.6v2.4h2.4',
@@ -667,11 +669,7 @@ function getOptionInputDisplayValue(field, value) {
 }
 
 function parseOptionInputValue(field, rawValue, currentValue) {
-    if (typeof field.parseValue === 'function') {
-        return field.parseValue(rawValue, currentValue);
-    }
-
-    return rawValue;
+    return parseFieldInputValue(field, rawValue, currentValue);
 }
 
 function createOptionInput(field, value, onChange) {
