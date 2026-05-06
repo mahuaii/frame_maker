@@ -4,91 +4,12 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta http-equiv="Cache-Control" content="no-store, no-cache, must-revalidate, max-age=0">
-    <meta http-equiv="Pragma" content="no-cache">
-    <meta http-equiv="Expires" content="0">
     <title>Frame Maker</title>
-    <script>
-        (() => {
-            const assetVersion = '20260426-000000';
-            const localFontHref = `css/fonts-local.css?v=${assetVersion}`;
-            const cdnFontHrefs = [
-                'https://cdn.jsdelivr.net/npm/misans@4.1.0/lib/Normal/MiSans-Light.min.css',
-                'https://cdn.jsdelivr.net/npm/misans@4.1.0/lib/Normal/MiSans-Regular.min.css',
-            ];
-            const isLocalHost = ['localhost', '127.0.0.1', '[::1]'].includes(window.location.hostname)
-                || window.location.protocol === 'file:';
-
-            const appendStylesheet = (href) => {
-                const link = document.createElement('link');
-                link.rel = 'stylesheet';
-                link.href = href;
-                document.head.appendChild(link);
-                return link;
-            };
-
-            if (isLocalHost) {
-                appendStylesheet(localFontHref);
-                return;
-            }
-
-            let localFallbackLoaded = false;
-            const loadLocalFallback = () => {
-                if (localFallbackLoaded) return;
-                localFallbackLoaded = true;
-                appendStylesheet(localFontHref);
-            };
-
-            cdnFontHrefs.forEach((href) => {
-                const link = appendStylesheet(href);
-                link.addEventListener('error', loadLocalFallback, { once: true });
-            });
-        })();
-    </script>
-    <link rel="stylesheet" href="css/style.css?v=20260426-000000">
 </head>
 
 <body>
-    <!-- 主体区域 -->
-    <main class="main-content">
-        <!-- 左侧相框选择器 -->
-        <section class="frame-selector" id="frame-selector">
-            <h1 class="selector-title">Frame Maker</h1>
-            <div class="selector-list" id="selector-list">
-                <!-- 由 JS 动态生成模板卡片 -->
-            </div>
-        </section>
-
-        <div class="workspace-column">
-            <!-- 预览区 -->
-            <section class="preview-area" id="preview-area">
-                <div class="upload-guide" id="upload-guide">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none"
-                        stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
-                        <rect x="3" y="3" width="18" height="18" rx="2" ry="2" />
-                        <circle cx="8.5" cy="8.5" r="1.5" />
-                        <polyline points="21 15 16 10 5 21" />
-                    </svg>
-                    <p>拖拽上传照片</p>
-                    <p class="upload-hint">支持 JPG / PNG / WebP 格式</p>
-                </div>
-                <canvas id="preview-canvas"></canvas>
-            </section>
-        </div>
-
-        <div class="inspector-resizer" id="inspector-resizer" role="separator" aria-orientation="vertical"
-            aria-label="调整右侧栏宽度" tabindex="0"></div>
-
-        <!-- 右侧设置区 -->
-        <aside class="text-editor" id="text-editor">
-            <!-- 由 JS 动态生成输入字段 -->
-        </aside>
-    </main>
-
-    <!-- 隐藏的文件输入 -->
-    <input type="file" id="file-input" accept="image/*" multiple hidden>
-
-    <script type="module" src="js/app.js?v=20260426-000000"></script>
+    <div id="app"></div>
+    <script type="module" src="/src/main.ts"></script>
 </body>
 
 </html>
