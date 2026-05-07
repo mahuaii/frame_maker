@@ -1,14 +1,18 @@
 export function drawBeveledPhotoBorder(ctx, rect, borderWidth, color) {
-    const snappedBorderWidth = Math.max(Math.round(borderWidth), 1);
-    const chamfer = Math.max(Math.round(snappedBorderWidth * 0.72), 1);
-    const innerLeft = Math.round(rect.x);
-    const innerTop = Math.round(rect.y);
-    const innerRight = Math.round(rect.x + rect.width);
-    const innerBottom = Math.round(rect.y + rect.height);
-    const outerLeft = innerLeft - snappedBorderWidth;
-    const outerTop = innerTop - snappedBorderWidth;
-    const outerRight = innerRight + snappedBorderWidth;
-    const outerBottom = innerBottom + snappedBorderWidth;
+    if (!rect || !color || rect.width <= 0 || rect.height <= 0) {
+        return;
+    }
+
+    const resolvedBorderWidth = Math.max(Number(borderWidth) || 0, 1);
+    const chamfer = Math.max(resolvedBorderWidth * 0.72, 1);
+    const innerLeft = rect.x;
+    const innerTop = rect.y;
+    const innerRight = rect.x + rect.width;
+    const innerBottom = rect.y + rect.height;
+    const outerLeft = innerLeft - resolvedBorderWidth;
+    const outerTop = innerTop - resolvedBorderWidth;
+    const outerRight = innerRight + resolvedBorderWidth;
+    const outerBottom = innerBottom + resolvedBorderWidth;
 
     ctx.save();
     ctx.fillStyle = color;
@@ -32,10 +36,22 @@ export function drawBeveledPhotoBorder(ctx, rect, borderWidth, color) {
     ctx.restore();
 }
 
+export function resolvePhotoBorderWidth(rect, widthRatio = 0.0022) {
+    if (!rect || rect.width <= 0 || rect.height <= 0) {
+        return 1;
+    }
+
+    const numericWidthRatio = Number(widthRatio);
+    const resolvedWidthRatio = Number.isFinite(numericWidthRatio) && numericWidthRatio > 0
+        ? numericWidthRatio
+        : 0.0022;
+
+    return Math.max(Math.min(rect.width, rect.height) * resolvedWidthRatio, 1);
+}
+
 export function drawOptionalThinPhotoBorder(ctx, {
     enabled,
     rect,
-    canvasWidth,
     color,
     widthRatio = 0.0022,
 }) {
@@ -43,6 +59,6 @@ export function drawOptionalThinPhotoBorder(ctx, {
         return;
     }
 
-    const borderWidth = Math.max(canvasWidth * widthRatio, 1);
+    const borderWidth = resolvePhotoBorderWidth(rect, widthRatio);
     drawBeveledPhotoBorder(ctx, rect, borderWidth, color);
 }

@@ -1,5 +1,5 @@
 import { getAppearanceColor } from '../templates/appearance.js';
-import { drawBeveledPhotoBorder } from '../../templates/photo-border.js';
+import { drawBeveledPhotoBorder, resolvePhotoBorderWidth } from '../../templates/photo-border.js';
 
 function isOverlayEnabled(overlay, config = {}) {
     if (!overlay?.enabledConfigKey) {
@@ -28,15 +28,14 @@ function renderPhotoBorder(ctx, overlay, args) {
     }
 
     const rect = args.metrics?.scaledPhotoArea;
-    const canvasWidth = args.canvasSize?.width ?? 0;
-    if (!rect || !canvasWidth) {
+    if (!rect) {
         return;
     }
 
     const widthRatio = Number.isFinite(Number(overlay.widthRatio))
         ? Number(overlay.widthRatio)
         : 0.0022;
-    const borderWidth = Math.max(canvasWidth * widthRatio, 1);
+    const borderWidth = resolvePhotoBorderWidth(rect, widthRatio);
 
     drawBeveledPhotoBorder(ctx, rect, borderWidth, getOverlayColor(overlay, args.appearance));
 }
