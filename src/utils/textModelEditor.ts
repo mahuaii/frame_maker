@@ -22,6 +22,23 @@ export type TextEditorField = TemplateField & {
     groupClassName?: string;
 };
 
+const TEXT_EDITOR_GRAY_EXCLUDED_FIELD_KEYS = new Set(['label', 'style.fontId', 'style.fontStyle']);
+const TEXT_EDITOR_WHITE_FIELD_KEYS = new Set(['rotation', 'align', 'direction', 'style.fontWeight']);
+const GAP_SCALE_PREFIX_ICON_PATH = 'M15.5 7a.5.5 0 0 1 0 1h-.25a.25.25 0 0 0-.25.25v6.5c0 .138.112.25.25.25h.25a.5.5 0 0 1 0 1h-.25C14.56 16 14 15.44 14 14.75v-6.5C14 7.56 14.56 7 15.25 7zm-8.5.5a.5.5 0 0 1 .5-.5h.25C8.44 7 9 7.56 9 8.25v6.5C9 15.44 8.44 16 7.75 16H7.5a.5.5 0 0 1 0-1h.25a.25.25 0 0 0 .25-.25v-6.5A.25.25 0 0 0 7.75 8H7.5a.5.5 0 0 1-.5-.5m4 2a.5.5 0 0 1 1 0v4a.5.5 0 0 1-1 0z';
+const FONT_SCALE_PREFIX_ICON_PATH = 'M9.88 6.3a.6.6 0 0 1 1.11 0l3.5 9.2a.6.6 0 1 1-1.12.43l-.85-2.23H8.35l-.84 2.23a.6.6 0 1 1-1.12-.43zm.56 1.9-1.64 4.3h3.27zm6.43 2.06a.48.48 0 0 1 .9 0l1.82 4.91a.49.49 0 1 1-.91.34l-.34-.91h-2.05l-.33.91a.49.49 0 0 1-.91-.34zm.45 1.5-.67 1.85h1.34z';
+const LETTER_SPACING_PREFIX_ICON_PATH = 'M6.5 6a.5.5 0 0 1 .5.5v11a.5.5 0 0 1-1 0v-11a.5.5 0 0 1 .5-.5m11 0a.5.5 0 0 1 .5.5v11a.5.5 0 0 1-1 0v-11a.5.5 0 0 1 .5-.5m-5.25 3a.5.5 0 0 1 .472.335l1.75 5a.5.5 0 1 1-.944.33l-.407-1.165H10.88l-.407 1.165a.5.5 0 1 1-.944-.33l1.75-5 .032-.072A.5.5 0 0 1 11.75 9zm-1.02 3.5h1.54L12 10.298z';
+const OFFSET_PREFIX_ICON_PATH = 'M16.5 8.5a.5.5 0 0 1 .5.5v5a.5.5 0 1 1-1 0v-2H7v2a.5.5 0 0 1-1 0V9a.5.5 0 0 1 1 0v2h9V9a.5.5 0 0 1 .5-.5';
+const SEPARATOR_LENGTH_PREFIX_ICON_PATHS = [
+    'M5 6.5h14',
+    'M5 17.5h14',
+    'M7 12h10',
+    'M7 12l2-2',
+    'M7 12l2 2',
+    'M17 12l-2-2',
+    'M17 12l-2 2',
+];
+const SEPARATOR_THICKNESS_PREFIX_ICON_PATH = 'M6 6.5a.5.5 0 0 1 .5-.5h11a.5.5 0 0 1 0 1h-11a.5.5 0 0 1-.5-.5M7 10v1h10v-1zm-.25-1a.75.75 0 0 0-.75.75v1.5c0 .414.336.75.75.75h10.5a.75.75 0 0 0 .75-.75v-1.5a.75.75 0 0 0-.75-.75zM7 17v-2h10v2zm-1-2.25a.75.75 0 0 1 .75-.75h10.5a.75.75 0 0 1 .75.75v2.5a.75.75 0 0 1-.75.75H6.75a.75.75 0 0 1-.75-.75z';
+
 export const TEXT_STANDALONE_FIELD_KEYS = new Set(['label', 'content']);
 export const TEXT_LAYOUT_FIELD_KEYS = new Set([
     'region',
@@ -378,6 +395,27 @@ export function getTextObjectFontWeight(item: TextObject, fontId = getTextObject
     );
 }
 
+function applyTextEditorFieldFrameStyle(fields: TextEditorField[] = []) {
+    return fields.map((field) => {
+        if (!field || TEXT_EDITOR_GRAY_EXCLUDED_FIELD_KEYS.has(field.key)) {
+            return field;
+        }
+
+        const classNames = new Set(String(field.groupClassName ?? '').split(/\s+/).filter(Boolean));
+        if (TEXT_EDITOR_WHITE_FIELD_KEYS.has(field.key)) {
+            classNames.delete('field-frame-gray');
+            classNames.add('field-frame-white');
+        } else {
+            classNames.add('field-frame-gray');
+        }
+
+        return {
+            ...field,
+            groupClassName: Array.from(classNames).join(' '),
+        };
+    });
+}
+
 function buildTextObjectStyleFields(
     template: FrameTemplate,
     activeAppearanceKey: string,
@@ -393,6 +431,11 @@ function buildTextObjectStyleFields(
             min: 0.1,
             step: 0.05,
             defaultValue: 1,
+            prefixIconPaths: [{
+                d: FONT_SCALE_PREFIX_ICON_PATH,
+                fill: 'var(--fpl-icon-color, var(--color-icon))',
+            }],
+            prefixIconViewBox: '5.5 5.5 15 11',
         },
         buildTextColorTokenField(template?.appearanceThemes, activeAppearanceKey, {
             key: 'style.colorToken',
@@ -407,6 +450,11 @@ function buildTextObjectStyleFields(
             type: 'number',
             step: 0.01,
             defaultValue: 0,
+            prefixIconPaths: [{
+                d: LETTER_SPACING_PREFIX_ICON_PATH,
+                fill: 'var(--fpl-icon-color, var(--color-icon))',
+            }],
+            prefixIconViewBox: '5.5 5.5 13 13',
         },
     ];
 }
@@ -450,7 +498,7 @@ export function buildTextObjectFieldDefinitions(
     const styleFields = buildTextObjectStyleFields(template, activeAppearanceKey, fontFields);
 
     if (item.type === 'group') {
-        return [
+        return applyTextEditorFieldFrameStyle([
             { key: 'label', label: '组标题', type: 'input', defaultValue: depth > 0 ? '子组' : '文本组' },
             ...(depth === 0 ? [
                 {
@@ -528,10 +576,45 @@ export function buildTextObjectFieldDefinitions(
                 type: 'number',
                 step: 0.05,
                 defaultValue: 0.4,
+                prefixIconPaths: [{
+                    d: GAP_SCALE_PREFIX_ICON_PATH,
+                    fill: 'var(--fpl-icon-color, var(--color-icon))',
+                    fillRule: 'evenodd',
+                    clipRule: 'evenodd',
+                }],
+                prefixIconViewBox: '6 6 12 12',
             },
             ...(depth === 0 ? [
-                { key: 'offsetXScale', label: 'X 偏移', type: 'number', step: 0.1, defaultValue: 0 },
-                { key: 'offsetYScale', label: 'Y 偏移', type: 'number', step: 0.1, defaultValue: 0 },
+                {
+                    key: 'offsetXScale',
+                    label: 'X 偏移',
+                    type: 'number',
+                    step: 0.1,
+                    defaultValue: 0,
+                    prefixIconPaths: [{
+                        d: OFFSET_PREFIX_ICON_PATH,
+                        fill: 'var(--fpl-icon-color, var(--color-icon))',
+                        fillRule: 'evenodd',
+                        clipRule: 'evenodd',
+                    }],
+                    prefixIconViewBox: '5.5 8 12 7',
+                },
+                {
+                    key: 'offsetYScale',
+                    label: 'Y 偏移',
+                    type: 'number',
+                    step: 0.1,
+                    defaultValue: 0,
+                    prefixIconPaths: [{
+                        d: OFFSET_PREFIX_ICON_PATH,
+                        fill: 'var(--fpl-icon-color, var(--color-icon))',
+                        fillRule: 'evenodd',
+                        clipRule: 'evenodd',
+                    }],
+                    prefixIconViewBox: '9 5.5 7 13',
+                    prefixIconRotation: 90,
+                    prefixIconRotationCenter: '11.625 12.125',
+                },
             ] : []),
             {
                 key: 'style.fontOverride',
@@ -540,23 +623,53 @@ export function buildTextObjectFieldDefinitions(
                 defaultValue: usesFontOverride,
             },
             ...styleFields,
-        ];
+        ]);
     }
 
     if (item.type === 'text') {
-        return [
+        return applyTextEditorFieldFrameStyle([
             { key: 'content', label: '内容', type: 'textarea', defaultValue: '' },
             ...buildTextObjectStyleFields(template, activeAppearanceKey, fontFields, {
                 includeFontFields: true,
             }),
-        ];
+        ]);
     }
 
     if (item.type === 'separator') {
-        return [
+        return applyTextEditorFieldFrameStyle([
             { key: 'forceVisible', label: '强制显示', type: 'toggle', defaultValue: false },
-            { key: 'lengthScale', label: '长度', type: 'number', min: 0.1, step: 0.05, defaultValue: 1.4 },
-            { key: 'thicknessScale', label: '粗细', type: 'number', min: 0.01, step: 0.01, defaultValue: 0.06 },
+            {
+                key: 'lengthScale',
+                label: '长度',
+                type: 'number',
+                min: 0.1,
+                step: 0.05,
+                defaultValue: 1.4,
+                prefixIconPaths: SEPARATOR_LENGTH_PREFIX_ICON_PATHS.map((path) => ({
+                    d: path,
+                    fill: 'none',
+                    stroke: 'var(--fpl-icon-color, var(--color-icon))',
+                    strokeWidth: 1.4,
+                    strokeLinecap: 'round',
+                    strokeLinejoin: 'round',
+                })),
+                prefixIconViewBox: '4 4 16 16',
+            },
+            {
+                key: 'thicknessScale',
+                label: '粗细',
+                type: 'number',
+                min: 0.01,
+                step: 0.01,
+                defaultValue: 0.06,
+                prefixIconPaths: [{
+                    d: SEPARATOR_THICKNESS_PREFIX_ICON_PATH,
+                    fill: 'var(--fpl-icon-color, var(--color-icon))',
+                    fillRule: 'evenodd',
+                    clipRule: 'evenodd',
+                }],
+                prefixIconViewBox: '4 4 16 16',
+            },
             buildTextColorTokenField(template?.appearanceThemes, activeAppearanceKey, {
                 key: 'colorToken',
                 label: '颜色',
@@ -564,7 +677,7 @@ export function buildTextObjectFieldDefinitions(
                 group: 'text',
             }),
             { key: 'color', label: '自定义颜色', type: 'color', defaultValue: '#0000005A' },
-        ];
+        ]);
     }
 
     return [];

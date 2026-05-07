@@ -29,6 +29,7 @@ import {
     type FlatTextObject,
     type TextEditorField,
 } from '../utils/textModelEditor';
+import FieldControl from './FieldControl.vue';
 import type { FrameTemplate, TemplateFieldOption } from '../types/template';
 import type {
     TextColorPaletteItem,
@@ -37,6 +38,28 @@ import type {
     TextObject,
     TextObjectDropPosition,
 } from '../types/text';
+
+const EYE_ICON_PATHS = [
+    'M1.5 8s2.25-4 6.5-4 6.5 4 6.5 4-2.25 4-6.5 4-6.5-4-6.5-4z',
+    'M8 6.4a1.6 1.6 0 1 1 0 3.2 1.6 1.6 0 0 1 0-3.2z',
+];
+const EYE_OFF_ICON_PATHS = [
+    ...EYE_ICON_PATHS,
+    'M13.5 2.5l-11 11',
+];
+const TRASH_ICON_PATHS = [
+    'M2.7 4h10.6',
+    'M6.2 4V2.9h3.6V4',
+    'M4 4l.5 9.1h7L12 4',
+    'M6.8 6.4v4.4',
+    'M9.2 6.4v4.4',
+];
+type TextFieldBlock =
+    | { type: 'single'; field: TextEditorField }
+    | { type: 'grid'; fields: TextEditorField[] }
+    | { type: 'anchor'; fields: TextEditorField[] }
+    | { type: 'offset'; fields: TextEditorField[] }
+    | { type: 'font-panel'; fontIdField: TextEditorField | null; variantFields: TextEditorField[] };
 
 const props = defineProps<{
     template: FrameTemplate;
@@ -100,6 +123,11 @@ const standaloneFields = computed(() => selectedFields.value.filter((field) => T
 const layoutFields = computed(() => selectedFields.value.filter((field) => TEXT_LAYOUT_FIELD_KEYS.has(field.key)));
 const fontFields = computed(() => selectedFields.value.filter((field) => TEXT_FONT_FIELD_KEYS.has(field.key)));
 const colorFields = computed(() => getTextColorFields(selectedFields.value));
+const rootGroupSelected = computed(() => selectedItem.value?.type === 'group' && selectedLocation.value?.depth === 0);
+const layoutHeaderActionField = computed(() => layoutFields.value.find((field) => field.key === 'forceVisible') ?? null);
+const fontHeaderActionField = computed(() => fontFields.value.find((field) => field.key === 'style.fontOverride') ?? null);
+const layoutFieldBlocks = computed(() => buildLayoutFieldBlocks(layoutFields.value, rootGroupSelected.value));
+const fontFieldBlocks = computed(() => buildFontFieldBlocks(fontFields.value));
 const selectedColorToken = computed(() => (
     selectedItem.value && colorFields.value
         ? getTextColorTokenValue(selectedItem.value, colorFields.value.tokenField)
@@ -241,6 +269,153 @@ function updateField(field: TextEditorField, value: unknown) {
     emit('updateField', selectedItem.value.id, field.key, normalizeFieldInputValue(field, value));
 }
 
+function getFieldByKey(fields: TextEditorField[], key: string) {
+    return fields.find((field) => field.key === key) ?? null;
+}
+
+function buildPairedFieldBlock(fields: TextEditorField[], pairKeys: string[]): TextFieldBlock | null {
+    const pairFields = pairKeys
+        .map((fieldKey) => getFieldByKey(fields, fieldKey))
+        .filter(Boolean) as TextEditorField[];
+
+    if (pairFields.length === 0) {
+        return null;
+    }
+
+    return pairKeys[0] === 'offsetXScale'
+        ? { type: 'offset', fields: pairFields }
+        : { type: 'grid', fields: pairFields };
+}
+
+function buildLayoutFieldBlocks(fields: TextEditorField[], rootGroup: boolean): TextFieldBlock[] {
+    const blocks: TextFieldBlock[] = [];
+    const anchorLayoutFieldKeys = new Set(['region', 'anchor']);
+    const headerActionFieldKeys = new Set(['forceVisible']);
+    const pairedFieldKeyGroups = [
+        ['rotation', 'align'],
+        ['direction', 'gapScale'],
+        ['offsetXScale', 'offsetYScale'],
+        ['lengthScale', 'thicknessScale'],
+    ];
+    const pairedFieldKeys = new Set(pairedFieldKeyGroups.flat());
+
+    fields.forEach((field) => {
+        if (rootGroup && field.key === 'region') {
+            const anchorFields = [getFieldByKey(fields, 'region'), getFieldByKey(fields, 'anchor')]
+                .filter(Boolean) as TextEditorField[];
+            if (anchorFields.length > 0) {
+                blocks.push({ type: 'anchor', fields: anchorFields });
+            }
+            return;
+        }
+
+        if ((rootGroup && anchorLayoutFieldKeys.has(field.key)) || headerActionFieldKeys.has(field.key)) {
+            return;
+        }
+
+        const pairKeys = pairedFieldKeyGroups.find(([firstKey]) => firstKey === field.key);
+        if (pairKeys) {
+            const block = buildPairedFieldBlock(fields, pairKeys);
+            if (block) {
+                blocks.push(block);
+            }
+            return;
+        }
+
+        if (pairedFieldKeys.has(field.key)) {
+            return;
+        }
+
+        blocks.push({ type: 'single', field });
+    });
+
+    return blocks;
+}
+
+function buildFontFieldBlocks(fields: TextEditorField[]): TextFieldBlock[] {
+    const blocks: TextFieldBlock[] = [];
+    const fontPanelFieldKeys = new Set([
+        'style.fontId',
+        'style.fontStyle',
+        'style.fontWeight',
+        'style.fontOverride',
+    ]);
+    const pairedFieldKeyGroups = [
+        ['style.fontScale', 'style.letterSpacingScale'],
+    ];
+    const pairedFieldKeys = new Set(pairedFieldKeyGroups.flat());
+
+    fields.forEach((field) => {
+        if (field.key === 'style.fontId') {
+            blocks.push({
+                type: 'font-panel',
+                fontIdField: field,
+                variantFields: [
+                    getFieldByKey(fields, 'style.fontStyle'),
+                    getFieldByKey(fields, 'style.fontWeight'),
+                ].filter(Boolean) as TextEditorField[],
+            });
+            return;
+        }
+
+        if (fontPanelFieldKeys.has(field.key)) {
+            return;
+        }
+
+        const pairKeys = pairedFieldKeyGroups.find(([firstKey]) => firstKey === field.key);
+        if (pairKeys) {
+            const block = buildPairedFieldBlock(fields, pairKeys);
+            if (block) {
+                blocks.push(block);
+            }
+            return;
+        }
+
+        if (pairedFieldKeys.has(field.key)) {
+            return;
+        }
+
+        blocks.push({ type: 'single', field });
+    });
+
+    return blocks;
+}
+
+function compactTitle(field: TextEditorField) {
+    const titles: Record<string, string> = {
+        gapScale: '间距',
+        'style.fontScale': '字号',
+        'style.letterSpacingScale': '字距',
+    };
+
+    return titles[field.key];
+}
+
+function compactLabel(field: TextEditorField) {
+    const labels: Record<string, string> = {
+        offsetXScale: 'X',
+        offsetYScale: 'Y',
+    };
+
+    return labels[field.key] ?? field.label;
+}
+
+function shouldRenderCompact(field: TextEditorField) {
+    return field.type === 'number' && [
+        'gapScale',
+        'offsetXScale',
+        'offsetYScale',
+        'style.fontScale',
+        'style.letterSpacingScale',
+        'lengthScale',
+        'thicknessScale',
+    ].includes(field.key);
+}
+
+function updateToggleAction(field: TextEditorField, event: Event) {
+    updateField(field, (event.target as HTMLInputElement).checked);
+}
+
 function isSelectedOption(field: TextEditorField, option: TemplateFieldOption) {
     return String(fieldValue(field)) === String(option.value);
 }
@@ -359,7 +534,7 @@ function removePaletteColor(
         tokenField.key,
         colorField.key,
         selected,
-        defaultOption?.value ?? '',
+        String(defaultOption?.value ?? ''),
         defaultOption ? getColorOptionValue(defaultOption) : getColorOptionValue(null)
     );
 }
@@ -373,23 +548,26 @@ function clearImage() {
 function objectImageName(item: TextObject | null) {
     return item?.type === 'image' ? item.source?.name || '未选择图片' : '';
 }
+
+function visibilityIconPaths(row: FlatTextObject) {
+    return row.selfHidden ? EYE_OFF_ICON_PATHS : EYE_ICON_PATHS;
+}
 </script>
 
 <template>
-    <section class="panel-section text-editor-panel">
-        <header class="panel-section-header">
-            <h2>文本对象</h2>
-            <button class="section-reset-button" type="button" @click="emit('resetTextModel')">
-                重置
-            </button>
-        </header>
-
+    <div class="text-editor-panel">
         <div class="text-model-editor">
             <div class="text-object-tree">
                 <div class="text-object-tree-header">
                     <span>组 / 项</span>
                     <div class="text-object-tree-actions">
-                        <button class="secondary-button text-object-add-button" type="button" @click="emit('addRootGroup')">
+                        <button class="field-reset-button" type="button" aria-label="重置文本" title="重置文本" @click="emit('resetTextModel')">
+                            <svg viewBox="0 0 16 16" aria-hidden="true" focusable="false">
+                                <path d="M3.2 8a4.8 4.8 0 1 0 1.406-3.394"></path>
+                                <path d="M3.2 3.6v2.4h2.4"></path>
+                            </svg>
+                        </button>
+                        <button class="btn-small text-object-add-button" type="button" @click="emit('addRootGroup')">
                             新增文本组
                         </button>
                     </div>
@@ -435,7 +613,9 @@ function objectImageName(item: TextObject | null) {
                                 @click.stop="requestDelete(row.item.id)"
                                 @pointerleave="clearPendingDelete"
                             >
-                                ×
+                                <svg viewBox="0 0 16 16" aria-hidden="true" focusable="false">
+                                    <path v-for="path in TRASH_ICON_PATHS" :key="path" :d="path"></path>
+                                </svg>
                             </button>
                             <button
                                 class="text-object-visibility-button"
@@ -444,7 +624,9 @@ function objectImageName(item: TextObject | null) {
                                 :aria-label="row.selfHidden ? '显示' : '隐藏'"
                                 @click.stop="emit('toggleVisibility', row.item.id)"
                             >
-                                {{ row.selfHidden ? '显' : '隐' }}
+                                <svg viewBox="0 0 16 16" aria-hidden="true" focusable="false">
+                                    <path v-for="path in visibilityIconPaths(row)" :key="path" :d="path"></path>
+                                </svg>
                             </button>
                         </div>
                     </article>
@@ -453,18 +635,18 @@ function objectImageName(item: TextObject | null) {
                 <p v-else class="text-object-empty">暂无文本组</p>
 
                 <div v-if="selectedItem?.type === 'group'" class="text-object-action-bar">
-                    <button class="secondary-button text-object-action" type="button" @click="emit('addTextObject', selectedItem.id, 'text')">
+                    <button class="btn-small text-object-action" type="button" @click="emit('addTextObject', selectedItem.id, 'text')">
                         +文字
                     </button>
-                    <button class="secondary-button text-object-action" type="button" @click="emit('addTextObject', selectedItem.id, 'separator')">
+                    <button class="btn-small text-object-action" type="button" @click="emit('addTextObject', selectedItem.id, 'separator')">
                         +分隔线
                     </button>
-                    <button class="secondary-button text-object-action" type="button" @click="emit('addTextObject', selectedItem.id, 'image')">
+                    <button class="btn-small text-object-action" type="button" @click="emit('addTextObject', selectedItem.id, 'image')">
                         +图片
                     </button>
                     <button
                         v-if="selectedLocation?.depth === 0"
-                        class="secondary-button text-object-action"
+                        class="btn-small text-object-action"
                         type="button"
                         @click="emit('addTextObject', selectedItem.id, 'group')"
                     >
@@ -480,130 +662,183 @@ function objectImageName(item: TextObject | null) {
 
                 <template v-else>
                     <div v-if="standaloneFields.length" class="text-object-standalone-fields">
-                        <div v-for="field in standaloneFields" :key="field.key" class="field-group">
-                            <label :for="`text-${selectedItem.id}-${field.key}`">{{ field.label }}</label>
-                            <textarea
-                                v-if="field.type === 'textarea'"
-                                :id="`text-${selectedItem.id}-${field.key}`"
-                                :value="fieldValue(field) as string"
-                                @change="updateField(field, ($event.target as HTMLTextAreaElement).value)"
-                            ></textarea>
-                            <input
-                                v-else
-                                :id="`text-${selectedItem.id}-${field.key}`"
-                                type="text"
-                                :value="fieldValue(field) as string"
-                                @change="updateField(field, ($event.target as HTMLInputElement).value)"
-                            >
-                        </div>
+                        <FieldControl
+                            v-for="field in standaloneFields"
+                            :key="field.key"
+                            :field="field"
+                            :value="fieldValue(field)"
+                            :id-prefix="`text-${selectedItem.id}`"
+                            @change="updateField"
+                            @input="updateField"
+                        />
                     </div>
 
                     <section v-if="layoutFields.length" class="inspector-section">
                         <div class="inspector-section-header">
                             <h2 class="inspector-section-title">{{ selectedItem.type === 'separator' ? '分隔线' : '布局' }}</h2>
+                            <label
+                                v-if="layoutHeaderActionField"
+                                class="text-section-checkbox-action checkbox-field"
+                                title="强制显示"
+                                aria-label="强制显示"
+                            >
+                                <span class="text-section-checkbox-action-label">强制显示</span>
+                                <input
+                                    type="checkbox"
+                                    :checked="Boolean(fieldValue(layoutHeaderActionField))"
+                                    @change="updateToggleAction(layoutHeaderActionField, $event)"
+                                >
+                            </label>
                         </div>
                         <div class="inspector-section-content text-object-sectioned-fields">
-                            <div v-for="field in layoutFields" :key="field.key" class="field-group">
-                                <label :for="`text-${selectedItem.id}-${field.key}`">{{ field.label }}</label>
+                            <template v-for="(block, blockIndex) in layoutFieldBlocks" :key="`${block.type}-${blockIndex}`">
+                                <FieldControl
+                                    v-if="block.type === 'single'"
+                                    :field="block.field"
+                                    :value="fieldValue(block.field)"
+                                    :id-prefix="`text-${selectedItem.id}`"
+                                    :compact="shouldRenderCompact(block.field)"
+                                    :compact-title="compactTitle(block.field)"
+                                    :label="compactLabel(block.field)"
+                                    @change="updateField"
+                                    @input="updateField"
+                                />
 
-                                <div v-if="field.control === 'nine-grid'" class="nine-grid-picker">
-                                    <button
-                                        v-for="option in field.options ?? []"
-                                        :key="option.value"
-                                        class="nine-grid-picker-button"
-                                        :class="{ selected: isSelectedOption(field, option) }"
-                                        type="button"
-                                        @click="updateField(field, option.value)"
-                                    >
-                                        {{ option.label }}
-                                    </button>
+                                <div
+                                    v-else-if="block.type === 'anchor'"
+                                    class="text-group-anchor-layout inspector-field-grid-contained"
+                                >
+                                    <FieldControl
+                                        v-for="field in block.fields"
+                                        :key="field.key"
+                                        :field="field"
+                                        :value="fieldValue(field)"
+                                        :id-prefix="`text-${selectedItem.id}`"
+                                        @change="updateField"
+                                        @input="updateField"
+                                    />
                                 </div>
 
-                                <div v-else-if="field.control === 'frame-region'" class="frame-region-picker">
-                                    <span class="frame-region-picker-photo"></span>
-                                    <button
-                                        v-for="option in field.options ?? []"
-                                        :key="option.value"
-                                        class="frame-region-picker-button"
-                                        :class="[`frame-region-picker-${option.value}`, { selected: isSelectedOption(field, option) }]"
-                                        type="button"
-                                        @click="updateField(field, option.value)"
-                                    >
-                                        <span class="frame-region-picker-mark"></span>
-                                        {{ option.label }}
-                                    </button>
+                                <div
+                                    v-else-if="block.type === 'offset'"
+                                    class="text-object-offset-fields inspector-field-grid-contained"
+                                >
+                                    <div class="field-group-label">偏移</div>
+                                    <div class="inspector-field-grid text-object-offset-grid">
+                                        <FieldControl
+                                            v-for="field in block.fields"
+                                            :key="field.key"
+                                            :field="field"
+                                            :value="fieldValue(field)"
+                                            :id-prefix="`text-${selectedItem.id}`"
+                                            compact
+                                            :label="compactLabel(field)"
+                                            @change="updateField"
+                                            @input="updateField"
+                                        />
+                                    </div>
                                 </div>
 
-                                <label v-else-if="field.type === 'toggle'" class="toggle-row">
-                                    <input
-                                        type="checkbox"
-                                        :checked="Boolean(fieldValue(field))"
-                                        @change="updateField(field, ($event.target as HTMLInputElement).checked)"
-                                    >
-                                    <span>启用</span>
-                                </label>
-
-                                <input
-                                    v-else-if="field.type === 'number'"
-                                    :id="`text-${selectedItem.id}-${field.key}`"
-                                    type="number"
-                                    :min="field.min"
-                                    :max="field.max"
-                                    :step="field.step ?? 1"
-                                    :value="fieldValue(field) as string | number"
-                                    @change="updateField(field, ($event.target as HTMLInputElement).value)"
+                                <div
+                                    v-else-if="block.type === 'grid'"
+                                    class="inspector-field-grid inspector-field-grid-contained"
                                 >
-
-                                <select
-                                    v-else
-                                    :id="`text-${selectedItem.id}-${field.key}`"
-                                    :value="String(fieldValue(field))"
-                                    @change="updateField(field, ($event.target as HTMLSelectElement).value)"
-                                >
-                                    <option v-for="option in field.options ?? []" :key="option.value" :value="option.value">
-                                        {{ option.label }}
-                                    </option>
-                                </select>
-                            </div>
+                                    <FieldControl
+                                        v-for="field in block.fields"
+                                        :key="field.key"
+                                        :field="field"
+                                        :value="fieldValue(field)"
+                                        :id-prefix="`text-${selectedItem.id}`"
+                                        :compact="shouldRenderCompact(field)"
+                                        :compact-title="compactTitle(field)"
+                                        :label="compactLabel(field)"
+                                        @change="updateField"
+                                        @input="updateField"
+                                    />
+                                </div>
+                            </template>
                         </div>
                     </section>
 
                     <section v-if="fontFields.length" class="inspector-section">
                         <div class="inspector-section-header">
                             <h2 class="inspector-section-title">字体</h2>
+                            <label
+                                v-if="fontHeaderActionField"
+                                class="text-section-checkbox-action checkbox-field"
+                                title="字体覆盖"
+                                aria-label="字体覆盖"
+                            >
+                                <span class="text-section-checkbox-action-label">覆盖</span>
+                                <input
+                                    type="checkbox"
+                                    :checked="Boolean(fieldValue(fontHeaderActionField))"
+                                    @change="updateToggleAction(fontHeaderActionField, $event)"
+                                >
+                            </label>
                         </div>
                         <div class="inspector-section-content text-object-sectioned-fields">
-                            <div v-for="field in fontFields" :key="field.key" class="field-group">
-                                <label :for="`text-${selectedItem.id}-${field.key}`">{{ field.label }}</label>
-                                <label v-if="field.type === 'toggle'" class="toggle-row">
-                                    <input
-                                        type="checkbox"
-                                        :checked="Boolean(fieldValue(field))"
-                                        @change="updateField(field, ($event.target as HTMLInputElement).checked)"
+                            <template v-for="(block, blockIndex) in fontFieldBlocks" :key="`${block.type}-${blockIndex}`">
+                                <FieldControl
+                                    v-if="block.type === 'single'"
+                                    :field="block.field"
+                                    :value="fieldValue(block.field)"
+                                    :id-prefix="`text-${selectedItem.id}`"
+                                    :compact="shouldRenderCompact(block.field)"
+                                    :compact-title="compactTitle(block.field)"
+                                    :label="compactLabel(block.field)"
+                                    @change="updateField"
+                                    @input="updateField"
+                                />
+
+                                <div
+                                    v-else-if="block.type === 'font-panel'"
+                                    class="text-font-panel field-group field-frame-gray"
+                                >
+                                    <FieldControl
+                                        v-if="block.fontIdField"
+                                        :field="block.fontIdField"
+                                        :value="fieldValue(block.fontIdField)"
+                                        :id-prefix="`text-${selectedItem.id}`"
+                                        label=""
+                                        @change="updateField"
+                                        @input="updateField"
+                                    />
+                                    <div
+                                        v-if="block.variantFields.length"
+                                        class="inspector-field-grid text-font-variant-grid"
                                     >
-                                    <span>启用</span>
-                                </label>
-                                <input
-                                    v-else-if="field.type === 'number'"
-                                    :id="`text-${selectedItem.id}-${field.key}`"
-                                    type="number"
-                                    :min="field.min"
-                                    :max="field.max"
-                                    :step="field.step ?? 1"
-                                    :value="fieldValue(field) as string | number"
-                                    @change="updateField(field, ($event.target as HTMLInputElement).value)"
+                                        <FieldControl
+                                            v-for="field in block.variantFields"
+                                            :key="field.key"
+                                            :field="field"
+                                            :value="fieldValue(field)"
+                                            :id-prefix="`text-${selectedItem.id}`"
+                                            label=""
+                                            @change="updateField"
+                                            @input="updateField"
+                                        />
+                                    </div>
+                                </div>
+
+                                <div
+                                    v-else-if="block.type === 'grid'"
+                                    class="inspector-field-grid inspector-field-grid-contained"
                                 >
-                                <select
-                                    v-else
-                                    :id="`text-${selectedItem.id}-${field.key}`"
-                                    :value="String(fieldValue(field))"
-                                    @change="updateField(field, ($event.target as HTMLSelectElement).value)"
-                                >
-                                    <option v-for="option in field.options ?? []" :key="option.value" :value="option.value">
-                                        {{ option.label }}
-                                    </option>
-                                </select>
-                            </div>
+                                    <FieldControl
+                                        v-for="field in block.fields"
+                                        :key="field.key"
+                                        :field="field"
+                                        :value="fieldValue(field)"
+                                        :id-prefix="`text-${selectedItem.id}`"
+                                        :compact="shouldRenderCompact(field)"
+                                        :compact-title="compactTitle(field)"
+                                        :label="compactLabel(field)"
+                                        @change="updateField"
+                                        @input="updateField"
+                                    />
+                                </div>
+                            </template>
                         </div>
                     </section>
 
@@ -625,12 +860,12 @@ function objectImageName(item: TextObject | null) {
                                 <div class="text-color-row-list">
                                     <button
                                         v-for="row in colorTokenRows(colorFields.tokenField)"
-                                        :key="row.token"
+                                        :key="String(row.token)"
                                         class="text-color-row"
                                         :class="{ selected: row.selected }"
                                         type="button"
                                         :style="{ '--text-color-swatch': row.color }"
-                                        @click="selectTokenColor(colorFields.tokenField, colorFields.colorField, row.token, row.color)"
+                                        @click="selectTokenColor(colorFields.tokenField, colorFields.colorField, String(row.token), row.color)"
                                     >
                                         <span class="text-color-swatch"></span>
                                         <span class="text-color-value">{{ formatColorHex(row.color) }}</span>
@@ -712,5 +947,5 @@ function objectImageName(item: TextObject | null) {
                 </template>
             </div>
         </div>
-    </section>
+    </div>
 </template>
