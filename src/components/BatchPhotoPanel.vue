@@ -23,73 +23,81 @@ const selectedExportCount = computed(() => (
 ));
 
 function formatDimensions(photo: PhotoEntry) {
-    return photo.width && photo.height ? `${photo.width} x ${photo.height}` : '';
+    return photo.width && photo.height ? `${photo.width} × ${photo.height}` : '';
 }
 </script>
 
 <template>
-    <section class="panel-section batch-photo-panel">
-        <header class="panel-section-header">
-            <h2>照片列表</h2>
-            <span>{{ photos.length }} 张 / {{ selectedExportCount }} 张导出</span>
-        </header>
-
-        <div class="batch-actions">
-            <button class="secondary-button" type="button" :disabled="!activePhotoId" @click="emit('copySettings')">
+    <section class="inspector-section batch-photo-panel">
+        <div class="inspector-section-header">
+            <h2 class="inspector-section-title">照片列表</h2>
+        </div>
+        <div class="inspector-section-content">
+            <div class="batch-actions inspector-content-contained">
+                <button class="btn-small text-object-action batch-action-button" type="button" :disabled="!activePhotoId" @click="emit('copySettings')">
                 复制设置
-            </button>
-            <button
-                class="secondary-button"
-                type="button"
-                :disabled="!activePhotoId || !copiedSettingsAvailable"
-                @click="emit('pasteSettings')"
-            >
-                粘贴设置
-            </button>
-            <button
-                class="secondary-button"
-                type="button"
-                :disabled="!activePhotoId || photos.length === 0"
-                @click="emit('applySettingsToAll')"
-            >
-                应用到全部
-            </button>
-        </div>
-
-        <div v-if="photos.length" class="batch-photo-list">
-            <article
-                v-for="photo in photos"
-                :key="photo.id"
-                v-memo="[
-                    photo.id === activePhotoId,
-                    photoStatesById[photo.id]?.selectedForExport,
-                    photo.thumbnailUrl,
-                    photo.objectUrl,
-                    photo.name,
-                    photo.width,
-                    photo.height
-                ]"
-                class="batch-photo-card"
-                :class="{ 'is-active': photo.id === activePhotoId }"
-            >
-                <button type="button" class="batch-photo-select" @click="emit('selectPhoto', photo.id)">
-                    <img :src="photo.thumbnailUrl || photo.objectUrl" alt="">
-                    <span class="batch-photo-info">
-                        <strong>{{ photo.name ?? '未命名照片' }}</strong>
-                        <span>{{ formatDimensions(photo) }}</span>
-                    </span>
                 </button>
-                <label class="batch-export-toggle">
-                    <input
-                        type="checkbox"
-                        :checked="photoStatesById[photo.id]?.selectedForExport ?? false"
-                        @change="emit('toggleExport', photo.id, ($event.target as HTMLInputElement).checked)"
-                    >
-                    导出
-                </label>
-            </article>
-        </div>
+                <button
+                    class="btn-small text-object-action batch-action-button"
+                    type="button"
+                    :disabled="!activePhotoId || !copiedSettingsAvailable"
+                    @click="emit('pasteSettings')"
+                >
+                粘贴设置
+                </button>
+                <button
+                    class="btn-small text-object-action batch-action-button"
+                    type="button"
+                    :disabled="!activePhotoId || photos.length === 0"
+                    @click="emit('applySettingsToAll')"
+                >
+                应用到全部
+                </button>
+            </div>
 
-        <p v-else class="batch-empty">尚未上传照片</p>
+            <div class="batch-summary inspector-content-contained">
+                {{ photos.length > 0 ? `共 ${photos.length} 张，已选择 ${selectedExportCount} 张导出` : '尚未上传照片' }}
+            </div>
+
+            <div v-if="photos.length" class="batch-photo-list inspector-content-contained">
+                <div
+                    v-for="photo in photos"
+                    :key="photo.id"
+                    v-memo="[
+                        photo.id === activePhotoId,
+                        photoStatesById[photo.id]?.selectedForExport,
+                        photo.thumbnailUrl,
+                        photo.objectUrl,
+                        photo.name,
+                        photo.width,
+                        photo.height
+                    ]"
+                    class="batch-photo-card"
+                    :class="{ selected: photo.id === activePhotoId }"
+                    role="button"
+                    tabindex="0"
+                    :aria-pressed="photo.id === activePhotoId"
+                    @click="emit('selectPhoto', photo.id)"
+                    @keydown.enter.prevent="emit('selectPhoto', photo.id)"
+                    @keydown.space.prevent="emit('selectPhoto', photo.id)"
+                >
+                    <img class="batch-photo-thumbnail" :src="photo.thumbnailUrl || photo.objectUrl" alt="" aria-hidden="true">
+                    <span class="batch-photo-info">
+                        <span class="batch-photo-name">{{ photo.name ?? '未命名照片' }}</span>
+                        <span class="batch-photo-meta">{{ formatDimensions(photo) }}</span>
+                    </span>
+                    <span class="checkbox-field batch-photo-check-wrap" @click.stop>
+                        <input
+                            class="batch-photo-checkbox"
+                            type="checkbox"
+                            :checked="photoStatesById[photo.id]?.selectedForExport ?? false"
+                            :aria-label="`选择导出 ${photo.name ?? '照片'}`"
+                            @click.stop
+                            @change="emit('toggleExport', photo.id, ($event.target as HTMLInputElement).checked)"
+                    >
+                    </span>
+                </div>
+            </div>
+        </div>
     </section>
 </template>

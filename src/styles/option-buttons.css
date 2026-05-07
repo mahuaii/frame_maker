@@ -1,0 +1,273 @@
+/* === Option Buttons === */
+:root {
+    --option-button-transition: border-color 0.15s ease, background-color 0.15s ease, box-shadow 0.15s ease;
+    --icon-option-button-transition: var(--option-button-transition), color 0.15s ease;
+}
+
+.option-button-group {
+    display: flex;
+    flex-direction: column;
+    flex-wrap: nowrap;
+    min-height: 0;
+    gap: var(--field-inline-padding);
+    align-items: flex-start;
+    width: 100%;
+    padding: 0;
+    border-radius: 0;
+    background: transparent;
+}
+
+.option-button {
+    padding: 0;
+    border: 1px solid transparent;
+    border-radius: var(--field-radius);
+    background: var(--color-control-background-muted);
+    cursor: pointer;
+    transition: var(--option-button-transition);
+}
+
+.option-button:hover {
+    background: var(--color-control-background-hover);
+}
+
+.option-button.selected {
+    border-color: var(--color-field-border-hover);
+    box-shadow: none;
+}
+
+.option-button:focus-visible {
+    border-color: var(--color-field-border-focus);
+    box-shadow: none;
+    outline: none;
+}
+
+.icon-option-button {
+    color: var(--color-text-secondary);
+    transition: var(--icon-option-button-transition);
+}
+
+.icon-option-button:hover {
+    color: var(--color-gray-dark);
+}
+
+.icon-option-button.selected {
+    color: var(--color-control-accent);
+}
+
+.icon-option-button.selected:hover {
+    color: var(--color-control-accent);
+}
+
+.theme-radio-list {
+    display: flex;
+    flex-flow: row wrap;
+    align-items: flex-start;
+    gap: 6px;
+}
+
+.theme-radio-button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: flex-start;
+    gap: 6px;
+    width: auto;
+    max-width: 100%;
+    min-height: var(--field-height);
+    padding: 0 8px;
+    border-color: var(--color-control-border);
+    border-radius: var(--radius-sm);
+    background: var(--color-control-background);
+    color: var(--color-text-primary);
+    font-size: 11px;
+    letter-spacing: 0;
+    white-space: nowrap;
+}
+
+.theme-radio-button:hover {
+    border-color: var(--color-field-border-hover);
+    background: var(--color-control-background-hover);
+}
+
+.theme-radio-button.selected {
+    border-color: var(--color-field-border-hover);
+    background: var(--color-control-background-hover);
+}
+
+.theme-radio-swatch {
+    flex: 0 0 auto;
+    width: 12px;
+    height: 12px;
+    border: 1px solid var(--color-field-border);
+    border-radius: calc(var(--radius-sm) - 1px);
+    background-color: var(--theme-radio-swatch);
+}
+
+.theme-radio-label {
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.text-align-radio {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    width: 100%;
+    height: var(--field-height);
+    min-height: var(--field-height);
+    overflow: hidden;
+    border-radius: var(--field-radius);
+    background: var(--color-control-background-muted);
+}
+
+.text-direction-radio {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.text-rotation-radio {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+
+.text-align-radio-button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 0;
+    height: 100%;
+    padding: 0;
+    border: 0;
+    border-left: 1px solid var(--color-white);
+    border-left-color: var(--color-white);
+    border-radius: 0;
+    background: transparent;
+    cursor: pointer;
+}
+
+.text-align-radio-button:first-child {
+    border-left: 0;
+}
+
+.text-align-radio .text-align-radio-button,
+.text-align-radio .text-align-radio-button:hover {
+    color: var(--color-gray-dark);
+}
+
+.text-align-radio .text-align-radio-button.selected,
+.text-align-radio .text-align-radio-button.selected:hover {
+    color: var(--color-control-accent);
+}
+
+.text-align-radio-button:hover {
+    background: var(--color-control-background-active);
+}
+
+.text-align-radio-button.selected {
+    border-left-color: var(--color-white);
+    background: transparent;
+}
+
+.text-align-radio-button.selected:hover {
+    background: transparent;
+}
+
+.text-align-radio-button:focus-visible {
+    outline: none;
+    box-shadow: inset 0 0 0 1px var(--color-field-border-focus);
+}
+
+.text-align-radio-icon {
+    width: 24px;
+    height: 24px;
+    color: inherit;
+}
+
+.text-align-radio-line {
+    fill: currentColor;
+}
+
+.text-align-radio-guide {
+    fill: currentColor;
+}
+
+.color-option-list {
+    align-items: stretch;
+}
+
+.color-option-list.color-option-grid {
+    display: flex;
+    flex-direction: column;
+    row-gap: var(--field-inline-padding);
+}
+
+.color-option-grid-row {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    width: 100%;
+}
+
+.color-option-row {
+    position: relative;
+    --field-frame-background: var(--color-control-background-muted);
+    --field-frame-background-hover: var(--color-control-background-hover);
+    --field-frame-border: var(--color-control-background-muted);
+    --field-frame-border-hover: var(--color-field-border-hover);
+    --field-frame-divider: var(--color-white);
+    display: grid;
+    grid-template-columns: 26px minmax(0, 1fr) 38px 16px;
+    align-items: center;
+    width: 100%;
+    height: var(--field-height);
+    min-height: var(--field-height);
+    padding: 0 6px 0 var(--field-inline-padding);
+    border-color: var(--field-frame-border);
+    border-radius: var(--field-radius);
+    background: var(--field-frame-background);
+    color: var(--color-text-primary);
+    text-align: left;
+}
+
+.color-option-row::after {
+    content: '';
+    position: absolute;
+    top: 1px;
+    bottom: 1px;
+    right: 60px;
+    width: 1px;
+    background: var(--field-frame-divider);
+    pointer-events: none;
+}
+
+.color-option-row:hover {
+    border-color: var(--field-frame-border-hover);
+    background: var(--field-frame-background-hover);
+}
+
+.color-option-swatch {
+    width: 18px;
+    height: 18px;
+    border-radius: calc(var(--field-radius) - 1px);
+    background-color: var(--option-swatch);
+}
+
+.color-option-value,
+.color-option-opacity,
+.color-option-unit {
+    overflow: hidden;
+    color: var(--color-text-primary);
+    font-size: var(--field-font-size);
+    font-weight: 400;
+    letter-spacing: 0;
+    line-height: 1;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.color-option-opacity {
+    padding-left: 4px;
+    border-left: 0;
+    text-align: right;
+}
+
+.color-option-unit {
+    color: var(--color-text-secondary);
+    text-align: right;
+}

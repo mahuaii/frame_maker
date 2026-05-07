@@ -1,0 +1,101 @@
+/* === 预览区 === */
+.preview-area,
+.preview-surface {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--color-bg-preview);
+    position: relative;
+    overflow: hidden;
+    cursor: default;
+}
+
+.preview-area.has-image,
+.preview-surface.has-image {
+    cursor: default;
+}
+
+.preview-area.drag-over,
+.preview-surface.drag-over {
+    background: var(--color-bg-preview);
+    outline: 3px dashed var(--color-accent);
+    outline-offset: -3px;
+}
+
+/* 上传引导 */
+.upload-guide {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: var(--spacing-3);
+    color: var(--color-text-secondary);
+    pointer-events: none;
+    user-select: none;
+}
+
+.upload-guide p {
+    font-size: 16px;
+    font-weight: 400;
+}
+
+.upload-guide .upload-hint {
+    font-size: 13px;
+    color: var(--color-text-placeholder);
+    font-weight: 400;
+}
+
+.upload-guide svg {
+    color: var(--color-text-placeholder);
+}
+
+.upload-guide.hidden {
+    display: none;
+}
+
+.upload-notice {
+    position: absolute;
+    top: var(--spacing-4);
+    left: 50%;
+    z-index: 2;
+    max-width: min(420px, calc(100% - var(--spacing-8)));
+    padding: var(--spacing-2) var(--spacing-3);
+    border: 1px solid var(--color-control-border);
+    border-radius: var(--radius-sm);
+    background: var(--color-bg-elevated);
+    color: var(--color-text-primary);
+    box-shadow: var(--color-shadow-soft);
+    font-size: 13px;
+    line-height: 1.5;
+    letter-spacing: 0;
+    text-align: center;
+    pointer-events: none;
+    opacity: 0;
+    transform: translate(-50%, -6px);
+    transition: opacity 180ms ease, transform 180ms ease;
+}
+
+.upload-notice.visible {
+    opacity: 1;
+    transform: translate(-50%, 0);
+}
+
+.upload-notice[hidden] {
+    display: none;
+}
+
+/* Canvas 预览 */
+#preview-canvas,
+.preview-canvas {
+    display: none;
+    width: auto;
+    height: auto;
+    max-width: none;
+    max-height: none;
+    flex: 0 0 auto;
+}
+
+#preview-canvas.visible,
+.preview-canvas {
+    display: block;
+}

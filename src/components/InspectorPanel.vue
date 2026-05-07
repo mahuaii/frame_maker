@@ -1,7 +1,35 @@
 <script setup lang="ts">
 import { computed, reactive, watch } from 'vue';
 import { EDITABLE_EXIF_FIELDS } from '../adapters/exifAdapter';
+import FieldControl from './FieldControl.vue';
 import type { FrameTemplate, TemplateField } from '../types/template';
+
+const FREE_FRAME_ASPECT_RATIO = 'free';
+const LAYOUT_FIELD_KEYS = new Set([
+    'frameAspectRatio',
+    'frameBorderWidth',
+    'frameTop',
+    'frameRight',
+    'frameBottom',
+    'frameLeft',
+]);
+const FRAME_SIDE_FIELD_KEYS = new Set([
+    'frameTop',
+    'frameRight',
+    'frameBottom',
+    'frameLeft',
+]);
+const APPEARANCE_FIELD_KEYS = new Set([
+    'colorScheme',
+    'showThinBorder',
+]);
+const COMPACT_FIELD_LABELS: Record<string, string> = {
+    frameTop: 'T',
+    frameRight: 'R',
+    frameBottom: 'B',
+    frameLeft: 'L',
+};
+const PRIMARY_EXIF_FIELD_KEYS = ['focalLength', 'fNumber', 'exposureTime', 'iso'];
 
 const props = defineProps<{
     template: FrameTemplate;
@@ -20,19 +48,25 @@ const emit = defineEmits<{
 
 const textDrafts = reactive<Record<string, unknown>>({});
 
-const visibleFields = computed(() => props.template.fields.filter((field) => !field.hidden));
-const layoutFields = computed(() => visibleFields.value.filter((field) => (
-    field.key.startsWith('frame')
-)));
-const appearanceFields = computed(() => visibleFields.value.filter((field) => (
-    field.key === 'colorScheme' || field.key === 'showThinBorder'
-)));
-const textFields = computed(() => visibleFields.value.filter((field) => (
-    !layoutFields.value.includes(field) && !appearanceFields.value.includes(field)
-)));
+const isFreeFrameLayout = computed(() => (
+    (props.values.frameAspectRatio ?? FREE_FRAME_ASPECT_RATIO) === FREE_FRAME_ASPECT_RATIO
+));
+const visibleFields = computed(() => props.template.fields.filter(shouldShowTemplateField));
+const layoutFields = computed(() => visibleFields.value.filter((field) => LAYOUT_FIELD_KEYS.has(field.key)));
+const appearanceFields = computed(() => visibleFields.value.filter((field) => APPEARANCE_FIELD_KEYS.has(field.key)));
+const aspectField = computed(() => layoutFields.value.find((field) => field.key === 'frameAspectRatio'));
+const borderField = computed(() => layoutFields.value.find((field) => field.key === 'frameBorderWidth'));
+const sideFields = computed(() => layoutFields.value.filter((field) => FRAME_SIDE_FIELD_KEYS.has(field.key)));
 const layoutFieldsWithDefaults = computed(() => (
     layoutFields.value.filter((field) => props.defaultValues[field.key] !== undefined)
 ));
+const primaryExifFields = computed(() => PRIMARY_EXIF_FIELD_KEYS
+    .map((fieldKey) => EDITABLE_EXIF_FIELDS.find((field) => field.key === fieldKey))
+    .filter((field): field is typeof EDITABLE_EXIF_FIELDS[number] => Boolean(field))
+);
+const remainingExifFields = computed(() => EDITABLE_EXIF_FIELDS.filter((field) => (
+    !PRIMARY_EXIF_FIELD_KEYS.includes(field.key)
+)));
 
 watch(() => props.values, () => {
     Object.keys(textDrafts).forEach((key) => {
@@ -42,6 +76,26 @@ watch(() => props.values, () => {
 
 function fieldValue(field: TemplateField) {
     return textDrafts[field.key] ?? props.values[field.key] ?? field.defaultValue ?? '';
+}
+
+function shouldShowTemplateField(field: TemplateField) {
+    if (field.hidden) {
+        return false;
+    }
+
+    if (field.key === 'frameBorderWidth') {
+        return !isFreeFrameLayout.value;
+    }
+
+    if (FRAME_SIDE_FIELD_KEYS.has(field.key)) {
+        return isFreeFrameLayout.value;
+    }
+
+    return true;
+}
+
+function compactFieldLabel(field: TemplateField) {
+    return COMPACT_FIELD_LABELS[field.key] ?? field.label;
 }
 
 function commitField(field: TemplateField, value: unknown) {
@@ -68,109 +122,114 @@ function commitDraft(field: TemplateField) {
 
 <template>
     <aside class="inspector-panel">
-        <section class="panel-section">
-            <header class="panel-section-header">
-                <h2>版式</h2>
+        <section class="inspector-section">
+            <div class="inspector-section-header">
+                <h2 class="inspector-section-title">外观</h2>
+            </div>
+            <div class="inspector-section-content">
+                <FieldControl
+                    v-for="field in appearanceFields"
+                    :key="field.key"
+                    :field="field"
+                    :value="fieldValue(field)"
+                    @change="commitField"
+                    @input="updateDraft"
+                />
+            </div>
+        </section>
+
+        <section class="inspector-section">
+            <header class="inspector-section-header">
+                <h2 class="inspector-section-title">版式</h2>
                 <button
-                    class="section-reset-button"
+                    class="field-reset-button inspector-section-reset-button"
                     type="button"
+                    aria-label="重置版式"
+                    title="重置版式"
                     :disabled="layoutFieldsWithDefaults.length === 0"
                     @click="emit('resetLayout')"
                 >
-                    重置
+                    <svg viewBox="0 0 16 16" aria-hidden="true" focusable="false">
+                        <path d="M3.2 8a4.8 4.8 0 1 0 1.406-3.394"></path>
+                        <path d="M3.2 3.6v2.4h2.4"></path>
+                    </svg>
                 </button>
             </header>
-            <div v-for="field in layoutFields" :key="field.key" class="field-group">
-                <label :for="field.key">{{ field.label }}</label>
-                <select
-                    v-if="field.type === 'select' || field.type === 'option-input'"
-                    :id="field.key"
-                    :value="fieldValue(field) as string"
-                    @change="commitField(field, ($event.target as HTMLSelectElement).value)"
-                >
-                    <option v-for="option in field.options ?? []" :key="option.value" :value="option.value">
-                        {{ option.label }}
-                    </option>
-                </select>
-                <input
-                    v-else
-                    :id="field.key"
-                    type="number"
-                    :min="field.min"
-                    :max="field.max"
-                    :step="field.step ?? 1"
-                    :value="fieldValue(field) as string"
-                    @change="commitField(field, Number(($event.target as HTMLInputElement).value))"
-                >
-            </div>
-        </section>
-
-        <section class="panel-section">
-            <h2>外观</h2>
-            <div v-for="field in appearanceFields" :key="field.key" class="field-group">
-                <label>{{ field.label }}</label>
-                <div v-if="field.type === 'toggle'" class="toggle-row">
-                    <input
-                        :id="field.key"
-                        type="checkbox"
-                        :checked="Boolean(fieldValue(field))"
-                        @change="commitField(field, ($event.target as HTMLInputElement).checked)"
-                    >
-                    <label :for="field.key">启用</label>
+            <div class="inspector-section-content">
+                <FieldControl
+                    v-if="aspectField"
+                    :field="aspectField"
+                    :value="fieldValue(aspectField)"
+                    @change="commitField"
+                    @input="updateDraft"
+                />
+                <div v-if="isFreeFrameLayout && sideFields.length" class="field-group">
+                    <div class="field-group-label">边界宽度</div>
+                    <div class="inspector-field-grid inspector-field-grid-contained">
+                        <FieldControl
+                            v-for="field in sideFields"
+                            :key="field.key"
+                            :field="field"
+                            :value="fieldValue(field)"
+                            :label="compactFieldLabel(field)"
+                            compact
+                            @change="commitField"
+                            @input="updateDraft"
+                        />
+                    </div>
                 </div>
-                <div v-else class="theme-options">
-                    <button
-                        v-for="option in field.options ?? []"
-                        :key="option.value"
-                        class="theme-button"
-                        :class="{ 'is-selected': fieldValue(field) === option.value }"
-                        type="button"
-                        :style="{ '--swatch': option.swatch ?? '#111111' }"
-                        @click="commitField(field, option.value)"
-                    >
-                        {{ option.displayValue ?? option.label }}
-                    </button>
+                <div v-else-if="borderField" class="field-group">
+                    <div class="field-group-label">边界宽度</div>
+                    <div class="inspector-field-grid inspector-field-grid-contained">
+                        <FieldControl
+                            :field="borderField"
+                            :value="fieldValue(borderField)"
+                            compact
+                            @change="commitField"
+                            @input="updateDraft"
+                        />
+                    </div>
                 </div>
             </div>
         </section>
 
-        <section v-if="textFields.length" class="panel-section">
-            <h2>文本</h2>
-            <div v-for="field in textFields" :key="field.key" class="field-group">
-                <label :for="field.key">{{ field.label }}</label>
-                <textarea
-                    v-if="field.type === 'textarea'"
-                    :id="field.key"
-                    :value="fieldValue(field) as string"
-                    @input="updateDraft(field, ($event.target as HTMLTextAreaElement).value)"
-                    @blur="commitDraft(field)"
-                ></textarea>
-                <input
-                    v-else
-                    :id="field.key"
-                    type="text"
-                    :value="fieldValue(field) as string"
-                    @input="updateDraft(field, ($event.target as HTMLInputElement).value)"
-                    @blur="commitDraft(field)"
+        <section class="inspector-section">
+            <header class="inspector-section-header">
+                <h2 class="inspector-section-title">拍摄信息</h2>
+                <button
+                    class="field-reset-button inspector-section-reset-button"
+                    type="button"
+                    aria-label="重置拍摄信息"
+                    title="重置拍摄信息"
+                    @click="emit('resetExif')"
                 >
-            </div>
-        </section>
-
-        <section class="panel-section">
-            <header class="panel-section-header">
-                <h2>拍摄信息</h2>
-                <button class="section-reset-button" type="button" @click="emit('resetExif')">
-                    重置
+                    <svg viewBox="0 0 16 16" aria-hidden="true" focusable="false">
+                        <path d="M3.2 8a4.8 4.8 0 1 0 1.406-3.394"></path>
+                        <path d="M3.2 3.6v2.4h2.4"></path>
+                    </svg>
                 </button>
             </header>
-            <div v-for="field in EDITABLE_EXIF_FIELDS" :key="field.key" class="field-group">
-                <label :for="`exif-${field.key}`">{{ field.label }}</label>
-                <input
-                    :id="`exif-${field.key}`"
-                    type="text"
-                    :value="exifOverrides[field.key] ?? ''"
-                    @change="emit('updateExif', field.key, ($event.target as HTMLInputElement).value)"
-                >
+            <div class="inspector-section-content exif-editor-content">
+                <div class="inspector-field-grid inspector-field-grid-contained">
+                    <FieldControl
+                        v-for="field in primaryExifFields"
+                        :key="field.key"
+                        :field="{ ...field, type: field.type ?? 'input', defaultValue: '' }"
+                        :value="exifOverrides[field.key] ?? ''"
+                        id-prefix="field-exif"
+                        @change="(_, value) => emit('updateExif', field.key, String(value ?? ''))"
+                    />
+                </div>
+                <div class="editor-collapsible-content">
+                    <FieldControl
+                        v-for="field in remainingExifFields"
+                        :key="field.key"
+                        :field="{ ...field, type: field.type ?? 'input', defaultValue: '' }"
+                        :value="exifOverrides[field.key] ?? ''"
+                        id-prefix="field-exif"
+                        @change="(_, value) => emit('updateExif', field.key, String(value ?? ''))"
+                    />
+                </div>
             </div>
         </section>
     </aside>

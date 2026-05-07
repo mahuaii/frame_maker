@@ -1,0 +1,261 @@
+/* === Nine Grid Picker === */
+.nine-grid-picker {
+    --nine-grid-picker-muted: color-mix(in srgb, var(--color-gray-dark) 48%, var(--color-white));
+
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    grid-template-rows: repeat(3, minmax(0, 1fr));
+    gap: 0;
+    width: 100%;
+    height: var(--field-double-row-height);
+    min-height: var(--field-double-row-height);
+    padding: 6px 10px;
+    border-radius: var(--field-radius);
+    background: var(--color-control-background-muted);
+}
+
+.nine-grid-picker-button {
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 0;
+    min-height: 0;
+    padding: 0;
+    border: 0;
+    border-radius: calc(var(--field-radius) - 1px);
+    color: transparent;
+    font-size: 0;
+    line-height: 1;
+    letter-spacing: 0;
+    text-indent: -9999px;
+    background: transparent;
+    cursor: pointer;
+    overflow: hidden;
+    transition: var(--icon-option-button-transition);
+}
+
+.nine-grid-picker-button::before {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    pointer-events: none;
+}
+
+.nine-grid-picker-button::before {
+    width: 2px;
+    height: 2px;
+    border-radius: 50%;
+    background: var(--nine-grid-picker-muted);
+    transform: translate(-50%, -50%);
+}
+
+.nine-grid-picker-icon {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 18px;
+    height: 18px;
+    color: currentColor;
+    opacity: 0;
+    pointer-events: none;
+    transform: translate(-50%, -50%);
+}
+
+.nine-grid-picker-icon path {
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 2;
+    stroke-linecap: round;
+}
+
+.nine-grid-picker-button:hover,
+.nine-grid-picker-button:focus-visible {
+    color: var(--color-text-secondary);
+    background: transparent;
+    outline: none;
+}
+
+.nine-grid-picker-button:hover::before,
+.nine-grid-picker-button:focus-visible::before,
+.nine-grid-picker-button.selected::before,
+.nine-grid-picker-button.is-selected::before,
+.nine-grid-picker-button[aria-pressed="true"]::before,
+.nine-grid-picker-button[aria-selected="true"]::before,
+.nine-grid-picker-button[aria-current="true"]::before {
+    opacity: 0;
+}
+
+.nine-grid-picker-button:hover .nine-grid-picker-icon,
+.nine-grid-picker-button:focus-visible .nine-grid-picker-icon {
+    opacity: 1;
+}
+
+.nine-grid-picker-button.selected,
+.nine-grid-picker-button.is-selected,
+.nine-grid-picker-button[aria-pressed="true"],
+.nine-grid-picker-button[aria-selected="true"],
+.nine-grid-picker-button[aria-current="true"] {
+    color: var(--color-control-accent);
+    background: transparent;
+}
+
+.nine-grid-picker-button.selected .nine-grid-picker-icon,
+.nine-grid-picker-button.is-selected .nine-grid-picker-icon,
+.nine-grid-picker-button[aria-pressed="true"] .nine-grid-picker-icon,
+.nine-grid-picker-button[aria-selected="true"] .nine-grid-picker-icon,
+.nine-grid-picker-button[aria-current="true"] .nine-grid-picker-icon {
+    opacity: 1;
+}
+
+.nine-grid-picker-button:disabled,
+.nine-grid-picker-button[aria-disabled="true"] {
+    cursor: default;
+    opacity: 0.48;
+}
+
+/* === Frame Region Picker === */
+.frame-region-picker {
+    --frame-region-picker-muted: color-mix(in srgb, var(--color-gray-dark) 45%, var(--color-white));
+    --frame-region-picker-photo-border: color-mix(in srgb, var(--color-gray-dark) 10%, transparent);
+    --frame-region-picker-mark-length: 16px;
+    --frame-region-picker-mark-thickness: 1px;
+    --frame-region-picker-selected-mark-thickness: 2px;
+
+    position: relative;
+    width: 100%;
+    height: var(--field-double-row-height);
+    min-height: var(--field-double-row-height);
+    border-radius: var(--field-radius);
+    background: var(--color-control-background-muted);
+}
+
+.frame-region-picker-photo {
+    position: absolute;
+    inset: 30% 22%;
+    border: 1px solid var(--frame-region-picker-photo-border);
+    border-radius: var(--field-radius);
+    pointer-events: none;
+}
+
+.frame-region-picker-button {
+    position: absolute;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0;
+    border: 0;
+    border-radius: calc(var(--field-radius) - 1px);
+    color: var(--frame-region-picker-muted);
+    font-size: 0;
+    line-height: 1;
+    letter-spacing: 0;
+    background: transparent;
+    cursor: pointer;
+    overflow: hidden;
+    transition: var(--icon-option-button-transition);
+}
+
+.frame-region-picker-button::before {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 2px;
+    height: 2px;
+    border-radius: 50%;
+    background: var(--frame-region-picker-muted);
+    opacity: 0;
+    pointer-events: none;
+    transform: translate(-50%, -50%);
+}
+
+.frame-region-picker-button:hover,
+.frame-region-picker-button:focus-visible {
+    color: var(--color-text-secondary);
+    background: transparent;
+    outline: none;
+}
+
+.frame-region-picker-button.selected,
+.frame-region-picker-button[aria-checked="true"] {
+    --frame-region-picker-mark-thickness: var(--frame-region-picker-selected-mark-thickness);
+
+    color: var(--color-control-accent);
+}
+
+.frame-region-picker-button:hover::before,
+.frame-region-picker-button:focus-visible::before,
+.frame-region-picker-button.selected::before,
+.frame-region-picker-button[aria-checked="true"]::before {
+    opacity: 0;
+}
+
+.frame-region-picker-button:focus-visible {
+    background: transparent;
+}
+
+.frame-region-picker-mark,
+.frame-region-picker-mark::before,
+.frame-region-picker-mark::after {
+    display: block;
+    border-radius: var(--radius-pill);
+    background: currentColor;
+    pointer-events: none;
+}
+
+.frame-region-picker-top,
+.frame-region-picker-bottom {
+    left: 50%;
+    width: 52px;
+    height: 24px;
+    transform: translateX(-50%);
+}
+
+.frame-region-picker-top {
+    top: calc(15% - 12px);
+}
+
+.frame-region-picker-bottom {
+    bottom: calc(15% - 12px);
+}
+
+.frame-region-picker-top .frame-region-picker-mark,
+.frame-region-picker-bottom .frame-region-picker-mark {
+    width: var(--frame-region-picker-mark-length);
+    height: var(--frame-region-picker-mark-thickness);
+}
+
+.frame-region-picker-left,
+.frame-region-picker-right {
+    top: 50%;
+    width: 30px;
+    height: 44px;
+    transform: translateY(-50%);
+}
+
+.frame-region-picker-left {
+    left: calc(11% - 15px);
+}
+
+.frame-region-picker-right {
+    right: calc(11% - 15px);
+}
+
+.frame-region-picker-left .frame-region-picker-mark,
+.frame-region-picker-right .frame-region-picker-mark {
+    width: var(--frame-region-picker-mark-thickness);
+    height: var(--frame-region-picker-mark-length);
+}
+
+.frame-region-picker-center {
+    inset: 30% 22%;
+}
+
+.frame-region-picker-center .frame-region-picker-mark {
+    width: var(--frame-region-picker-mark-length);
+    height: var(--frame-region-picker-mark-length);
+    background: transparent;
+    border: var(--frame-region-picker-mark-thickness) solid currentColor;
+}

@@ -1,112 +1,40 @@
-.app-shell {
-    display: grid;
-    grid-template-columns: 188px minmax(0, 1fr) 336px;
-    height: 100%;
-    min-width: 0;
-}
-
-.template-list,
-.right-panel {
-    min-width: 0;
-    background: var(--surface-panel);
-    border-color: var(--color-border);
-}
-
-.template-list {
+/* === App Shell === */
+body {
     display: flex;
     flex-direction: column;
-    gap: 10px;
-    padding: 18px 14px;
-    overflow-y: auto;
-    border-right: 1px solid var(--color-border);
+    height: 100vh;
+    overflow: hidden;
 }
 
-.template-list h1 {
-    margin: 0 0 8px;
-    font-size: 18px;
-    line-height: 1.2;
-    font-weight: 650;
-}
-
-.workspace {
-    position: relative;
-    display: grid;
-    grid-template-rows: auto minmax(0, 1fr);
-    min-width: 0;
+#app {
+    display: flex;
+    flex-direction: column;
+    flex: 1 1 auto;
+    width: 100%;
     min-height: 0;
+    overflow: hidden;
 }
 
-.workspace-toolbar {
-    display: grid;
-    grid-template-columns: minmax(0, 1fr) auto;
-    gap: 10px;
-    align-items: stretch;
-    padding: 12px;
-    border-bottom: 1px solid var(--color-border);
-    background: var(--surface-panel);
-}
-
-.preview-surface {
+/* === 主体区域 === */
+.main-content {
     position: relative;
-    display: grid;
-    place-items: center;
-    min-width: 0;
+    display: flex;
+    flex: 1;
     min-height: 0;
-    overflow: auto;
-    padding: 18px;
+    overflow: hidden;
+    background: var(--color-bg-primary);
 }
 
-.preview-canvas {
-    box-shadow: 0 8px 26px rgb(20 24 32 / 14%);
-}
-
-.right-panel {
-    overflow-y: auto;
-    border-left: 1px solid var(--color-border);
-}
-
-.error-message {
-    position: absolute;
-    left: 18px;
-    right: 18px;
-    bottom: 16px;
-    margin: 0;
-    padding: 9px 11px;
-    border: 1px solid color-mix(in srgb, var(--color-danger) 34%, white);
-    border-radius: var(--radius-sm);
-    background: #fff7f6;
-    color: var(--color-danger);
-    font-size: 13px;
+.workspace-column {
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
 }
 
 @media (max-width: 980px) {
-    body {
-        overflow: auto;
-    }
-
-    .app-shell {
-        grid-template-columns: 1fr;
-        grid-template-rows: auto minmax(520px, 60vh) auto;
-        min-height: 100%;
-    }
-
-    .template-list {
-        flex-direction: row;
-        overflow-x: auto;
-        border-right: 0;
-        border-bottom: 1px solid var(--color-border);
-    }
-
-    .template-list h1 {
-        position: sticky;
-        left: 0;
-        align-self: center;
-        padding-right: 8px;
-        background: var(--surface-panel);
-    }
-
-    .right-panel {
-        border-left: 0;
-        border-top: 1px solid var(--color-border);
+    .main-content {
+        flex-direction: column;
     }
 }

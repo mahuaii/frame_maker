@@ -1,421 +1,137 @@
+@import url("./base.css");
+@import url("./layout.css");
+@import url("./components.css");
+@import url("./fields.css");
+@import url("./nine-grid-picker.css");
+@import url("./option-input.css");
+@import url("./option-buttons.css");
+@import url("./export.css");
+@import url("./preview.css");
+@import url("./template-selector.css");
+@import url("./inspector.css");
+
 .vue-native-app {
+    --inspector-width: 276px;
+
+    position: relative;
     display: grid;
-    grid-template-columns: 188px minmax(0, 1fr) 336px;
+    grid-template-columns: 178px minmax(0, 1fr) var(--inspector-width);
+    flex: 1 1 auto;
     width: 100%;
     height: 100%;
     min-width: 0;
+    min-height: 0;
+    overflow: hidden;
     color: var(--color-text-primary);
     background: var(--color-bg-primary);
-}
-
-.vue-native-app .template-list,
-.vue-native-right-panel {
-    min-width: 0;
-    background: var(--color-white);
-    border-color: var(--color-divider);
-}
-
-.vue-native-app .template-list {
-    display: flex;
-    flex-direction: column;
-    gap: 10px;
-    padding: 18px 14px;
-    overflow-y: auto;
-    border-right: 1px solid var(--color-divider);
-}
-
-.vue-native-app .template-list h1 {
-    margin: 0 0 8px;
-    font-size: 18px;
-    line-height: 1.2;
-    font-weight: 650;
-}
-
-.vue-native-app .template-item {
-    display: grid;
-    gap: 8px;
-    width: 100%;
-    padding: 8px;
-    border: 1px solid transparent;
-    border-radius: var(--radius-md);
-    background: transparent;
-    color: var(--color-text-primary);
-    text-align: left;
-}
-
-.vue-native-app .template-item:hover,
-.vue-native-app .template-item.is-selected {
-    border-color: var(--color-text-primary);
-    background: var(--color-bg-secondary);
-}
-
-.vue-native-app .template-item img {
-    width: 100%;
-    aspect-ratio: 1;
-    object-fit: cover;
-    border-radius: var(--radius-sm);
-    background: var(--color-bg-elevated);
-}
-
-.vue-native-app .template-item span {
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-    font-size: 12px;
 }
 
 .vue-native-workspace {
     position: relative;
     display: grid;
-    grid-template-rows: auto minmax(0, 1fr);
+    grid-template-rows: minmax(0, 1fr);
     min-width: 0;
     min-height: 0;
-}
-
-.vue-native-toolbar {
-    display: grid;
-    grid-template-columns: minmax(0, 1fr) auto;
-    gap: 10px;
-    align-items: stretch;
-    padding: 12px;
-    border-bottom: 1px solid var(--color-divider);
-    background: var(--color-white);
-}
-
-.vue-native-app .upload-area {
-    display: grid;
-    grid-template-columns: auto minmax(0, 1fr);
-    grid-template-rows: auto auto;
-    column-gap: 10px;
-    align-items: center;
-    min-height: 58px;
-    padding: 10px 12px;
-    border: 1px dashed var(--color-divider-strong);
-    border-radius: var(--radius-md);
-    background: var(--color-bg-secondary);
-}
-
-.vue-native-app .upload-area.is-dragging {
-    border-color: var(--color-text-primary);
-    background: var(--color-bg-elevated);
-}
-
-.vue-native-app .upload-icon,
-.vue-native-app .preview-empty-icon {
-    width: 28px;
-    height: 28px;
-    border: 1.5px solid currentColor;
-    border-radius: var(--radius-sm);
-}
-
-.vue-native-app .upload-icon {
-    grid-row: 1 / span 2;
-}
-
-.vue-native-app .upload-title {
-    font-size: 14px;
-    font-weight: 620;
-}
-
-.vue-native-app .upload-hint {
-    color: var(--color-text-secondary);
-    font-size: 12px;
-}
-
-.vue-native-app .undo-toolbar {
-    display: flex;
-    gap: 6px;
-    align-items: center;
-}
-
-.vue-native-app .undo-toolbar button,
-.vue-native-app .primary-button,
-.vue-native-app .secondary-button {
-    min-height: var(--toolbar-control-height);
-    border: 1px solid var(--color-divider);
-    border-radius: var(--radius-sm);
-    background: var(--color-white);
-    color: var(--color-text-primary);
-}
-
-.vue-native-app .undo-toolbar button {
-    width: var(--toolbar-control-height);
-    font-size: 18px;
-}
-
-.vue-native-app .primary-button {
-    width: 100%;
-    background: var(--color-text-primary);
-    color: var(--color-white);
-}
-
-.vue-native-app .secondary-button {
-    display: inline-grid;
-    place-items: center;
-    width: 100%;
-    padding: 0 10px;
-}
-
-.vue-native-app .preview-surface {
-    position: relative;
-    display: grid;
-    place-items: center;
-    min-width: 0;
-    min-height: 0;
-    overflow: auto;
-    padding: 18px;
-}
-
-.vue-native-app .preview-canvas {
-    box-shadow: 0 8px 26px rgb(20 24 32 / 14%);
-}
-
-.vue-native-app .preview-empty {
-    display: grid;
-    gap: 10px;
-    place-items: center;
-    color: var(--color-text-secondary);
-    font-size: 13px;
 }
 
 .vue-native-right-panel {
-    overflow-y: auto;
-    border-left: 1px solid var(--color-divider);
-}
+    --inspector-inline-padding: 16px;
 
-.vue-native-app .inspector-panel,
-.vue-native-app .export-panel,
-.vue-native-app .template-package-actions {
-    display: grid;
-    gap: 14px;
-}
-
-.vue-native-app .panel-section {
-    display: grid;
-    gap: 12px;
-    padding: 16px;
-    border-bottom: 1px solid var(--color-divider);
-}
-
-.vue-native-app .panel-section h2 {
-    margin: 0;
-    font-size: 13px;
-    line-height: 1.2;
-    font-weight: 680;
-}
-
-.vue-native-app .panel-section-header {
     display: flex;
-    gap: 10px;
-    align-items: center;
-    justify-content: space-between;
+    flex-direction: column;
+    width: var(--inspector-width);
     min-width: 0;
-}
-
-.vue-native-app .panel-section-header span {
-    color: var(--color-text-secondary);
-    font-size: 12px;
-    white-space: nowrap;
-}
-
-.vue-native-app .section-reset-button {
-    min-height: 26px;
-    padding: 0 8px;
-    border: 1px solid var(--color-divider);
-    border-radius: var(--radius-sm);
+    overflow: hidden;
+    border-left: 1px solid var(--color-control-border);
     background: var(--color-white);
-    color: var(--color-text-secondary);
-    font-size: 12px;
 }
 
-.vue-native-app .field-group {
-    display: grid;
-    gap: 6px;
+.vue-native-app .preview-surface {
+    padding: 0;
 }
 
-.vue-native-app .field-group label {
-    color: var(--color-text-secondary);
-    font-size: 12px;
+.vue-native-app .preview-empty p:first-of-type {
+    font-size: 16px;
 }
 
-.vue-native-app .field-group input,
-.vue-native-app .field-group select,
-.vue-native-app .field-group textarea {
-    width: 100%;
-    min-height: var(--toolbar-control-height);
-    padding: 6px 9px;
-    border: 1px solid var(--color-field-border);
-    border-radius: var(--radius-sm);
-    background: var(--color-field-background);
-    color: var(--color-text-primary);
+.vue-native-app .inspector-panel {
+    display: block;
 }
 
-.vue-native-app .field-group textarea {
-    min-height: 76px;
-    resize: vertical;
-}
-
-.vue-native-app .toggle-row {
-    display: flex;
-    gap: 8px;
-    align-items: center;
-}
-
-.vue-native-app .toggle-row input {
-    width: auto;
+.vue-native-app .inspector-scroll-area {
+    flex: 1 1 auto;
     min-height: 0;
 }
 
-.vue-native-app .theme-options {
-    display: grid;
-    grid-template-columns: repeat(3, minmax(0, 1fr));
-    gap: 6px;
+.vue-native-app .export-settings-menu .export-controls {
+    min-width: 260px;
 }
 
-.vue-native-app .theme-button {
-    position: relative;
-    min-height: var(--toolbar-control-height);
-    padding: 0 8px 0 22px;
-    border: 1px solid var(--color-field-border);
+.vue-native-app .export-settings-menu .vue-export-menu-action {
+    justify-content: center;
+    width: 100%;
+    min-height: 30px;
+    margin-top: 10px;
+    padding: 0 12px;
     border-radius: var(--radius-sm);
-    background: var(--color-field-background);
-    color: var(--color-text-primary);
     font-size: 12px;
 }
 
-.vue-native-app .theme-button::before {
-    position: absolute;
-    top: 50%;
-    left: 8px;
-    width: 9px;
-    height: 9px;
-    border: 1px solid var(--color-field-border);
-    border-radius: 50%;
-    background: var(--swatch);
-    content: "";
-    transform: translateY(-50%);
+.primary-button,
+.secondary-button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 30px;
+    padding: 0 12px;
+    border: 1px solid var(--color-control-border);
+    border-radius: var(--radius-sm);
+    background: var(--color-control-background);
+    color: var(--color-text-primary);
+    font-size: 12px;
+    font-weight: 500;
+    letter-spacing: 0;
+    cursor: pointer;
+    transition: background-color 0.18s ease, border-color 0.18s ease, color 0.18s ease;
 }
 
-.vue-native-app .theme-button.is-selected {
-    border-color: var(--color-text-primary);
+.primary-button {
+    border-color: var(--color-control-accent);
+    background: var(--color-control-accent);
+    color: var(--color-white);
 }
 
-.vue-native-app .custom-size-grid {
+.primary-button:hover:not(:disabled) {
+    border-color: var(--color-accent-hover);
+    background: var(--color-accent-hover);
+}
+
+.secondary-button:hover:not(:disabled) {
+    background: var(--color-control-background-hover);
+}
+
+.vue-native-app .template-package-actions {
     display: grid;
-    grid-template-columns: 1fr 1fr;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
     gap: 8px;
+}
+
+.vue-native-app .template-package-actions input {
+    display: none;
 }
 
 .vue-native-app .batch-actions {
-    display: grid;
-    grid-template-columns: repeat(3, minmax(0, 1fr));
-    gap: 6px;
+    width: 100%;
+    max-width: 100%;
 }
 
-.vue-native-app .batch-photo-list {
-    display: grid;
-    gap: 8px;
-}
-
-.vue-native-app .batch-photo-card {
-    display: grid;
-    grid-template-columns: minmax(0, 1fr) auto;
-    gap: 8px;
-    align-items: center;
-    padding: 8px;
-    border: 1px solid var(--color-divider);
-    border-radius: var(--radius-md);
-    background: var(--color-bg-secondary);
-}
-
-.vue-native-app .batch-photo-card.is-active {
-    border-color: var(--color-text-primary);
-    background: var(--color-white);
-}
-
-.vue-native-app .batch-photo-select {
-    display: grid;
-    grid-template-columns: 42px minmax(0, 1fr);
-    gap: 8px;
-    align-items: center;
-    min-width: 0;
-    padding: 0;
-    border: 0;
-    background: transparent;
-    color: var(--color-text-primary);
-    text-align: left;
-}
-
-.vue-native-app .batch-photo-select img {
-    width: 42px;
-    height: 42px;
-    object-fit: cover;
-    border-radius: var(--radius-sm);
-    background: var(--color-bg-elevated);
-}
-
-.vue-native-app .batch-photo-info {
-    display: grid;
-    gap: 3px;
-    min-width: 0;
-}
-
-.vue-native-app .batch-photo-info strong,
-.vue-native-app .batch-photo-info span {
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-}
-
-.vue-native-app .batch-photo-info strong {
-    font-size: 12px;
-    font-weight: 620;
-}
-
-.vue-native-app .batch-photo-info span,
-.vue-native-app .batch-empty {
-    color: var(--color-text-secondary);
-    font-size: 12px;
-}
-
-.vue-native-app .batch-export-toggle {
-    display: flex;
-    gap: 5px;
-    align-items: center;
-    color: var(--color-text-secondary);
-    font-size: 12px;
-}
-
-.vue-native-app .batch-export-toggle input {
-    width: auto;
-    min-height: 0;
-}
-
-.vue-native-app .batch-empty {
-    margin: 0;
+.vue-native-app .batch-action-button {
+    padding-inline: 4px;
 }
 
 .vue-native-app .text-editor-panel {
+    display: block;
     gap: 0;
-}
-
-.vue-native-app .text-editor-panel .secondary-button {
-    width: auto;
-    min-height: 28px;
-    padding: 0 9px;
-    font-size: 12px;
-}
-
-.vue-native-app .text-object-tree-header .secondary-button,
-.vue-native-app .text-object-action-bar .secondary-button {
-    width: auto;
-}
-
-.vue-native-app .text-object-delete-button,
-.vue-native-app .text-object-visibility-button {
-    font-size: 11px;
-    font-weight: 600;
-    letter-spacing: 0;
 }
 
 .vue-native-app .text-editor-panel .inspector-section {
@@ -423,12 +139,13 @@
     border-bottom: 0;
 }
 
-.vue-native-app .text-editor-panel .inspector-section-header {
-    min-height: 28px;
-}
-
 .vue-native-app .text-editor-panel .inspector-section-title {
     margin: 0;
+}
+
+.vue-native-app .text-align-radio-fallback {
+    font-size: 10px;
+    line-height: 1;
 }
 
 .vue-native-app .error-message {
@@ -446,33 +163,46 @@
 }
 
 @media (max-width: 980px) {
+    body {
+        overflow: auto;
+    }
+
     .vue-native-app {
         grid-template-columns: 1fr;
         grid-template-rows: auto minmax(520px, 60vh) auto;
         min-height: 100%;
     }
 
-    .vue-native-app .template-list {
+    .vue-native-app .frame-selector {
+        width: 100%;
+        min-width: 0;
         flex-direction: row;
         overflow-x: auto;
         border-right: 0;
         border-bottom: 1px solid var(--color-divider);
     }
 
-    .vue-native-app .template-list h1 {
+    .vue-native-app .selector-title {
         position: sticky;
         left: 0;
         align-self: center;
         padding-right: 8px;
-        background: var(--color-white);
+        background: var(--color-bg-primary);
     }
 
-    .vue-native-app .template-item {
+    .vue-native-app .selector-list {
+        flex-direction: row;
+        overflow-x: auto;
+        overflow-y: hidden;
+    }
+
+    .vue-native-app .template-card {
         width: 132px;
         flex: 0 0 auto;
     }
 
     .vue-native-right-panel {
+        width: 100%;
         border-left: 0;
         border-top: 1px solid var(--color-divider);
     }

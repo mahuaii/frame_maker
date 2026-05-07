@@ -21,18 +21,21 @@ function thumbnailUrl(template: FrameTemplate) {
 </script>
 
 <template>
-    <aside class="template-list">
-        <h1>Frame Maker</h1>
+    <aside class="frame-selector template-list">
+        <h1 class="selector-title">Frame Maker</h1>
+        <div class="selector-list">
         <button
             v-for="template in templates"
             :key="template.id"
-            class="template-item"
-            :class="{ 'is-selected': template.id === selectedTemplateId }"
+            class="template-card template-item"
+            :class="{ selected: template.id === selectedTemplateId, 'is-selected': template.id === selectedTemplateId }"
             type="button"
+            :aria-label="template.label ?? template.id"
+            :title="template.label ?? template.id"
             @click="emit('select', template)"
         >
-            <img :src="thumbnailUrl(template)" alt="" loading="lazy">
-            <span>{{ template.label ?? template.id }}</span>
+            <img class="template-thumbnail" :src="thumbnailUrl(template)" alt="" loading="lazy">
         </button>
+        </div>
     </aside>
 </template>

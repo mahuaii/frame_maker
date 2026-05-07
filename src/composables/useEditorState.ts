@@ -747,7 +747,7 @@ export function useEditorState(defaultTemplate: FrameTemplate, initialValues: Re
             return;
         }
 
-        selectTextColor(template, objectId, tokenField.key, colorField.key, option.value, getColorOptionValue(option));
+        selectTextColor(template, objectId, tokenField.key, colorField.key, String(option.value), getColorOptionValue(option));
     }
 
     function undo() {

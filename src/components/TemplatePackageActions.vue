@@ -19,14 +19,13 @@ function pickFile(files: FileList | null) {
 </script>
 
 <template>
-    <section class="panel-section template-package-actions">
-        <h2>模板包</h2>
-        <label class="secondary-button">
-            导入模板 ZIP
+    <div class="template-package-actions">
+        <label class="btn inspector-template-package-button">
+            导入模板
             <input type="file" accept=".zip,.frame-template.zip,application/zip" hidden @change="pickFile(($event.target as HTMLInputElement).files)">
         </label>
-        <button class="secondary-button" type="button" @click="emit('exportTemplate')">
-            导出当前模板
+        <button class="btn inspector-template-package-button" type="button" @click="emit('exportTemplate')">
+            导出模板
         </button>
-    </section>
+    </div>
 </template>
