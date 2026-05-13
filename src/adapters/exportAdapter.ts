@@ -1,4 +1,4 @@
-import { renderTemplateFrame } from '../../js/core/render/runtime.js';
+import { renderTemplateFrame } from '../../js/core/render/runtime.ts';
 import { resolveResizeDimensions } from '../../js/core/render/sizing.ts';
 import { getBaseFrameDimensions } from './rendererAdapter';
 import type { ExportSettings } from '../types/editor';

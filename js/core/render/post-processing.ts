@@ -1,4 +1,4 @@
-import { createScratchCanvas, drawCanvasScaled } from './canvas.js';
+import { createScratchCanvas, drawCanvasScaled } from './canvas.ts';
 
 function resizeCanvasByAreaSampling(sourceCanvas, targetWidth, targetHeight) {
     const sourceCtx = sourceCanvas.getContext('2d', { willReadFrequently: true });
@@ -110,7 +110,7 @@ function getSharpenStrength(sourceWidth, sourceHeight, targetWidth, targetHeight
     return 0.36;
 }
 
-function applySharpenPostProcess(canvas, options = {}) {
+function applySharpenPostProcess(canvas, options: Record<string, any> = {}) {
     const strength = Number(options.strength);
     if (!Number.isFinite(strength) || strength <= 0) {
         return canvas;
@@ -274,7 +274,7 @@ function applyWatermarkPostProcess(canvas, watermark) {
     return canvas;
 }
 
-export function applyGlobalPostProcessing(canvas, globalSettings = {}) {
+export function applyGlobalPostProcessing(canvas, globalSettings: Record<string, any> = {}) {
     let processedCanvas = canvas;
 
     processedCanvas = applyResizePostProcess(processedCanvas, globalSettings.resize);

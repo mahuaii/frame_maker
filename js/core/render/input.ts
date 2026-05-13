@@ -23,7 +23,7 @@ const EXIF_TAGS = {
     0xa434: 'lensModel',
 };
 
-export const EDITABLE_EXIF_FIELDS = Object.freeze([
+export const EDITABLE_EXIF_FIELDS: readonly any[] = Object.freeze([
     { key: 'make', label: '相机品牌' },
     { key: 'model', label: '相机型号' },
     { key: 'dateTimeOriginal', label: '拍摄时间' },
@@ -300,7 +300,7 @@ export function createEditableExifOverrideValues(exif) {
     };
 }
 
-export function resolveEditableExif(overrides = {}) {
+export function resolveEditableExif(overrides: Record<string, any> = {}) {
     const hasExplicitOverrides = EDITABLE_EXIF_FIELDS.some((field) => (
         normalizeEditableExifText(overrides[field.key]) !== null
     ));

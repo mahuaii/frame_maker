@@ -40,7 +40,7 @@ function renderPhotoBorder(ctx, overlay, args) {
     drawBeveledPhotoBorder(ctx, rect, borderWidth, getOverlayColor(overlay, args.appearance));
 }
 
-export function renderDeclarativeOverlays(ctx, args = {}) {
+export function renderDeclarativeOverlays(ctx: CanvasRenderingContext2D, args: Record<string, any> = {}) {
     const overlays = Array.isArray(args.template?.overlays) ? args.template.overlays : [];
 
     overlays.forEach((overlay) => {

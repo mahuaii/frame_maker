@@ -1,5 +1,5 @@
 import { loadRuntimeFonts, ensureRuntimeFont } from '../fonts/index.ts';
-import { drawSurfaceBackground } from './surface.js';
+import { drawSurfaceBackground } from './surface.ts';
 
 export function scaleByShortEdge(canvasSize, ratio) {
     return Math.min(canvasSize.width, canvasSize.height) * ratio;

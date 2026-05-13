@@ -1,13 +1,13 @@
 export {
     calculateFrameMetrics,
     calculatePreviewScale,
-} from './metrics.js';
+} from './metrics.ts';
 export {
     setupCanvas,
-} from './canvas.js';
+} from './canvas.ts';
 export {
     drawSurfaceBackground,
-} from './surface.js';
+} from './surface.ts';
 export {
     createRuntimeHelpers,
     fitText,
@@ -15,10 +15,10 @@ export {
     safeArea,
     scaleByLongEdge,
     scaleByShortEdge,
-} from './text-runtime.js';
+} from './text-runtime.ts';
 export {
     applyGlobalPostProcessing,
-} from './post-processing.js';
+} from './post-processing.ts';
 export {
     renderTemplateFrame,
-} from './render-template.js';
+} from './render-template.ts';

@@ -1,14 +1,14 @@
-import { renderTextModel } from '../text/index.js';
+import { renderTextModel } from '../text/index.ts';
 import { resolveTemplateAppearance, resolveTemplateConfig } from '../templates/registry.ts';
-import { buildTemplateResolveInput, createGlobalRenderSettings } from './input.js';
-import { copyCanvasInto, setupCanvas } from './canvas.js';
-import { calculateFrameMetrics } from './metrics.js';
-import { renderDeclarativeOverlays } from './overlays.js';
-import { applyGlobalPostProcessing } from './post-processing.js';
-import { drawSurfaceBackground } from './surface.js';
-import { createRuntimeHelpers } from './text-runtime.js';
+import { buildTemplateResolveInput, createGlobalRenderSettings } from './input.ts';
+import { copyCanvasInto, setupCanvas } from './canvas.ts';
+import { calculateFrameMetrics } from './metrics.ts';
+import { renderDeclarativeOverlays } from './overlays.ts';
+import { applyGlobalPostProcessing } from './post-processing.ts';
+import { drawSurfaceBackground } from './surface.ts';
+import { createRuntimeHelpers } from './text-runtime.ts';
 
-export async function renderTemplateFrame(canvas, image, template, rawConfig, options = {}) {
+export async function renderTemplateFrame(canvas: HTMLCanvasElement, image: HTMLImageElement, template: any, rawConfig: Record<string, unknown>, options: Record<string, any> = {}) {
     const scale = options.scale ?? 1;
     const config = resolveTemplateConfig(template, rawConfig);
     const globalSettings = createGlobalRenderSettings({
@@ -45,7 +45,7 @@ export async function renderTemplateFrame(canvas, image, template, rawConfig, op
     const appearance = resolveTemplateAppearance(template, config);
     const canvasBackground = appearance.canvasBackground ?? {
         type: 'solid',
-        color: appearance.backgroundColor ?? data?.backgroundColor ?? template.backgroundColor,
+        color: (appearance as Record<string, any>).backgroundColor ?? data?.backgroundColor ?? template.backgroundColor,
     };
 
     drawSurfaceBackground(ctx, image, {

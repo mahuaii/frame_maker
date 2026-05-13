@@ -6,7 +6,7 @@ import {
 } from '../adapters/exifAdapter';
 import {
     createImageThumbnailObjectUrl,
-} from '../../js/core/render/thumbnail.js';
+} from '../../js/core/render/thumbnail.ts';
 import type { PhotoEntry } from '../types/photo';
 
 function loadImage(objectUrl: string): Promise<HTMLImageElement> {

@@ -1,4 +1,4 @@
-import { renderTemplateFrame } from './core/render/runtime.js';
+import { renderTemplateFrame } from './core/render/runtime.ts';
 
 export {
     applyGlobalPostProcessing,
@@ -11,7 +11,7 @@ export {
     scaleByLongEdge,
     scaleByShortEdge,
     setupCanvas,
-} from './core/render/runtime.js';
+} from './core/render/runtime.ts';
 export {
     EDITABLE_EXIF_FIELDS,
     buildTemplateResolveInput,
@@ -20,7 +20,7 @@ export {
     createPhotoSource,
     extractExifData,
     resolveEditableExif,
-} from './core/render/input.js';
+} from './core/render/input.ts';
 export { renderTextModel } from './core/text/index.ts';
 
 export function renderFrame(canvas, image, template, fieldValues, scaleOrOptions = 1) {

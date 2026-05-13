@@ -54,7 +54,7 @@ export function resolveThumbnailBackgroundColor(
     return fallback;
 }
 
-export async function createImageThumbnailObjectUrl(image, options = {}) {
+export async function createImageThumbnailObjectUrl(image: CanvasImageSource, options: Record<string, any> = {}) {
     const {
         size = DEFAULT_THUMBNAIL_SIZE,
         mimeType = 'image/jpeg',
@@ -95,5 +95,5 @@ export async function createImageThumbnailObjectUrl(image, options = {}) {
     );
 
     const blob = await canvasToBlob(canvas, mimeType, quality);
-    return URL.createObjectURL(blob);
+    return URL.createObjectURL(blob as Blob);
 }

@@ -2,7 +2,7 @@ import {
     calculateFrameMetrics,
     calculatePreviewScale,
 } from '../../js/renderer.js';
-import { renderTemplateFrame } from '../../js/core/render/runtime.js';
+import { renderTemplateFrame } from '../../js/core/render/runtime.ts';
 import type { PhotoEntry } from '../types/photo';
 import type {
     CalculateFrameMetrics,

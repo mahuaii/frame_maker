@@ -26,7 +26,7 @@ function createSurfaceScratchCanvas(referenceCanvas, width, height) {
     return scratchCanvas;
 }
 
-function drawEdgeExtendedSurface(ctx, image, area, surface = {}, photoArea = null) {
+function drawEdgeExtendedSurface(ctx, image, area, surface: Record<string, any> = {}, photoArea = null) {
     const imageWidth = image?.naturalWidth ?? image?.width ?? 0;
     const imageHeight = image?.naturalHeight ?? image?.height ?? 0;
     if (!imageWidth || !imageHeight || !area.width || !area.height) {
@@ -242,7 +242,7 @@ function drawEdgeExtendedSurface(ctx, image, area, surface = {}, photoArea = nul
     return true;
 }
 
-export function drawSurfaceBackground(ctx, image, area, surface = {}, options = {}) {
+export function drawSurfaceBackground(ctx, image, area, surface: Record<string, any> = {}, options: Record<string, any> = {}) {
     if (!area || area.width <= 0 || area.height <= 0) {
         return;
     }

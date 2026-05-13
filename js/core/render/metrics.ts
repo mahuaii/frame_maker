@@ -49,7 +49,7 @@ function normalizeFrameSides(template, config = {}) {
         }
     });
 
-    return sides;
+    return sides as Record<string, number>;
 }
 
 function scaleRect(rect, scale) {
