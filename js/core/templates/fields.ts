@@ -1,4 +1,13 @@
-function normalizeNumberValue(value, fallbackValue) {
+import type { TemplateField } from '../../../src/types/template';
+import { normalizeFrameAspectRatioValue, normalizeFrameBorderWidth } from './frame-layout.ts';
+
+type FieldValueNormalizer = (
+    value: unknown,
+    fallbackValue: unknown,
+    field: TemplateField
+) => unknown;
+
+function normalizeNumberValue(value: unknown, fallbackValue: unknown): unknown {
     if (value === '' || value === null || value === undefined) {
         return fallbackValue;
     }
@@ -7,7 +16,7 @@ function normalizeNumberValue(value, fallbackValue) {
     return Number.isFinite(parsedValue) ? parsedValue : fallbackValue;
 }
 
-function normalizeToggleValue(value, fallbackValue = false) {
+function normalizeToggleValue(value: unknown, fallbackValue: unknown = false): boolean {
     if (typeof value === 'boolean') {
         return value;
     }
@@ -24,18 +33,18 @@ function normalizeToggleValue(value, fallbackValue = false) {
     return Boolean(fallbackValue);
 }
 
-function normalizeSelectValue(value, field, fallbackValue) {
+function normalizeSelectValue(value: unknown, field: TemplateField, fallbackValue: unknown): unknown {
     const options = Array.isArray(field.options) ? field.options : [];
     const validValues = new Set(options.map((option) => option.value));
 
-    if (validValues.has(value)) {
+    if (validValues.has(value as never)) {
         return value;
     }
 
     return fallbackValue;
 }
 
-function clampColorChannel(value) {
+function clampColorChannel(value: unknown): number {
     const numericValue = Number(value);
     if (!Number.isFinite(numericValue)) {
         return 0;
@@ -44,11 +53,11 @@ function clampColorChannel(value) {
     return Math.min(Math.max(Math.round(numericValue), 0), 255);
 }
 
-function toHexChannel(value) {
+function toHexChannel(value: unknown): string {
     return clampColorChannel(value).toString(16).padStart(2, '0').toUpperCase();
 }
 
-function normalizeColorAlpha(value) {
+function normalizeColorAlpha(value: unknown): number {
     if (typeof value !== 'string') {
         return 255;
     }
@@ -65,7 +74,7 @@ function normalizeColorAlpha(value) {
     return clampColorChannel(parsedValue * 255);
 }
 
-function normalizeColorValue(value, fallbackValue = '#000000FF') {
+function normalizeColorValue(value: unknown, fallbackValue = '#000000FF'): string {
     if (typeof value !== 'string') {
         return fallbackValue;
     }
@@ -96,7 +105,7 @@ function normalizeColorValue(value, fallbackValue = '#000000FF') {
     return fallbackValue;
 }
 
-export function getFieldDefaultValue(field) {
+export function getFieldDefaultValue(field: TemplateField): unknown {
     if (field.defaultValue !== undefined) {
         if (field.type === 'color') {
             return normalizeColorValue(field.defaultValue);
@@ -117,7 +126,7 @@ export function getFieldDefaultValue(field) {
     }
 }
 
-export function normalizeFieldValue(field, rawValue) {
+export function normalizeFieldValue(field: TemplateField, rawValue: unknown): unknown {
     const fallbackValue = getFieldDefaultValue(field);
 
     if (typeof field.normalizeValue === 'function') {
@@ -136,7 +145,7 @@ export function normalizeFieldValue(field, rawValue) {
         case 'select':
             return normalizeSelectValue(rawValue, field, fallbackValue);
         case 'color':
-            return normalizeColorValue(rawValue, fallbackValue);
+            return normalizeColorValue(rawValue, fallbackValue as string);
         case 'text':
         case 'textarea':
         default:
@@ -144,7 +153,11 @@ export function normalizeFieldValue(field, rawValue) {
     }
 }
 
-export function parseFieldInputValue(field, rawValue, currentValue) {
+export function parseFieldInputValue(
+    field: TemplateField,
+    rawValue: unknown,
+    currentValue: unknown
+): unknown {
     if (typeof field.parseValue === 'function') {
         return field.parseValue(rawValue, currentValue, field);
     }
@@ -156,22 +169,24 @@ export function parseFieldInputValue(field, rawValue, currentValue) {
     return rawValue;
 }
 
-export function buildDefaultConfig(fields) {
-    return fields.reduce((config, field) => {
+export function buildDefaultConfig(fields: TemplateField[]): Record<string, unknown> {
+    return fields.reduce<Record<string, unknown>>((config, field) => {
         config[field.key] = getFieldDefaultValue(field);
         return config;
     }, {});
 }
 
-export function normalizeTemplateConfig(fields, rawConfig = {}) {
-    return fields.reduce((config, field) => {
+export function normalizeTemplateConfig(
+    fields: TemplateField[],
+    rawConfig: Record<string, unknown> = {}
+): Record<string, unknown> {
+    return fields.reduce<Record<string, unknown>>((config, field) => {
         config[field.key] = normalizeFieldValue(field, rawConfig[field.key]);
         return config;
     }, {});
 }
-import { normalizeFrameAspectRatioValue, normalizeFrameBorderWidth } from './frame-layout.js';
 
-const FIELD_VALUE_NORMALIZERS = Object.freeze({
+const FIELD_VALUE_NORMALIZERS: Record<string, FieldValueNormalizer> = Object.freeze({
     frameAspectRatio: normalizeFrameAspectRatioValue,
     frameBorderWidth: normalizeFrameBorderWidth,
 });

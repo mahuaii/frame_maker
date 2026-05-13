@@ -1,4 +1,4 @@
-import { normalizeTemplateConfig } from './fields.js';
+import { normalizeTemplateConfig } from './fields.ts';
 import { buildColorTokenField, createAppearanceThemes, getAppearanceColor, resolveTemplateAppearance } from './appearance.js';
 
 function defaultResolveTemplateData() {

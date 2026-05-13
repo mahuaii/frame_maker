@@ -1,17 +1,13 @@
 import { renderTemplateFrame } from '../../js/core/render/runtime.js';
-import { resolveResizeDimensions } from '../../js/core/render/sizing.js';
+import { resolveResizeDimensions } from '../../js/core/render/sizing.ts';
 import { getBaseFrameDimensions } from './rendererAdapter';
 import type { ExportSettings } from '../types/editor';
 import type { PhotoEntry } from '../types/photo';
-import type {
-    RenderTemplateFrame,
-    ResolveResizeDimensions,
-} from '../types/render';
+import type { RenderTemplateFrame } from '../types/render';
 import type { FrameTemplate } from '../types/template';
 import type { TextModel } from '../types/text';
 
 const renderTemplateFrameContract = renderTemplateFrame as unknown as RenderTemplateFrame;
-const resolveResizeDimensionsContract = resolveResizeDimensions as unknown as ResolveResizeDimensions;
 
 function getExtensionForMimeType(mimeType: string) {
     if (mimeType === 'image/png') return 'png';
@@ -57,7 +53,7 @@ export async function exportCurrentPhoto({
     settings: ExportSettings;
 }) {
     const baseDimensions = getBaseFrameDimensions(photo, template, fieldValues);
-    const resize = resolveResizeDimensionsContract({
+    const resize = resolveResizeDimensions({
         sizePreset: settings.sizePreset,
         customWidth: settings.customWidth,
         customHeight: settings.customHeight,

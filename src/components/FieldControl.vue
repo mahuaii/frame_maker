@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed, nextTick, ref, watch } from 'vue';
-import { parseFieldInputValue } from '../../js/core/templates/fields.js';
+import { parseFieldInputValue } from '../../js/core/templates/fields.ts';
 import type { InspectorField, InspectorFieldIconPath, InspectorFieldOption } from '../types/inspector';
 
 type TextRadioPathDefinition = {

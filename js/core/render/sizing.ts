@@ -1,4 +1,15 @@
-export function parsePositiveInteger(value) {
+import type { CanvasSize, ResizeDimensions } from '../../../src/types/render';
+
+type SizePreset = 'original' | '1080' | '2048' | 'custom';
+
+type ResolveResizeInput = {
+    sizePreset: SizePreset;
+    customWidth: string;
+    customHeight: string;
+    baseDimensions: CanvasSize;
+};
+
+export function parsePositiveInteger(value: unknown): number | null {
     if (value === '' || value === null || value === undefined) {
         return null;
     }
@@ -11,7 +22,13 @@ export function parsePositiveInteger(value) {
     return normalized;
 }
 
-export function fitInside(sourceWidth, sourceHeight, containerWidth, containerHeight, padding = 0.9) {
+export function fitInside(
+    sourceWidth: number,
+    sourceHeight: number,
+    containerWidth: number,
+    containerHeight: number,
+    padding = 0.9
+): CanvasSize | null {
     if (!sourceWidth || !sourceHeight || !containerWidth || !containerHeight) {
         return null;
     }
@@ -26,7 +43,10 @@ export function fitInside(sourceWidth, sourceHeight, containerWidth, containerHe
     };
 }
 
-export function scaleByLongEdge(targetLongEdge, baseDimensions) {
+export function scaleByLongEdge(
+    targetLongEdge: number,
+    baseDimensions: CanvasSize
+): CanvasSize | null {
     const { width, height } = baseDimensions;
     if (!targetLongEdge || !width || !height) {
         return null;
@@ -50,7 +70,7 @@ export function resolveResizeDimensions({
     customWidth,
     customHeight,
     baseDimensions,
-}) {
+}: ResolveResizeInput): ResizeDimensions | null {
     if (sizePreset === 'original') {
         return null;
     }

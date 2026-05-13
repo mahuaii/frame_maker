@@ -2,7 +2,7 @@ import { DEFAULT_FONT_IDS, FONT_FAMILIES, getFontFieldOptions } from '../core/fo
 import {
     FRAME_ASPECT_RATIO_OPTIONS,
     FREE_FRAME_ASPECT_RATIO,
-} from '../core/templates/frame-layout.js';
+} from '../core/templates/frame-layout.ts';
 
 export const defaultFrameFont = {
     basis: 'height',

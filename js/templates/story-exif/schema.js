@@ -1,4 +1,4 @@
-import { buildDefaultConfig } from '../../core/templates/fields.js';
+import { buildDefaultConfig } from '../../core/templates/fields.ts';
 import { buildAppearanceField } from '../../core/templates/appearance.js';
 import { createSolidAppearanceThemes } from '../appearance-presets.js';
 import { buildFrameLayoutFields } from '../shared.js';

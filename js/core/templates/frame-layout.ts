@@ -1,7 +1,9 @@
+import type { TemplateFieldOption, TemplatePrimitiveValue } from '../../../src/types/template';
+
 export const FREE_FRAME_ASPECT_RATIO = 'free';
 export const ORIGINAL_FRAME_ASPECT_RATIO = 'original';
 
-export const FRAME_ASPECT_RATIO_OPTIONS = [
+export const FRAME_ASPECT_RATIO_OPTIONS: TemplateFieldOption[] = [
     { value: FREE_FRAME_ASPECT_RATIO },
     { value: ORIGINAL_FRAME_ASPECT_RATIO },
     { value: '1:1' },
@@ -15,17 +17,17 @@ export const FRAME_ASPECT_RATIO_OPTIONS = [
     { value: '9:16' },
 ];
 
-const FREE_FRAME_ASPECT_RATIO_LABELS = new Set([
+const FREE_FRAME_ASPECT_RATIO_LABELS = new Set<TemplatePrimitiveValue>([
     FREE_FRAME_ASPECT_RATIO,
     '自由',
 ]);
 
-const ORIGINAL_FRAME_ASPECT_RATIO_LABELS = new Set([
+const ORIGINAL_FRAME_ASPECT_RATIO_LABELS = new Set<TemplatePrimitiveValue>([
     ORIGINAL_FRAME_ASPECT_RATIO,
     '原照比例',
 ]);
 
-export function parseFrameAspectRatio(value) {
+export function parseFrameAspectRatio(value: unknown): number | null {
     if (typeof value !== 'string') {
         const numericValue = Number(value);
         return Number.isFinite(numericValue) && numericValue > 0 ? numericValue : null;
@@ -44,7 +46,10 @@ export function parseFrameAspectRatio(value) {
     return parts[0] / parts[1];
 }
 
-export function normalizeFrameAspectRatioValue(value, fallbackValue = FREE_FRAME_ASPECT_RATIO) {
+export function normalizeFrameAspectRatioValue(
+    value: unknown,
+    fallbackValue: TemplatePrimitiveValue = FREE_FRAME_ASPECT_RATIO
+): TemplatePrimitiveValue {
     if (value === null || value === undefined) {
         return fallbackValue;
     }
@@ -61,7 +66,7 @@ export function normalizeFrameAspectRatioValue(value, fallbackValue = FREE_FRAME
     return parseFrameAspectRatio(rawValue) ? rawValue : fallbackValue;
 }
 
-export function normalizeFrameBorderWidth(value, fallbackValue = 0) {
+export function normalizeFrameBorderWidth(value: unknown, fallbackValue = 0): number {
     const numericValue = Number(value);
     if (!Number.isFinite(numericValue)) {
         return fallbackValue;

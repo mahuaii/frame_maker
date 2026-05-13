@@ -1,4 +1,4 @@
-import { ORIGINAL_FRAME_ASPECT_RATIO, parseFrameAspectRatio } from '../templates/frame-layout.js';
+import { ORIGINAL_FRAME_ASPECT_RATIO, parseFrameAspectRatio } from '../templates/frame-layout.ts';
 import { resolveTemplateConfig } from '../templates/registry.js';
 
 const FRAME_SIDE_KEYS = ['top', 'right', 'bottom', 'left'];
