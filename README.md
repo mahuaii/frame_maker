@@ -1,6 +1,6 @@
 # Frame Maker
 
-一个基于原生 HTML / CSS / JavaScript 的静态相框生成工具。上传照片后，可以选择不同模板、编辑文案，并直接导出 JPG。
+基于 Vue 3 + Vite 的相框生成工具。上传照片后，可以选择不同模板、编辑文案，并直接导出 JPG。
 
 这个项目适合做：
 
@@ -17,7 +17,9 @@
 - 支持读取 JPEG EXIF 信息并用于模板排版
 - 支持导出 JPG，并可设置长边尺寸或自定义尺寸
 - 模板系统模块化，便于新增样式
-- 提供缩略图生成脚本和参考 UI 页面
+- 支持文本编辑与颜色管理
+- 支持撤销/重做操作
+- 支持模板导入/导出（.frame-template.zip）
 
 ## 当前模板
 
@@ -28,7 +30,11 @@
 
 ## 快速开始
 
-本项目是纯静态前端，无需打包。
+首次使用先安装依赖：
+
+```bash
+npm install
+```
 
 ### 方式一：直接启动仓库内脚本
 
@@ -48,17 +54,19 @@ http://localhost:8001
 ./start.sh 8080
 ```
 
-### 方式二：使用 Python 本地静态服务器
+### 方式二：使用 npm 脚本
 
 ```bash
-python3 -m http.server 8001
+npm run dev -- --port 8001
 ```
 
-然后打开：
+### 构建生产版本
 
-```text
-http://localhost:8001
+```bash
+npm run build
 ```
+
+旧版原生 UI 已归档到 `legacy/`，当前默认应用不再提供旧版 query 运行入口。需要恢复旧版时，将 `legacy/js/app.js`、`legacy/js/app/`、`legacy/js/ui/`、`legacy/css/` 搬回原路径，并重新接回旧入口。
 
 ## 使用流程
 
@@ -111,22 +119,25 @@ http://localhost:8001
 ```text
 frame_maker/
 ├── index.html                  # 应用入口
-├── css/
-│   ├── style.css               # 样式入口，按顺序加载模块
-│   ├── base.css                # 设计变量、reset、基础元素
-│   ├── layout.css              # 页面骨架、工具栏、主布局
-│   ├── components.css          # 按钮、表单、选项、开关等通用控件
-│   ├── features.css            # 导出区、预览区、模板选择器、编辑面板
-│   └── fonts-local.css         # 本地 UI 字体声明
+├── src/
+│   ├── main.ts                 # Vue 应用启动入口
+│   ├── App.vue                 # 根组件
+│   ├── components/             # Vue 组件
+│   ├── composables/            # 组合式 API（状态管理、历史记录等）
+│   ├── adapters/               # 模板、渲染、导出适配层
+│   ├── types/                  # TypeScript 类型定义
+│   ├── utils/                  # 工具函数
+│   └── styles/                 # Vue 原生样式
 ├── js/
-│   ├── app.js                  # 页面主流程
-│   ├── renderer.js             # 渲染入口
+│   ├── core/                   # 共享渲染、模板、字体能力
+│   ├── templates/              # 各模板实现
 │   ├── templates.js            # 模板注册表
-│   ├── core/                   # 核心渲染、模板、字体能力
-│   └── templates/              # 各模板实现
+│   └── renderer.js             # 渲染入口
+├── legacy/
+│   ├── css/                    # 旧版原生 UI 样式归档
+│   └── js/                     # 旧版原生 UI 应用归档
 ├── thumbnails/                 # 模板缩略图
-├── scripts/                    # 辅助脚本（如缩略图生成）
-├── reference-ui/               # 参考界面稿与实验页面
+├── tests/                      # 测试
 └── start.sh                    # 本地启动脚本
 ```
 
@@ -155,18 +166,9 @@ frame_maker/
 3. 在 `js/templates.js` 中注册模板
 4. 为模板补充 `thumbnails/<template-id>_thumbnail.(png|jpg)`
 
-## 辅助资源
+## Legacy 归档
 
-- `scripts/thumbnail-generator.js`：用于生成模板缩略图
-- `reference-ui/`：存放界面参考稿与样式探索页面
-
-
-## 已知限制
-
-- 目前没有构建流程、测试框架和发布流程
-- EXIF 解析不是完整格式兼容实现，重点支持常见 JPEG 场景
-- 字体依赖本机环境，不同设备上的视觉结果可能略有差异
-- 当前导出格式为 JPG
+`legacy/` 只用于保存旧版原生 DOM UI，方便需要时恢复。当前 Vue 应用不从 `legacy/` 读取运行时代码；共享渲染和模板内核仍位于 `js/`。
 
 ## License
 

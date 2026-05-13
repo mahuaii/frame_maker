@@ -1,18 +1,11 @@
 <script setup lang="ts">
 import { computed, reactive, ref, onBeforeUnmount, onMounted } from 'vue';
-import { initFrameMakerApp } from '../js/app.js';
 import {
     DEFAULT_INSPECTOR_WIDTH,
     MAX_INSPECTOR_WIDTH,
     MIN_INSPECTOR_WIDTH,
     MIN_WORKSPACE_WIDTH,
-} from '../js/app/constants.js';
-import {
-    addImportedTemplate,
-    getTemplateById,
-    getTemplates,
-    templates,
-} from '../js/templates.js';
+} from './constants/ui';
 import BatchPhotoPanel from './components/BatchPhotoPanel.vue';
 import ExportPanel from './components/ExportPanel.vue';
 import InspectorPanel from './components/InspectorPanel.vue';
@@ -20,6 +13,7 @@ import PreviewCanvas from './components/PreviewCanvas.vue';
 import TemplateList from './components/TemplateList.vue';
 import TemplatePackageActions from './components/TemplatePackageActions.vue';
 import TextEditorPanel from './components/TextEditorPanel.vue';
+import UndoRedoToolbar from './components/UndoRedoToolbar.vue';
 import { downloadBlob, exportCurrentPhoto } from './adapters/exportAdapter';
 import { exportTemplateZip, importTemplateZip } from './adapters/templatePackageAdapter';
 import { useEditorState } from './composables/useEditorState';
@@ -28,8 +22,6 @@ import { useTemplateStore } from './composables/useTemplateStore';
 import type { ExportSettings } from './types/editor';
 import type { FrameTemplate } from './types/template';
 
-let appInstance: ReturnType<typeof initFrameMakerApp> | null = null;
-const isVueNativeMode = new URLSearchParams(window.location.search).get('app') === 'vue';
 const templateStore = useTemplateStore();
 const photoStore = usePhotoStore();
 const editor = useEditorState(
@@ -58,6 +50,8 @@ const uiState = reactive({
 
 const availableTemplates = templateStore.templates;
 const selectedTextObjectId = editor.selectedTextObjectId;
+const canUndo = editor.canUndo;
+const canRedo = editor.canRedo;
 const photos = photoStore.photos;
 const activePhoto = computed(() => (
     photoStore.getPhotoById(editor.state.value.activePhotoId)
@@ -159,31 +153,15 @@ function handleVueInspectorResizeKeyDown(event: KeyboardEvent) {
 }
 
 function handleWindowResize() {
-    if (!isVueNativeMode) {
-        return;
-    }
-
     setVueInspectorWidth(inspectorWidth.value);
 }
 
 onMounted(() => {
-    if (isVueNativeMode) {
-        window.addEventListener('resize', handleWindowResize);
-        setVueInspectorWidth(DEFAULT_INSPECTOR_WIDTH);
-        return;
-    }
-
-    appInstance = initFrameMakerApp({
-        templates,
-        getTemplates,
-        getTemplateById,
-        addImportedTemplate,
-    });
+    window.addEventListener('resize', handleWindowResize);
+    setVueInspectorWidth(DEFAULT_INSPECTOR_WIDTH);
 });
 
 onBeforeUnmount(() => {
-    appInstance?.destroy();
-    appInstance = null;
     window.removeEventListener('resize', handleWindowResize);
     document.body.classList.remove('is-resizing-inspector');
     editor.releaseAllTextObjectUrls();
@@ -295,7 +273,7 @@ async function handleExport() {
 </script>
 
 <template>
-    <main v-if="isVueNativeMode" ref="vueAppRef" class="vue-native-app" :style="vueAppStyle">
+    <main ref="vueAppRef" class="vue-native-app" :style="vueAppStyle">
         <TemplateList
             :templates="availableTemplates"
             :selected-template-id="selectedTemplateId"
@@ -385,6 +363,12 @@ async function handleExport() {
                     @import-template="handleImportTemplate"
                     @export-template="handleExportTemplate"
                 />
+                <UndoRedoToolbar
+                    :can-undo="canUndo"
+                    :can-redo="canRedo"
+                    @undo="editor.undo"
+                    @redo="editor.redo"
+                />
                 <div class="inspector-panel-tabs" role="tablist" aria-label="设置面板">
                     <button
                         class="inspector-panel-tab"
@@ -459,8 +443,8 @@ async function handleExport() {
                     :values="currentFieldValues"
                     :exif-overrides="exifOverrides"
                     :default-values="defaultFieldValues"
-                    @update-field="(key, value) => editor.updateField(selectedTemplate.id, key, value)"
-                    @draft-field="(key, value) => editor.replaceFieldDraft(selectedTemplate.id, key, value)"
+                    @update-field="(key, value) => editor.updateField(selectedTemplate, key, value)"
+                    @draft-field="(key, value) => editor.replaceFieldDraft(selectedTemplate, key, value)"
                     @update-exif="editor.updateExif"
                     @reset-layout="editor.resetLayoutFields(selectedTemplate, layoutFieldKeys, defaultFieldValues)"
                     @reset-exif="editor.resetExif"
@@ -469,34 +453,4 @@ async function handleExport() {
         </aside>
         <input ref="vueFileInputRef" type="file" accept="image/*" multiple hidden @change="handleVueFileInputChange">
     </main>
-
-    <main v-else class="main-content">
-        <section class="frame-selector" id="frame-selector">
-            <h1 class="selector-title">Frame Maker</h1>
-            <div class="selector-list" id="selector-list"></div>
-        </section>
-
-        <div class="workspace-column">
-            <section class="preview-area" id="preview-area">
-                <div class="upload-guide" id="upload-guide">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none"
-                        stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
-                        <rect x="3" y="3" width="18" height="18" rx="2" ry="2" />
-                        <circle cx="8.5" cy="8.5" r="1.5" />
-                        <polyline points="21 15 16 10 5 21" />
-                    </svg>
-                    <p>拖拽上传照片</p>
-                    <p class="upload-hint">支持 JPG / PNG / WebP 格式</p>
-                </div>
-                <canvas id="preview-canvas"></canvas>
-            </section>
-        </div>
-
-        <div class="inspector-resizer" id="inspector-resizer" role="separator" aria-orientation="vertical"
-            aria-label="调整右侧栏宽度" tabindex="0"></div>
-
-        <aside class="text-editor" id="text-editor"></aside>
-    </main>
-
-    <input v-if="!isVueNativeMode" type="file" id="file-input" accept="image/*" multiple hidden>
 </template>

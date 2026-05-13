@@ -18,6 +18,31 @@ try {
     assert.ok(alternateTemplate, 'expected at least two templates for state coverage');
 
     const editor = useEditorState(defaultTemplate, getInitialTemplateValues(defaultTemplate));
+    const draftEditor = useEditorState(defaultTemplate, getInitialTemplateValues(defaultTemplate));
+
+    draftEditor.addPhoto('draft-photo', {});
+    const defaultValues = getInitialTemplateValues(defaultTemplate);
+    draftEditor.replaceFieldDraft(defaultTemplate, 'frameBorderWidth', 12);
+    draftEditor.replaceFieldDraft(defaultTemplate, 'frameBorderWidth', 18);
+    assert.equal(
+        draftEditor.canUndo.value,
+        false,
+        'draft field updates should preview without entering edit history'
+    );
+    draftEditor.updateField(defaultTemplate, 'frameBorderWidth', 18);
+    assert.equal(draftEditor.canUndo.value, true, 'committing a drafted field should enter history once');
+    draftEditor.undo();
+    assert.equal(
+        draftEditor.activePhotoState.value.fieldValuesByTemplateId[defaultTemplate.id].frameBorderWidth,
+        defaultValues.frameBorderWidth,
+        'undo should restore the value before the draft interaction'
+    );
+    draftEditor.updateField(defaultTemplate, 'frameAspectRatio', '1:1');
+    assert.equal(
+        draftEditor.activePhotoState.value.fieldValuesByTemplateId[defaultTemplate.id].frameAspectRatio,
+        '1:1',
+        'field commits should resolve template config for aspect ratio changes'
+    );
 
     editor.addPhoto('photo-a', { make: 'Sony' });
     editor.addPhoto('photo-b', { make: 'Canon' });

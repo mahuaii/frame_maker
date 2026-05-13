@@ -82,17 +82,17 @@ const importedViaAdapter = adapter.addImportedTemplate(templates[0]);
 assert.equal(
     getSharedTemplateById(importedViaAdapter.id),
     importedViaAdapter,
-    'Vue template adapter should add templates to the shared legacy registry'
+    'Vue template adapter should add templates to the shared template registry'
 );
 assert.equal(
     adapter.getTemplateById(importedViaAdapter.id),
     importedViaAdapter,
-    'Vue template adapter should read templates from the shared legacy registry'
+    'Vue template adapter should read templates from the shared template registry'
 );
 assert.deepEqual(
     adapter.getAllTemplates().map((template) => template.id),
     getSharedTemplates().map((template) => template.id),
-    'Vue template adapter and legacy template module should expose the same template list'
+    'Vue template adapter and shared template module should expose the same template list'
 );
 assert.equal(getSharedTemplates().length, sharedTemplateCount + 1);
 

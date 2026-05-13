@@ -105,11 +105,9 @@ function commitField(field: TemplateField, value: unknown) {
 function updateDraft(field: TemplateField, value: unknown) {
     if (field.type === 'text' || field.type === 'textarea') {
         textDrafts[field.key] = value;
-        emit('draftField', field.key, value);
-        return;
     }
 
-    commitField(field, value);
+    emit('draftField', field.key, value);
 }
 
 function commitDraft(field: TemplateField) {

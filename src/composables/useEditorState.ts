@@ -21,6 +21,7 @@ import {
     createDefaultTextGroup,
     createDefaultTextItem,
 } from '../../js/core/text/index.js';
+import { resolveTemplateConfig } from '../../js/core/templates/registry.js';
 import type { CopiedPhotoSettings, EditableState, PhotoEditState } from '../types/editor';
 import type { FrameTemplate } from '../types/template';
 import type {
@@ -62,6 +63,7 @@ export function useEditorState(defaultTemplate: FrameTemplate, initialValues: Re
     });
     const selectedTextObjectId = ref<string | null>(null);
     const textObjectUrlRegistry = new Set<string>();
+    let draftBaseline: EditableState | null = null;
 
     const state = computed(() => history.present.value);
     const activePhotoState = computed(() => (
@@ -125,11 +127,17 @@ export function useEditorState(defaultTemplate: FrameTemplate, initialValues: Re
     }
 
     function commitState(nextState: EditableState) {
-        history.commit(nextState);
+        if (draftBaseline) {
+            history.commitFrom(draftBaseline, nextState);
+            draftBaseline = null;
+        } else {
+            history.commit(nextState);
+        }
         releaseUnusedTextObjectUrls();
     }
 
     function replacePresentShallow(nextState: EditableState) {
+        draftBaseline = null;
         history.replacePresentShallow(nextState);
         releaseUnusedTextObjectUrls();
     }
@@ -301,7 +309,20 @@ export function useEditorState(defaultTemplate: FrameTemplate, initialValues: Re
         }));
     }
 
-    function updateField(templateId: string, key: string, value: unknown) {
+    function resolveFieldValues(templateOrId: FrameTemplate | string, currentValues: Record<string, unknown>, key: string, value: unknown) {
+        const nextValues = {
+            ...currentValues,
+            [key]: value,
+        };
+
+        return typeof templateOrId === 'string'
+            ? nextValues
+            : resolveTemplateConfig(templateOrId, nextValues);
+    }
+
+    function updateField(templateOrId: FrameTemplate | string, key: string, value: unknown) {
+        const templateId = typeof templateOrId === 'string' ? templateOrId : templateOrId.id;
+
         updatePhotoState(state.value.activePhotoId, (photoState) => {
             const currentValues = photoState.fieldValuesByTemplateId[templateId] ?? {};
 
@@ -309,16 +330,18 @@ export function useEditorState(defaultTemplate: FrameTemplate, initialValues: Re
                 ...photoState,
                 fieldValuesByTemplateId: {
                     ...photoState.fieldValuesByTemplateId,
-                    [templateId]: {
-                        ...currentValues,
-                        [key]: value,
-                    },
+                    [templateId]: resolveFieldValues(templateOrId, currentValues, key, value),
                 },
             };
         });
     }
 
-    function replaceFieldDraft(templateId: string, key: string, value: unknown) {
+    function replaceFieldDraft(templateOrId: FrameTemplate | string, key: string, value: unknown) {
+        if (!draftBaseline) {
+            draftBaseline = cloneJson(state.value);
+        }
+
+        const templateId = typeof templateOrId === 'string' ? templateOrId : templateOrId.id;
         const photoId = state.value.activePhotoId;
         const targetState = photoId
             ? state.value.photoStatesById[photoId] ?? state.value.fallbackState
@@ -328,10 +351,7 @@ export function useEditorState(defaultTemplate: FrameTemplate, initialValues: Re
             ...targetState,
             fieldValuesByTemplateId: {
                 ...targetState.fieldValuesByTemplateId,
-                [templateId]: {
-                    ...currentValues,
-                    [key]: value,
-                },
+                [templateId]: resolveFieldValues(templateOrId, currentValues, key, value),
             },
         };
 
@@ -751,11 +771,13 @@ export function useEditorState(defaultTemplate: FrameTemplate, initialValues: Re
     }
 
     function undo() {
+        draftBaseline = null;
         history.undo();
         selectedTextObjectId.value = null;
     }
 
     function redo() {
+        draftBaseline = null;
         history.redo();
         selectedTextObjectId.value = null;
     }

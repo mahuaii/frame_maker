@@ -2,31 +2,32 @@
 
 ## 项目概览
 
-Frame Maker 是一个基于原生 HTML / CSS / JavaScript 的静态相框生成工具。应用入口是 `index.html`，浏览器端通过 ES modules 加载 `js/app.js`，用 Canvas 渲染照片、相框、模板文字、EXIF 信息和导出图片。
+Frame Maker 是一个基于 Vue 3 + Vite 的相框生成工具。应用入口是 `index.html`，浏览器端通过 `src/main.ts` 加载 Vue 应用，用共享 Canvas 渲染内核绘制照片、相框、模板文字、EXIF 信息和导出图片。
 
-当前项目没有构建流程。未发现 `package.json`、锁文件、Vite/Webpack 配置、TypeScript 配置、ESLint/Prettier 配置或 Python 依赖配置文件。依赖安装、统一 lint、统一 format 和发布流程：待确认。
+当前项目已有 `package.json`、`package-lock.json`、`vite.config.ts`、`tsconfig.json` 和 `tsconfig.node.json`。没有确认到 ESLint/Prettier 配置或统一格式化流程。
 
 ## 当前目录结构
 
-- `index.html`：静态页面入口，加载字体 CSS、`css/style.css` 和 `js/app.js`。其中存在手写资源版本号。
-- `css/style.css`：样式入口，只按顺序导入 `base.css`、`layout.css`、`components.css`、`features.css`。
-- `css/base.css`：设计变量、reset、基础字体和基础颜色。
-- `css/layout.css`：应用壳、顶部工具栏、主布局和移动端布局切换。
-- `css/components.css`：按钮、字段控件、颜色按钮、range 控件等通用组件。
-- `css/features.css`：导出区、预览区、模板选择器、右侧 inspector 面板等业务界面。
-- `css/fonts-local.css`：本地 UI 字体声明。
-- `js/app.js`：主流程，负责上传、模板选择、字段编辑、EXIF 编辑、预览和导出。
+- `index.html`：Vite 页面入口，加载 `src/main.ts`。
+- `src/main.ts`：Vue 应用启动入口，加载 `src/styles/fonts-local.css` 和 `src/styles/vue-native.css`。
+- `src/App.vue`：Vue 根组件，组装模板列表、预览区、右侧 inspector、文本编辑、批量照片和导出流程。
+- `src/components/`：Vue 组件。
+- `src/composables/`：状态、历史记录、照片、模板和预览渲染组合式逻辑。
+- `src/adapters/`：Vue 到共享模板、渲染、EXIF、导出、模板包能力的适配层。
+- `src/types/`：TypeScript 类型定义。
+- `src/utils/`：Vue 文本模型编辑工具。
+- `src/styles/`：Vue 原生 UI 样式入口和模块。
 - `js/renderer.js`：渲染聚合入口，转发 `js/core/render/` 的运行时 API。
 - `js/core/render/`：Canvas 渲染、布局度量、EXIF 输入归一化、导出尺寸计算。
 - `js/core/templates/`：模板注册、字段归一化、外观主题、配置读写。
 - `js/core/fonts/`：字体注册、字体加载和 Canvas 字体字符串构造。
-- `js/ui/`：原生 DOM 控件和 inspector 面板工具函数。
 - `js/templates.js`：模板注册列表和默认模板。
 - `js/templates/`：模板实现。每个模板通常包含 `schema.js`、`index.js`，按需包含 `render.js` 和 `resolve-data.js`。
+- `legacy/`：旧版原生 DOM UI 归档，包含旧 `css/`、`js/app.js`、`js/app/` 和 `js/ui/`；当前 Vue 应用不从该目录加载运行时代码。
 - `assets/fonts/`：字体文件。当前跟踪 MiSans 与 `times.ttf`；`assets/fonts/Angie_Sans_Std.otf` 被 `.gitignore` 排除。
-- `assets/samples/`：示例图片，目前有 `thumbnail-source-z30.jpg`。
 - `thumbnails/`：模板缩略图。当前跟踪 `.jpg` 缩略图。
-- `start.sh`：本地静态服务器启动脚本，默认端口 `8001`。
+- `tests/`：Node/Vite 相关测试。
+- `start.sh`：本地 Vite 开发服务器启动脚本，默认端口 `8001`。
 - `.playwright-cli/`：本地 Playwright CLI 输出目录，被 `.gitignore` 排除。
 - `.qoder/`：本地工具目录。用途待确认。
 
@@ -34,7 +35,13 @@ Frame Maker 是一个基于原生 HTML / CSS / JavaScript 的静态相框生成�
 
 ## 本地开发命令
 
-本项目是纯静态前端，无需打包。
+首次使用先安装依赖：
+
+```bash
+npm install
+```
+
+启动开发服务器：
 
 ```bash
 ./start.sh
@@ -52,66 +59,64 @@ http://localhost:8001
 ./start.sh 8080
 ```
 
-`start.sh` 实际执行：
-
-```bash
-python3 -m http.server "${PORT}"
-```
-
 也可以直接运行：
 
 ```bash
-python3 -m http.server 8001
+npm run dev -- --port 8001
+```
+
+构建生产版本：
+
+```bash
+npm run build
 ```
 
 ## 测试和检查命令
 
-当前工作树没有确认到统一测试、lint、format、端到端测试或 Playwright 配置文件。
+当前确认的检查命令：
 
-修改代码后至少应本地打开页面，确认上传、模板切换、右侧字段编辑、EXIF 编辑、预览和导出流程没有明显回归。
+```bash
+npm run build
+npm run test:templates
+npm run test:vue-state
+```
+
+当前没有确认到统一 lint、format 或端到端测试配置。按项目约定，如无特别说明，在计划和实施时不要做浏览器验证。
 
 ## 代码风格
 
-- JavaScript 使用浏览器原生 ES modules，保留显式相对路径导入。
+- Vue / TypeScript / JavaScript 使用 ES modules，保留显式相对路径导入。
 - 现有代码使用 4 个空格缩进、单引号和分号。
 - 优先使用 `const` / `let`，按当前文件风格组织常量、状态和函数。
 - UI 文案当前主要为中文；新增用户可见文案应保持中文表达，除非模板默认内容本身需要英文。
 - 注释可以使用中文，保持简洁，只解释非显而易见的流程。
-- CSS 按现有模块拆分：设计变量和 reset 放 `base.css`，页面骨架放 `layout.css`，通用控件放 `components.css`，具体功能区放 `features.css`。
+- CSS 按 `src/styles/` 现有模块拆分：设计变量和 reset 放 `base.css`，页面骨架放 `layout.css`，通用控件放 `components.css` 和组件细分样式，具体功能区放 `preview.css`、`template-selector.css`、`inspector.css`、`export.css` 等。
 - 新增 UI 前先复用现有组件类和变量，例如按钮、字段、颜色选项、range、inspector 分区等；不要为单个场景复制一套硬编码样式。
 - 确实需要新组件时，先在 `components.css` 中定义可复用的通用组件样式，再在 `features.css` 中做具体区域的布局和组合。
 - 不要引入构建工具、框架、状态库或格式化工具，除非任务明确要求并同步说明项目流程变化。
 
 ## 设计规范
 
-- 设计变量集中在 `css/base.css` 的 `:root`，新增颜色、间距、圆角、控件尺寸优先复用或扩展这些变量。
+- 设计变量集中在 `src/styles/base.css` 的 `:root`，新增颜色、间距、圆角、控件尺寸优先复用或扩展这些变量。
 - 当前基础色包括 `--color-white`、`--color-gray-light`、`--color-gray-dark`、`--color-accent`，并派生出背景、文字、分隔线、字段和模板选择状态变量。
 - 圆角变量 `--radius-sm`、`--radius-md`、`--radius-lg`、`--radius-pill` 当前都收敛到 `6px`；新增控件应保持小圆角风格。
 - 控件高度优先对齐 `--toolbar-control-height` 或 `.field-group` 内的 `--field-height`。
 - 字段文字应保持 `letter-spacing: 0`，输入区域避免由状态变化造成布局跳动。
 - 主布局是左侧模板选择器、中间预览区、右侧 inspector 面板；`980px` 以下切成上下布局。
-- 右侧 inspector 固定按 `版式`、`外观`、`文本`、`拍摄信息`、`导出` 分区，由 `js/app.js` 动态生成。
+- 右侧 inspector 由 Vue 组件组合生成：基础字段在 `src/components/InspectorPanel.vue`，文本编辑在 `src/components/TextEditorPanel.vue`，批量照片在 `src/components/BatchPhotoPanel.vue`，导出设置在 `src/components/ExportPanel.vue`。
 - 新组件的颜色、圆角、间距、字号、边框和状态样式应来自现有 CSS 变量；若变量不足，先补充语义化变量，再使用它。
 - 不要把全局样式写进模板模块；模板视觉应通过 schema、appearance theme、render overlay 和现有 CSS 组件表达。
 
 ## 应用状态和关键变量
 
-`js/app.js` 中的核心运行状态：
+Vue 应用中的核心运行状态：
 
-- `currentImage`：当前上传图片的 `HTMLImageElement`。
-- `currentPhoto`：由 `createPhotoSource()` 生成的归一化照片对象，包含文件、图片尺寸、文件名、类型和大小。
-- `selectedTemplateId`：当前模板 id，默认是 `gallery-caption-mat`。
-- `fieldValues`：当前模板字段值。切换模板时通过 `loadTemplateConfig(template)` 初始化，字段提交后通过 `resolveTemplateConfig(template, fieldValues)` 归一化。
-- `exifOverrideValues`：右侧拍摄信息区当前编辑值。
-- `initialExifOverrideValues`：上传图片后由 EXIF 预填的快照，用于重置拍摄信息。
-- `exportSettings`：导出配置，默认格式为 `image/jpeg`，尺寸预设为 `original`，JPEG 质量为 `1`。
+- `src/composables/usePhotoStore.ts` 管理上传照片、缩略图、原图 object URL 和原始 EXIF。
+- `src/composables/useTemplateStore.ts` 管理内置模板和导入模板。
+- `src/composables/useEditorState.ts` 管理每张照片的模板选择、字段值、文本模型、EXIF 覆盖值、导出选择、复制设置以及撤销/重做历史。
+- `src/App.vue` 管理当前导出配置、右侧面板状态、上传入口、导入/导出模板和批量导出流程。
 
-资源版本号目前手写在：
-
-- `index.html` 的 `assetVersion`、`css/style.css?v=...`、`js/app.js?v=...`
-- `js/app.js` 的 `ASSET_VERSION`
-
-修改静态资源缓存策略或缩略图加载策略时，是否同步这些版本号需要明确处理。
+资源缓存由 Vite 构建产物 hash 处理；当前入口不再维护旧版手写 `assetVersion`。
 
 ## 字段和右侧面板约定
 
@@ -126,7 +131,7 @@ python3 -m http.server 8001
 - `hidden: true`：不在右侧面板显示，但仍参与配置归一化。
 - `appearanceVisibility`：可按当前外观主题显示或隐藏字段，支持 `showOn` / `hideOn`。
 
-右侧字段分区由 `js/app.js` 的字段 key 判断：
+右侧基础字段分区由 `src/components/InspectorPanel.vue` 的字段 key 判断：
 
 - 版式字段：`frameTop`、`frameRight`、`frameBottom`、`frameLeft`、`frameVerticalSides`、`frameHorizontalSides`
 - 外观字段：`colorScheme`、`showThinBorder`
@@ -134,7 +139,7 @@ python3 -m http.server 8001
 - EXIF 区不来自模板字段，而来自 `EDITABLE_EXIF_FIELDS`
 - 导出区不来自模板字段，而来自 `EXPORT_FIELDS`
 
-新增字段时要确认字段 key 是否需要加入 `LAYOUT_FIELD_KEYS` 或 `APPEARANCE_FIELD_KEYS`，否则会自动进入文本区。
+新增字段时要确认字段 key 是否需要加入 `LAYOUT_FIELD_KEYS` 或 `APPEARANCE_FIELD_KEYS`，否则不会进入基础面板的对应分区；文本模型相关能力在 `TextEditorPanel.vue` 中处理。
 
 ## 模板系统接口
 
@@ -164,7 +169,7 @@ bottomInfoBarTemplate,
 storyExifTemplate,
 ```
 
-当前默认模板是 `gallery-caption-mat`，并且 `js/app.js` 的 `selectedTemplateId` 也默认使用这个 id。调整默认模板时两处都要同步。
+当前默认模板由 `js/templates.js` 的 `defaultTemplate` 和 Vue 状态初始化共同决定。调整默认模板时要同步检查 `js/templates.js`、`src/composables/useTemplateStore.ts` 和 `src/App.vue` 的初始化链路。
 
 ## 模板几何和字段命名
 
@@ -343,7 +348,7 @@ EXIF 解析位于 `js/core/render/input.js`，当前主要面向 JPEG。可编�
 新增字体时需要同步检查：
 
 - `js/core/fonts/index.js`
-- `css/fonts-local.css`
+- `src/styles/fonts-local.css`
 - 是否涉及字体授权或私有字体提交限制
 
 ## 新增或修改模板流程
@@ -369,7 +374,7 @@ EXIF 解析位于 `js/core/render/input.js`，当前主要面向 JPEG。可编�
 
 - 不要回退用户已有改动。当前项目可能有未提交文件或本地生成文件，修改前先看 `git status --short`。
 - 修改模板后，同时检查 `js/templates.js` 注册顺序、模板 `id`、默认配置和缩略图文件名是否一致。
-- 新增或调整字段后，检查 `js/app.js` 的右侧字段分区逻辑。
+- 新增或调整字段后，检查 `src/components/InspectorPanel.vue` 的基础字段分区逻辑，以及 `src/components/TextEditorPanel.vue` 是否需要配合文本模型能力。
 - 改动布局计算、`frame.sides`、`fixedAspectRatio`、anchors 或文本区域时，要做浏览器渲染验证；若布局校验脚本恢复存在，也运行对应脚本。
 - 改动缩略图相关逻辑、模板默认外观或模板列表后，按需重建缩略图并确认输出文件。
 - 字体加载同时影响 UI 和 Canvas 导出。字体相关改动要检查本地服务和导出结果。

@@ -6,5 +6,5 @@ PORT="${1:-8001}"
 
 cd "$(dirname "$0")"
 
-echo "Serving Frame Maker at http://localhost:${PORT}"
-exec python3 -m http.server "${PORT}"
+echo "Starting Frame Maker dev server at http://localhost:${PORT}"
+exec npx vite --host 0.0.0.0 --port "${PORT}"

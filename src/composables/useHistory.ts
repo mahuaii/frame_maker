@@ -4,13 +4,28 @@ function cloneState<T>(value: T): T {
     return JSON.parse(JSON.stringify(value));
 }
 
+function statesEqual<T>(left: T, right: T): boolean {
+    return JSON.stringify(left) === JSON.stringify(right);
+}
+
 export function useHistory<T>(initialState: T, limit = 50) {
     const past = ref<T[]>([]);
     const present = ref<T>(cloneState(initialState));
     const future = ref<T[]>([]);
 
     function commit(nextState: T) {
-        past.value = [...past.value.slice(-limit + 1), cloneState(present.value)];
+        commitFrom(present.value, nextState);
+    }
+
+    function commitFrom(previousState: T, nextState: T) {
+        if (statesEqual(previousState, nextState)) {
+            present.value = cloneState(nextState);
+            future.value = [];
+            return;
+        }
+
+        const nextPast = [...(past.value as T[]).slice(-limit + 1), cloneState(previousState)];
+        past.value = nextPast as typeof past.value;
         present.value = cloneState(nextState);
         future.value = [];
     }
@@ -52,6 +67,7 @@ export function useHistory<T>(initialState: T, limit = 50) {
         canUndo: computed(() => past.value.length > 0),
         canRedo: computed(() => future.value.length > 0),
         commit,
+        commitFrom,
         replacePresent,
         replacePresentShallow,
         mutatePresent,

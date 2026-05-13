@@ -39,6 +39,7 @@ let numberDragState: {
     pointerId: number;
     startY: number;
     startValue: number;
+    currentValue: number;
     lastStepOffset: number;
 } | null = null;
 
@@ -81,7 +82,7 @@ function commit(value: unknown) {
 }
 
 function draft(value: unknown) {
-    emit('input', props.field, value);
+    emit('input', props.field, normalizeInputValue(value));
 }
 
 function normalizeInputValue(value: unknown) {
@@ -119,8 +120,14 @@ function commitOptionInput(rawValue: unknown) {
     commit(nextValue);
 }
 
-function deferCloseOptionMenu() {
+function deferCloseOptionMenu(event: FocusEvent) {
+    const wrapper = event.currentTarget as HTMLElement;
+
     globalThis.setTimeout(() => {
+        if (wrapper.contains(document.activeElement)) {
+            return;
+        }
+
         optionOpen.value = false;
     }, 0);
 }
@@ -228,7 +235,8 @@ function commitDraggedNumber(nextValue: number, event: PointerEvent) {
     }
 
     input.value = normalizedValue;
-    commit(normalizedValue);
+    numberDragState.currentValue = Number(normalizedValue);
+    draft(normalizedValue);
     event.preventDefault();
 }
 
@@ -243,6 +251,7 @@ function startNumberDrag(event: PointerEvent) {
         pointerId: event.pointerId,
         startY: event.clientY,
         startValue: clampFieldNumberValue(prefixedNumberInputRef.value?.value),
+        currentValue: clampFieldNumberValue(prefixedNumberInputRef.value?.value),
         lastStepOffset: 0,
     };
     handle.closest('.field-prefix-number-control')?.classList.add('is-dragging-number');
@@ -275,8 +284,10 @@ function endNumberDrag(event: PointerEvent) {
         handle.releasePointerCapture(numberDragState.pointerId);
     }
 
+    const valueToCommit = numberDragState.currentValue;
     numberDragState = null;
     handle.closest('.field-prefix-number-control')?.classList.remove('is-dragging-number');
+    commit(valueToCommit);
     event.preventDefault();
 }
 
@@ -490,6 +501,7 @@ function textRadioPathDefinitions(control: string | undefined, value: unknown): 
                     :inputmode="inputMode"
                     :value="fieldValue as string | number"
                     :aria-label="displayLabel"
+                    @input="draft(($event.target as HTMLInputElement).value)"
                     @change="commit(($event.target as HTMLInputElement).value)"
                 >
                 <svg
@@ -596,7 +608,8 @@ function textRadioPathDefinitions(control: string | undefined, value: unknown): 
                     tabindex="-1"
                     aria-hidden="true"
                     :value="`#${colorHexDraft}`"
-                    @input="commitColor(($event.target as HTMLInputElement).value, colorAlphaDraft)"
+                    @input="draft(serializeColor(($event.target as HTMLInputElement).value, colorAlphaDraft))"
+                    @change="commitColor(($event.target as HTMLInputElement).value, colorAlphaDraft)"
                 >
                 <button
                     class="color-alpha-swatch-button"
@@ -631,7 +644,7 @@ function textRadioPathDefinitions(control: string | undefined, value: unknown): 
                     inputmode="numeric"
                     :aria-label="`${field.label ?? '颜色'}不透明度`"
                     :value="colorAlphaDraft"
-                    @input="commitColor(colorHexDraft, ($event.target as HTMLInputElement).value)"
+                    @input="draft(serializeColor(colorHexDraft, ($event.target as HTMLInputElement).value))"
                     @change="commitColor(colorHexDraft, ($event.target as HTMLInputElement).value)"
                 >
                 <span class="color-alpha-unit">%</span>
@@ -651,7 +664,8 @@ function textRadioPathDefinitions(control: string | undefined, value: unknown): 
                     :step="field.step ?? 1"
                     :value="fieldValue as string | number"
                     :style="{ '--range-progress': rangeProgress() }"
-                    @input="commit(($event.target as HTMLInputElement).value)"
+                    @input="draft(($event.target as HTMLInputElement).value)"
+                    @change="commit(($event.target as HTMLInputElement).value)"
                 >
                 <input
                     v-if="field.valueInput"
