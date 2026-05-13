@@ -1,4 +1,4 @@
-import { defineDataTemplate } from '../../core/templates/data-template.js';
+import { defineDataTemplate } from '../../core/templates/data-template.ts';
 import { storyExifTemplateSchema } from './schema.js';
 
 const storyExifTemplate = defineDataTemplate(storyExifTemplateSchema);

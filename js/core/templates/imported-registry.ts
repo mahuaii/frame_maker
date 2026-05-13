@@ -1,11 +1,17 @@
-import { createTemplateRegistry } from './registry.js';
+import { createTemplateRegistry } from './registry.ts';
+import type { FrameTemplate } from '../../../src/types/template';
 
-function splitTemplateId(id) {
+type ImportedFrameTemplate = FrameTemplate & {
+    originalId?: string;
+    releaseAssets?: () => void;
+};
+
+function splitTemplateId(id: string) {
     const importedSuffixMatch = String(id).match(/^(.*)--imported-\d+$/);
     return importedSuffixMatch ? importedSuffixMatch[1] : String(id);
 }
 
-function createUniqueTemplateId(id, usedIds) {
+function createUniqueTemplateId(id: string, usedIds: Set<string>) {
     if (!usedIds.has(id)) {
         return id;
     }
@@ -22,7 +28,7 @@ function createUniqueTemplateId(id, usedIds) {
     return nextId;
 }
 
-function cloneTemplateWithId(template, id) {
+function cloneTemplateWithId(template: ImportedFrameTemplate, id: string): ImportedFrameTemplate {
     return Object.freeze({
         ...template,
         id,
@@ -30,8 +36,8 @@ function cloneTemplateWithId(template, id) {
     });
 }
 
-export function createImportedTemplateRegistry(builtinTemplates = []) {
-    const importedTemplates = [];
+export function createImportedTemplateRegistry(builtinTemplates: ImportedFrameTemplate[] = []) {
+    const importedTemplates: ImportedFrameTemplate[] = [];
 
     function getUsedIds() {
         return new Set([
@@ -54,7 +60,7 @@ export function createImportedTemplateRegistry(builtinTemplates = []) {
             importedTemplates.push(importedTemplate);
             return importedTemplate;
         },
-        removeImportedTemplate(id) {
+        removeImportedTemplate(id: string) {
             const index = importedTemplates.findIndex((template) => template.id === id);
             if (index >= 0) {
                 const [template] = importedTemplates.splice(index, 1);
@@ -73,7 +79,7 @@ export function createImportedTemplateRegistry(builtinTemplates = []) {
         get templates() {
             return Object.freeze(getTemplates());
         },
-        getTemplateById(id) {
+        getTemplateById(id: string) {
             return getTemplates().find((template) => template.id === id);
         },
         createRegistry() {

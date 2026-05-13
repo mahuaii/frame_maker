@@ -1,5 +1,5 @@
 import { buildDefaultConfig } from '../../core/templates/fields.ts';
-import { buildAppearanceField } from '../../core/templates/appearance.js';
+import { buildAppearanceField } from '../../core/templates/appearance.ts';
 import { createSolidAppearanceThemes } from '../appearance-presets.js';
 import { buildFrameLayoutFields } from '../shared.js';
 

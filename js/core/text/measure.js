@@ -1,5 +1,5 @@
 import { buildCanvasFont } from '../fonts/index.js';
-import { getAppearanceColor } from '../templates/appearance.js';
+import { getAppearanceColor } from '../templates/appearance.ts';
 import { loadTextImage } from './image-cache.js';
 import { DEFAULT_TEXT_STYLE, TEXT_DIRECTIONS, TEXT_ITEM_TYPES, getTextBaseUnit } from './schema.js';
 

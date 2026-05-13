@@ -1,9 +1,12 @@
 import { unzipSync, zipSync, strFromU8, strToU8 } from 'fflate';
-import { createTemplatePackage, defineDataTemplate, normalizeDataTemplatePackage } from './data-template.js';
+import { createTemplatePackage, defineDataTemplate, normalizeDataTemplatePackage } from './data-template.ts';
+import type { FrameTemplate } from '../../../src/types/template';
 
 const TEMPLATE_JSON_PATH = 'template.json';
 
-function isSafeZipPath(path) {
+type TemplateAsset = Uint8Array | ArrayBuffer | Blob;
+
+function isSafeZipPath(path: unknown): path is string {
     return typeof path === 'string'
         && path
         && !path.startsWith('/')
@@ -11,7 +14,7 @@ function isSafeZipPath(path) {
         && !path.split('/').includes('..');
 }
 
-function getMimeType(path) {
+function getMimeType(path: string) {
     const lowerPath = path.toLowerCase();
     if (lowerPath.endsWith('.jpg') || lowerPath.endsWith('.jpeg')) {
         return 'image/jpeg';
@@ -28,7 +31,7 @@ function getMimeType(path) {
     return 'application/octet-stream';
 }
 
-async function readAssetBytes(asset) {
+async function readAssetBytes(asset: TemplateAsset) {
     if (asset instanceof Uint8Array) {
         return asset;
     }
@@ -44,7 +47,7 @@ async function readAssetBytes(asset) {
     throw new Error('Unsupported template asset value.');
 }
 
-function normalizeAssetPath(path) {
+function normalizeAssetPath(path: unknown): string {
     if (!isSafeZipPath(path) || !path.startsWith('assets/')) {
         throw new Error(`Invalid template asset path "${path}".`);
     }
@@ -52,7 +55,7 @@ function normalizeAssetPath(path) {
     return path;
 }
 
-export async function exportTemplatePackage(template, assets = {}) {
+export async function exportTemplatePackage(template: FrameTemplate, assets: Record<string, TemplateAsset> = {}) {
     const templatePackage = createTemplatePackage(template);
     const files = {
         [TEMPLATE_JSON_PATH]: strToU8(JSON.stringify(templatePackage, null, 2)),
@@ -64,12 +67,12 @@ export async function exportTemplatePackage(template, assets = {}) {
     }
 
     const zipped = zipSync(files);
-    return new Blob([zipped], {
+    return new Blob([zipped as BlobPart], {
         type: 'application/zip',
     });
 }
 
-export async function importTemplatePackage(file) {
+export async function importTemplatePackage(file: File | Blob) {
     const bytes = new Uint8Array(await file.arrayBuffer());
     const entries = unzipSync(bytes);
     const templateEntry = entries[TEMPLATE_JSON_PATH];
@@ -80,25 +83,25 @@ export async function importTemplatePackage(file) {
 
     const rawPackage = JSON.parse(strFromU8(templateEntry));
     const normalizedPackage = normalizeDataTemplatePackage(rawPackage);
-    const assetUrls = {};
-    const releaseUrls = [];
+    const assetUrls: Record<string, string> = {};
+    const releaseUrls: string[] = [];
 
     Object.values(normalizedPackage.template.assets ?? {}).forEach((path) => {
         if (!path) {
             return;
         }
 
-        normalizeAssetPath(path);
-        const entry = entries[path];
+        const assetPath = normalizeAssetPath(path);
+        const entry = entries[assetPath];
         if (!entry) {
-            throw new Error(`模板包缺少资源 ${path}。`);
+            throw new Error(`模板包缺少资源 ${assetPath}。`);
         }
 
-        const blob = new Blob([entry], {
-            type: getMimeType(path),
+        const blob = new Blob([entry as BlobPart], {
+            type: getMimeType(assetPath),
         });
         const url = URL.createObjectURL(blob);
-        assetUrls[path] = url;
+        assetUrls[assetPath] = url;
         releaseUrls.push(url);
     });
 

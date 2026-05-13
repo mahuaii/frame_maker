@@ -1,5 +1,5 @@
 import { renderTextModel } from '../text/index.js';
-import { resolveTemplateAppearance, resolveTemplateConfig } from '../templates/registry.js';
+import { resolveTemplateAppearance, resolveTemplateConfig } from '../templates/registry.ts';
 import { buildTemplateResolveInput, createGlobalRenderSettings } from './input.js';
 import { copyCanvasInto, setupCanvas } from './canvas.js';
 import { calculateFrameMetrics } from './metrics.js';

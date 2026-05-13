@@ -1,15 +1,22 @@
-import { defineTemplate } from './registry.js';
+import { defineTemplate } from './registry.ts';
+import type { FrameTemplate } from '../../../src/types/template';
 
 const TEMPLATE_FORMAT = 'frame-maker-template';
 const TEMPLATE_FORMAT_VERSION = 1;
 const TEMPLATE_ID_PATTERN = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
 const SAFE_ASSET_PATH_PATTERN = /^(?:assets\/)[A-Za-z0-9._/-]+$/;
 
-function isObject(value) {
+type DataTemplateOptions = {
+    sourceType?: string;
+    assets?: Record<string, string>;
+    releaseAssets?: () => void;
+};
+
+function isObject(value: unknown): value is Record<string, unknown> {
     return Boolean(value && typeof value === 'object' && !Array.isArray(value));
 }
 
-function cloneData(value) {
+function cloneData<T>(value: T): T {
     if (value === null || value === undefined) {
         return value;
     }
@@ -17,17 +24,17 @@ function cloneData(value) {
     return JSON.parse(JSON.stringify(value));
 }
 
-function assert(condition, message) {
+function assert(condition: unknown, message: string): asserts condition {
     if (!condition) {
         throw new Error(message);
     }
 }
 
-function validateTemplateId(id) {
+function validateTemplateId(id: unknown) {
     assert(typeof id === 'string' && TEMPLATE_ID_PATTERN.test(id), 'Template id must use kebab-case lowercase letters and numbers.');
 }
 
-function validateFrame(frame, templateId) {
+function validateFrame(frame: unknown, templateId: string) {
     assert(isObject(frame), `Template "${templateId}" requires frame.`);
     assert(isObject(frame.sides), `Template "${templateId}" requires frame.sides.`);
 
@@ -37,7 +44,7 @@ function validateFrame(frame, templateId) {
     });
 }
 
-function validateFields(fields, templateId) {
+function validateFields(fields: unknown, templateId: string) {
     assert(Array.isArray(fields), `Template "${templateId}" requires fields array.`);
 
     fields.forEach((field, index) => {
@@ -47,11 +54,11 @@ function validateFields(fields, templateId) {
     });
 }
 
-function validateTextGroups(textGroups, templateId) {
+function validateTextGroups(textGroups: unknown, templateId: string) {
     assert(Array.isArray(textGroups), `Template "${templateId}" requires textGroups array.`);
 }
 
-function validateAssets(assets = {}, templateId) {
+function validateAssets(assets: unknown = {}, templateId: string) {
     assert(isObject(assets), `Template "${templateId}" assets must be an object.`);
 
     Object.entries(assets).forEach(([key, value]) => {
@@ -64,15 +71,16 @@ function validateAssets(assets = {}, templateId) {
     });
 }
 
-function normalizeTemplateSchema(rawTemplate) {
+function normalizeTemplateSchema(rawTemplate: unknown) {
     assert(isObject(rawTemplate), 'Template package requires template object.');
 
     const template = cloneData(rawTemplate);
+    const templateId = String(template.id);
     validateTemplateId(template.id);
-    validateFrame(template.frame, template.id);
-    validateFields(template.fields, template.id);
-    validateTextGroups(template.textGroups, template.id);
-    validateAssets(template.assets ?? {}, template.id);
+    validateFrame(template.frame, templateId);
+    validateFields(template.fields, templateId);
+    validateTextGroups(template.textGroups, templateId);
+    validateAssets(template.assets ?? {}, templateId);
 
     return {
         ...template,
@@ -81,7 +89,7 @@ function normalizeTemplateSchema(rawTemplate) {
     };
 }
 
-export function createTemplatePackage(template) {
+export function createTemplatePackage(template: unknown) {
     const normalizedTemplate = normalizeTemplateSchema(template);
 
     return {
@@ -91,7 +99,7 @@ export function createTemplatePackage(template) {
     };
 }
 
-export function normalizeDataTemplatePackage(rawPackage) {
+export function normalizeDataTemplatePackage(rawPackage: unknown) {
     assert(isObject(rawPackage), 'Template package must be an object.');
     assert(rawPackage.format === TEMPLATE_FORMAT, `Unsupported template format "${rawPackage.format}".`);
     assert(rawPackage.formatVersion === TEMPLATE_FORMAT_VERSION, `Unsupported template format version "${rawPackage.formatVersion}".`);
@@ -99,18 +107,18 @@ export function normalizeDataTemplatePackage(rawPackage) {
     return createTemplatePackage(rawPackage.template);
 }
 
-export function defineDataTemplate(schema, options = {}) {
+export function defineDataTemplate(schema: unknown, options: DataTemplateOptions = {}): FrameTemplate {
     const normalizedPackage = createTemplatePackage(schema);
     const template = normalizedPackage.template;
 
-    return defineTemplate({
+    return defineTemplate(({
         ...template,
         sourceType: options.sourceType ?? 'data',
         packageFormat: normalizedPackage.format,
         packageFormatVersion: normalizedPackage.formatVersion,
         importedAssets: options.assets ?? {},
         releaseAssets: typeof options.releaseAssets === 'function' ? options.releaseAssets : null,
-    });
+    } as unknown) as FrameTemplate);
 }
 
 export const DATA_TEMPLATE_FORMAT = TEMPLATE_FORMAT;

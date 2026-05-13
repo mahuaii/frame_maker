@@ -1,4 +1,4 @@
-import { createImportedTemplateRegistry } from './core/templates/imported-registry.js';
+import { createImportedTemplateRegistry } from './core/templates/imported-registry.ts';
 import bottomInfoBarTemplate from './templates/bottom-info-bar/index.js';
 import galleryCaptionMatTemplate from './templates/gallery-caption-mat/index.js';
 import simpleMatTemplate from './templates/simple-mat/index.js';

@@ -1,4 +1,4 @@
-import { getAppearanceColor } from '../../core/templates/registry.js';
+import { getAppearanceColor } from '../../core/templates/registry.ts';
 import { drawOptionalThinPhotoBorder } from '../photo-border.js';
 
 export function renderSimpleMatTemplate(ctx, args) {

@@ -5,9 +5,9 @@ import {
     getTemplates as getSharedTemplates,
     templates,
 } from '../js/templates.js';
-import { defineDataTemplate, normalizeDataTemplatePackage } from '../js/core/templates/data-template.js';
-import { createImportedTemplateRegistry } from '../js/core/templates/imported-registry.js';
-import { exportTemplatePackage, importTemplatePackage } from '../js/core/templates/template-package.js';
+import { defineDataTemplate, normalizeDataTemplatePackage } from '../js/core/templates/data-template.ts';
+import { createImportedTemplateRegistry } from '../js/core/templates/imported-registry.ts';
+import { exportTemplatePackage, importTemplatePackage } from '../js/core/templates/template-package.ts';
 
 const thumbnailBytes = new Uint8Array([0xff, 0xd8, 0xff, 0xd9]);
 const disallowedFieldUiKeys = ['label', 'control', 'prefixIconPaths'];

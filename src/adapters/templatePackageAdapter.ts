@@ -1,7 +1,7 @@
 import {
     exportTemplatePackage,
     importTemplatePackage,
-} from '../../js/core/templates/template-package.js';
+} from '../../js/core/templates/template-package.ts';
 import type { FrameTemplate } from '../types/template';
 
 function getBuiltinThumbnailUrl(template: FrameTemplate) {

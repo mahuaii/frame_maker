@@ -21,7 +21,7 @@ import {
     createDefaultTextGroup,
     createDefaultTextItem,
 } from '../../js/core/text/index.js';
-import { resolveTemplateConfig } from '../../js/core/templates/registry.js';
+import { resolveTemplateConfig } from '../../js/core/templates/registry.ts';
 import type { CopiedPhotoSettings, EditableState, PhotoEditState } from '../types/editor';
 import type { FrameTemplate } from '../types/template';
 import type {

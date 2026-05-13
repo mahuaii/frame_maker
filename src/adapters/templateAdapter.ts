@@ -4,7 +4,7 @@ import {
     getTemplateById as getSharedTemplateById,
     getTemplates,
 } from '../../js/templates.js';
-import { resolveTemplateConfig } from '../../js/core/templates/registry.js';
+import { resolveTemplateConfig } from '../../js/core/templates/registry.ts';
 import type { FrameTemplate } from '../types/template';
 
 type GetTemplates = () => readonly FrameTemplate[];

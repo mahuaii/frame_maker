@@ -1,6 +1,6 @@
 import { normalizeTextModel } from '../../js/core/text/index.js';
-import { resolveTemplateAppearance } from '../../js/core/templates/registry.js';
-import { getPathValue, setPathValue } from '../../js/core/utils/object-path.js';
+import { resolveTemplateAppearance } from '../../js/core/templates/registry.ts';
+import { getPathValue, setPathValue } from '../../js/core/utils/object-path.ts';
 import {
     getFontFieldOptions,
     getFontWeightOptions,

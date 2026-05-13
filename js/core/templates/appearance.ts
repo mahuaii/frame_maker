@@ -1,10 +1,23 @@
+import type { FrameTemplate, TemplateAppearanceTheme, TemplateField } from '../../../src/types/template';
+
+type AppearanceThemeMap = Record<string, TemplateAppearanceTheme>;
+type AppearanceFieldOptions = {
+    key?: string;
+    defaultValue?: string;
+};
+type ColorTokenFieldOptions = {
+    key?: string;
+    defaultValue?: string;
+    group?: string;
+};
+
 export function buildAppearanceField(
-    themes,
+    themes: AppearanceThemeMap,
     {
         key = 'colorScheme',
         defaultValue,
-    } = {}
-) {
+    }: AppearanceFieldOptions = {}
+): TemplateField {
     const themeEntries = Object.entries(themes ?? {});
     const fallbackValue = defaultValue ?? themeEntries[0]?.[0] ?? '';
 
@@ -18,12 +31,12 @@ export function buildAppearanceField(
     };
 }
 
-function isPlainObject(value) {
+function isPlainObject(value: unknown): value is Record<string, unknown> {
     return Boolean(value && typeof value === 'object' && !Array.isArray(value));
 }
 
-function mergeColorGroups(baseColors = {}, overrideColors = {}) {
-    const result = {};
+function mergeColorGroups(baseColors: unknown = {}, overrideColors: unknown = {}) {
+    const result: Record<string, unknown> = {};
     const keys = new Set([
         ...Object.keys(baseColors ?? {}),
         ...Object.keys(overrideColors ?? {}),
@@ -44,7 +57,7 @@ function mergeColorGroups(baseColors = {}, overrideColors = {}) {
     return result;
 }
 
-function mergeAppearanceTheme(baseTheme = {}, overrideTheme = {}) {
+function mergeAppearanceTheme(baseTheme: TemplateAppearanceTheme = {}, overrideTheme: TemplateAppearanceTheme = {}) {
     const hasCanvasBackground = baseTheme.canvasBackground || overrideTheme.canvasBackground;
     const hasBarBackground = baseTheme.barBackground || overrideTheme.barBackground;
     const hasColors = baseTheme.colors || overrideTheme.colors;
@@ -70,7 +83,7 @@ function mergeAppearanceTheme(baseTheme = {}, overrideTheme = {}) {
     };
 }
 
-function getThemeColor(theme, token, group) {
+function getThemeColor(theme: TemplateAppearanceTheme, token: string, group?: string) {
     const colors = theme?.colors;
     if (!isPlainObject(colors)) {
         return null;
@@ -89,8 +102,11 @@ function getThemeColor(theme, token, group) {
     return null;
 }
 
-export function createAppearanceThemes(sharedThemes = {}, themeOverrides = {}) {
-    const result = {};
+export function createAppearanceThemes(
+    sharedThemes: AppearanceThemeMap = {},
+    themeOverrides: AppearanceThemeMap = {}
+): AppearanceThemeMap {
+    const result: AppearanceThemeMap = {};
     const keys = new Set([
         ...Object.keys(sharedThemes ?? {}),
         ...Object.keys(themeOverrides ?? {}),
@@ -100,13 +116,16 @@ export function createAppearanceThemes(sharedThemes = {}, themeOverrides = {}) {
         result[key] = mergeAppearanceTheme(
             sharedThemes?.[key] ?? {},
             themeOverrides?.[key] ?? {}
-        );
+        ) as TemplateAppearanceTheme;
     });
 
     return result;
 }
 
-export function resolveTemplateAppearance(template, config = {}) {
+export function resolveTemplateAppearance(
+    template: Pick<FrameTemplate, 'appearanceThemes' | 'appearanceFieldKey' | 'appearanceDefaultKey'>,
+    config: Record<string, unknown> = {}
+): TemplateAppearanceTheme & { key?: string } {
     const themes = template?.appearanceThemes;
     if (!themes || typeof themes !== 'object') {
         return {};
@@ -115,7 +134,9 @@ export function resolveTemplateAppearance(template, config = {}) {
     const fieldKey = template.appearanceFieldKey ?? 'colorScheme';
     const fallbackKey = template.appearanceDefaultKey ?? Object.keys(themes)[0];
     const requestedKey = config?.[fieldKey];
-    const appearanceKey = Object.hasOwn(themes, requestedKey) ? requestedKey : fallbackKey;
+    const appearanceKey = typeof requestedKey === 'string' && Object.hasOwn(themes, requestedKey)
+        ? requestedKey
+        : fallbackKey;
     const appearance = themes[appearanceKey] ?? {};
 
     return {
@@ -124,11 +145,11 @@ export function resolveTemplateAppearance(template, config = {}) {
     };
 }
 
-export function buildColorTokenField(appearanceThemes, activeThemeKey, {
+export function buildColorTokenField(appearanceThemes: AppearanceThemeMap | undefined, activeThemeKey: string, {
     key = 'style.colorToken',
     defaultValue,
     group = 'text',
-} = {}) {
+}: ColorTokenFieldOptions = {}): TemplateField {
     const theme = appearanceThemes?.[activeThemeKey]
         ?? Object.values(appearanceThemes ?? {})[0]
         ?? {};
@@ -147,7 +168,7 @@ export function buildColorTokenField(appearanceThemes, activeThemeKey, {
     };
 }
 
-export function getAppearanceColor(appearance, token, fallback = null) {
+export function getAppearanceColor(appearance: unknown, token: string, fallback: string | null = null) {
     if (!appearance || typeof appearance !== 'object') {
         return fallback;
     }

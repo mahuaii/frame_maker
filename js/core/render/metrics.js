@@ -1,5 +1,5 @@
 import { ORIGINAL_FRAME_ASPECT_RATIO, parseFrameAspectRatio } from '../templates/frame-layout.ts';
-import { resolveTemplateConfig } from '../templates/registry.js';
+import { resolveTemplateConfig } from '../templates/registry.ts';
 
 const FRAME_SIDE_KEYS = ['top', 'right', 'bottom', 'left'];
 const TEXT_REGION_KEYS = ['top', 'right', 'bottom', 'left', 'center'];

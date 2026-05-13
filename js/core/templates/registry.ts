@@ -1,15 +1,17 @@
 import { normalizeTemplateConfig } from './fields.ts';
-import { buildColorTokenField, createAppearanceThemes, getAppearanceColor, resolveTemplateAppearance } from './appearance.js';
+import { buildColorTokenField, createAppearanceThemes, getAppearanceColor, resolveTemplateAppearance } from './appearance.ts';
+import type { FrameTemplate, TemplateResolveData } from '../../../src/types/template';
+import type { TemplateRenderArgs } from '../../../src/types/render';
 
-function defaultResolveTemplateData() {
+function defaultResolveTemplateData(): TemplateResolveData {
     return {};
 }
 
-function defaultRenderOverlay() {
+function defaultRenderOverlay(_ctx: CanvasRenderingContext2D, _args: TemplateRenderArgs) {
     // Templates without custom overlays rely on runtime background/photo/text placement.
 }
 
-export function defineTemplate(template) {
+export function defineTemplate(template: FrameTemplate): FrameTemplate {
     if (!template?.id) {
         throw new Error('Template module requires a stable id.');
     }
@@ -57,8 +59,8 @@ export function defineTemplate(template) {
     });
 }
 
-export function createTemplateRegistry(templateModules) {
-    const templateMap = new Map();
+export function createTemplateRegistry(templateModules: FrameTemplate[]) {
+    const templateMap = new Map<string, FrameTemplate>();
 
     templateModules.forEach((template) => {
         if (templateMap.has(template.id)) {
@@ -78,7 +80,7 @@ export function createTemplateRegistry(templateModules) {
     };
 }
 
-export function resolveTemplateConfig(template, rawConfig = {}) {
+export function resolveTemplateConfig(template: FrameTemplate, rawConfig: Record<string, unknown> = {}) {
     return normalizeTemplateConfig(template.fields, {
         ...template.defaultConfig,
         ...rawConfig,

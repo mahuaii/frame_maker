@@ -1,4 +1,4 @@
-import { getAppearanceColor } from '../templates/appearance.js';
+import { getAppearanceColor } from '../templates/appearance.ts';
 import { drawBeveledPhotoBorder, resolvePhotoBorderWidth } from '../../templates/photo-border.js';
 
 function isOverlayEnabled(overlay, config = {}) {

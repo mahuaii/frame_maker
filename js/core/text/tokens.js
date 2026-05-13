@@ -1,4 +1,4 @@
-import { getPathValue } from '../utils/object-path.js';
+import { getPathValue } from '../utils/object-path.ts';
 
 const TOKEN_PATTERN = /\{\{\s*([A-Za-z][A-Za-z0-9_.-]*)\s*\}\}/g;
 

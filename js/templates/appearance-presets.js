@@ -1,4 +1,4 @@
-import { createAppearanceThemes } from '../core/templates/appearance.js';
+import { createAppearanceThemes } from '../core/templates/appearance.ts';
 
 export const sharedAppearanceThemes = {
     white: {
