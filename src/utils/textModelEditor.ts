@@ -1,12 +1,12 @@
 import { normalizeTextModel } from '../../js/core/text/index.js';
-import { buildColorTokenField as buildColorTokenFieldBase, resolveTemplateAppearance } from '../../js/core/templates/registry.js';
+import { resolveTemplateAppearance } from '../../js/core/templates/registry.js';
 import { getPathValue, setPathValue } from '../../js/core/utils/object-path.js';
 import {
     getFontFieldOptions,
     getFontWeightOptions,
     normalizeFontWeightForFont,
 } from '../../js/core/fonts/index.js';
-import type { TemplateField } from '../types/template';
+import type { InspectorField } from '../types/inspector';
 import type { FrameTemplate } from '../types/template';
 import type {
     TextColorPaletteItem,
@@ -18,7 +18,7 @@ import type {
     TextStyle,
 } from '../types/text';
 
-export type TextEditorField = TemplateField & {
+export type TextEditorField = InspectorField & {
     groupClassName?: string;
 };
 
@@ -65,19 +65,48 @@ export const TEXT_FONT_FIELD_KEYS = new Set([
 export const DEFAULT_TEXT_OBJECT_FONT_ID = 'systemSans';
 export const DEFAULT_TEXT_OBJECT_FONT_WEIGHT = 400;
 
-const buildTextColorTokenField = buildColorTokenFieldBase as (
+function isRecord(value: unknown): value is Record<string, unknown> {
+    return Boolean(value && typeof value === 'object' && !Array.isArray(value));
+}
+
+function buildTextColorTokenField(
     appearanceThemes: FrameTemplate['appearanceThemes'],
     activeThemeKey: string,
-    options: {
+    {
+        key = 'style.colorToken',
+        label = '颜色',
+        defaultValue,
+        group = 'text',
+    }: {
         key?: string;
         label?: string;
         defaultValue?: string;
         group?: string;
-    }
-) => TextEditorField;
+    } = {}
+): TextEditorField {
+    const theme = appearanceThemes?.[activeThemeKey]
+        ?? Object.values(appearanceThemes ?? {})[0]
+        ?? {};
+    const colors = isRecord(theme.colors?.[group]) ? theme.colors[group] : {};
+    const entries = Object.entries(colors).filter((entry): entry is [string, string] => (
+        typeof entry[1] === 'string'
+    ));
+    const defaultExists = defaultValue !== undefined && entries.some(([token]) => token === defaultValue);
+    const fallbackValue = defaultExists ? defaultValue : entries[0]?.[0] ?? '';
 
-function isRecord(value: unknown): value is Record<string, unknown> {
-    return Boolean(value && typeof value === 'object' && !Array.isArray(value));
+    return {
+        key,
+        label,
+        type: 'select',
+        control: 'color-buttons',
+        defaultValue: fallbackValue,
+        options: entries.map(([token, color]) => ({
+            value: token,
+            label: token,
+            swatch: color,
+            displayValue: color.replace(/^#/, '').toUpperCase(),
+        })),
+    };
 }
 
 export function cloneJson<T>(value: T): T {

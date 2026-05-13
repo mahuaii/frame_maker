@@ -2,17 +2,17 @@ export const FREE_FRAME_ASPECT_RATIO = 'free';
 export const ORIGINAL_FRAME_ASPECT_RATIO = 'original';
 
 export const FRAME_ASPECT_RATIO_OPTIONS = [
-    { value: FREE_FRAME_ASPECT_RATIO, label: '自由' },
-    { value: ORIGINAL_FRAME_ASPECT_RATIO, label: '原照比例' },
-    { value: '1:1', label: '1:1' },
-    { value: '5:4', label: '5:4' },
-    { value: '4:3', label: '4:3' },
-    { value: '3:2', label: '3:2' },
-    { value: '16:9', label: '16:9' },
-    { value: '4:5', label: '4:5' },
-    { value: '3:4', label: '3:4' },
-    { value: '2:3', label: '2:3' },
-    { value: '9:16', label: '9:16' },
+    { value: FREE_FRAME_ASPECT_RATIO },
+    { value: ORIGINAL_FRAME_ASPECT_RATIO },
+    { value: '1:1' },
+    { value: '5:4' },
+    { value: '4:3' },
+    { value: '3:2' },
+    { value: '16:9' },
+    { value: '4:5' },
+    { value: '3:4' },
+    { value: '2:3' },
+    { value: '9:16' },
 ];
 
 const FREE_FRAME_ASPECT_RATIO_LABELS = new Set([

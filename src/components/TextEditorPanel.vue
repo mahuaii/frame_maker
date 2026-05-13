@@ -30,7 +30,8 @@ import {
     type TextEditorField,
 } from '../utils/textModelEditor';
 import FieldControl from './FieldControl.vue';
-import type { FrameTemplate, TemplateFieldOption } from '../types/template';
+import type { InspectorFieldOption } from '../types/inspector';
+import type { FrameTemplate } from '../types/template';
 import type {
     TextColorPaletteItem,
     TextItemType,
@@ -416,7 +417,7 @@ function updateToggleAction(field: TextEditorField, event: Event) {
     updateField(field, (event.target as HTMLInputElement).checked);
 }
 
-function isSelectedOption(field: TextEditorField, option: TemplateFieldOption) {
+function isSelectedOption(field: TextEditorField, option: InspectorFieldOption) {
     return String(fieldValue(field)) === String(option.value);
 }
 

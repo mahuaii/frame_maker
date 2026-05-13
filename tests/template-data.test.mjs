@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict';
-import { zipSync, strToU8 } from 'fflate';
+import { zipSync, unzipSync, strFromU8, strToU8 } from 'fflate';
 import {
     getTemplateById as getSharedTemplateById,
     getTemplates as getSharedTemplates,
@@ -10,6 +10,7 @@ import { createImportedTemplateRegistry } from '../js/core/templates/imported-re
 import { exportTemplatePackage, importTemplatePackage } from '../js/core/templates/template-package.js';
 
 const thumbnailBytes = new Uint8Array([0xff, 0xd8, 0xff, 0xd9]);
+const disallowedFieldUiKeys = ['label', 'control', 'prefixIconPaths'];
 
 function makeAssetMap(template) {
     const thumbnailPath = template.assets?.thumbnail;
@@ -26,6 +27,11 @@ async function blobToBytes(blob) {
     return new Uint8Array(await blob.arrayBuffer());
 }
 
+async function readTemplateJsonFromPackage(blob) {
+    const entries = unzipSync(await blobToBytes(blob));
+    return JSON.parse(strFromU8(entries['template.json']));
+}
+
 assert.equal(templates.length, 4, 'expected four built-in templates');
 
 for (const template of templates) {
@@ -33,6 +39,16 @@ for (const template of templates) {
     assert.equal(dataTemplate.id, template.id);
 
     const zipBlob = await exportTemplatePackage(template, makeAssetMap(template));
+    const templateJson = await readTemplateJsonFromPackage(zipBlob);
+    templateJson.template.fields.forEach((field) => {
+        disallowedFieldUiKeys.forEach((key) => {
+            assert.equal(field[key], undefined, `template package field "${field.key}" should not include ${key}`);
+        });
+        field.options?.forEach((option) => {
+            assert.equal(option.label, undefined, `template package field "${field.key}" options should not include label`);
+        });
+    });
+
     const imported = await importTemplatePackage(makeFile(await blobToBytes(zipBlob)));
     const redefined = defineDataTemplate(imported.template);
 

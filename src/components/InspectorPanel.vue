@@ -1,8 +1,10 @@
 <script setup lang="ts">
 import { computed, reactive, watch } from 'vue';
 import { EDITABLE_EXIF_FIELDS } from '../adapters/exifAdapter';
+import { buildInspectorField } from '../adapters/inspectorFieldAdapter';
 import FieldControl from './FieldControl.vue';
 import type { FrameTemplate, TemplateField } from '../types/template';
+import type { InspectorField } from '../types/inspector';
 
 const FREE_FRAME_ASPECT_RATIO = 'free';
 const LAYOUT_FIELD_KEYS = new Set([
@@ -54,9 +56,21 @@ const isFreeFrameLayout = computed(() => (
 const visibleFields = computed(() => props.template.fields.filter(shouldShowTemplateField));
 const layoutFields = computed(() => visibleFields.value.filter((field) => LAYOUT_FIELD_KEYS.has(field.key)));
 const appearanceFields = computed(() => visibleFields.value.filter((field) => APPEARANCE_FIELD_KEYS.has(field.key)));
+const appearanceControlFields = computed(() => (
+    appearanceFields.value.map((field) => buildInspectorField(props.template, field))
+));
 const aspectField = computed(() => layoutFields.value.find((field) => field.key === 'frameAspectRatio'));
 const borderField = computed(() => layoutFields.value.find((field) => field.key === 'frameBorderWidth'));
 const sideFields = computed(() => layoutFields.value.filter((field) => FRAME_SIDE_FIELD_KEYS.has(field.key)));
+const aspectControlField = computed(() => (
+    aspectField.value ? buildInspectorField(props.template, aspectField.value) : null
+));
+const borderControlField = computed(() => (
+    borderField.value ? buildInspectorField(props.template, borderField.value) : null
+));
+const sideControlFields = computed(() => (
+    sideFields.value.map((field) => buildInspectorField(props.template, field))
+));
 const layoutFieldsWithDefaults = computed(() => (
     layoutFields.value.filter((field) => props.defaultValues[field.key] !== undefined)
 ));
@@ -94,15 +108,15 @@ function shouldShowTemplateField(field: TemplateField) {
     return true;
 }
 
-function compactFieldLabel(field: TemplateField) {
+function compactFieldLabel(field: InspectorField) {
     return COMPACT_FIELD_LABELS[field.key] ?? field.label;
 }
 
-function commitField(field: TemplateField, value: unknown) {
+function commitField(field: InspectorField, value: unknown) {
     emit('updateField', field.key, value);
 }
 
-function updateDraft(field: TemplateField, value: unknown) {
+function updateDraft(field: InspectorField, value: unknown) {
     if (field.type === 'text' || field.type === 'textarea') {
         textDrafts[field.key] = value;
     }
@@ -110,7 +124,7 @@ function updateDraft(field: TemplateField, value: unknown) {
     emit('draftField', field.key, value);
 }
 
-function commitDraft(field: TemplateField) {
+function commitDraft(field: InspectorField) {
     if (field.key in textDrafts) {
         commitField(field, textDrafts[field.key]);
         delete textDrafts[field.key];
@@ -126,7 +140,7 @@ function commitDraft(field: TemplateField) {
             </div>
             <div class="inspector-section-content">
                 <FieldControl
-                    v-for="field in appearanceFields"
+                    v-for="field in appearanceControlFields"
                     :key="field.key"
                     :field="field"
                     :value="fieldValue(field)"
@@ -155,17 +169,17 @@ function commitDraft(field: TemplateField) {
             </header>
             <div class="inspector-section-content">
                 <FieldControl
-                    v-if="aspectField"
-                    :field="aspectField"
-                    :value="fieldValue(aspectField)"
+                    v-if="aspectControlField"
+                    :field="aspectControlField"
+                    :value="fieldValue(aspectControlField)"
                     @change="commitField"
                     @input="updateDraft"
                 />
-                <div v-if="isFreeFrameLayout && sideFields.length" class="field-group">
+                <div v-if="isFreeFrameLayout && sideControlFields.length" class="field-group">
                     <div class="field-group-label">边界宽度</div>
                     <div class="inspector-field-grid inspector-field-grid-contained">
                         <FieldControl
-                            v-for="field in sideFields"
+                            v-for="field in sideControlFields"
                             :key="field.key"
                             :field="field"
                             :value="fieldValue(field)"
@@ -176,12 +190,12 @@ function commitDraft(field: TemplateField) {
                         />
                     </div>
                 </div>
-                <div v-else-if="borderField" class="field-group">
+                <div v-else-if="borderControlField" class="field-group">
                     <div class="field-group-label">边界宽度</div>
                     <div class="inspector-field-grid inspector-field-grid-contained">
                         <FieldControl
-                            :field="borderField"
-                            :value="fieldValue(borderField)"
+                            :field="borderControlField"
+                            :value="fieldValue(borderControlField)"
                             compact
                             @change="commitField"
                             @input="updateDraft"

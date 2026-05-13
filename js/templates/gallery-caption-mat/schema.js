@@ -46,7 +46,6 @@ export const galleryCaptionMatTemplateFields = [
     }),
     {
         key: 'showThinBorder',
-        label: '内边框',
         type: 'toggle',
         defaultValue: true,
     },

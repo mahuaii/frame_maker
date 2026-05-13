@@ -2,7 +2,6 @@ export function buildAppearanceField(
     themes,
     {
         key = 'colorScheme',
-        label = '主题',
         defaultValue,
     } = {}
 ) {
@@ -11,39 +10,12 @@ export function buildAppearanceField(
 
     return {
         key,
-        label,
         type: 'select',
-        control: 'theme-radio',
         defaultValue: fallbackValue,
-        options: themeEntries.map(([value, theme]) => ({
+        options: themeEntries.map(([value]) => ({
             value,
-            label: theme.label ?? value,
-            displayValue: getAppearanceOptionDisplayValue(theme),
-            opacity: theme.opacity,
-            swatch: theme.canvasBackground?.color
-                ?? getThemeColor(theme, 'barBackground', 'surface')
-                ?? theme.barBackground?.overlayColor
-                ?? getThemeColor(theme, 'textPrimary', 'text')
-                ?? getFirstThemeColor(theme)
-                ?? '#111111',
         })),
     };
-}
-
-function isBlurSurface(surface) {
-    return typeof surface?.type === 'string' && surface.type.toLowerCase().includes('blur');
-}
-
-function getAppearanceOptionDisplayValue(theme = {}) {
-    if (theme.displayValue !== undefined) {
-        return theme.displayValue;
-    }
-
-    if (isBlurSurface(theme.canvasBackground) || isBlurSurface(theme.barBackground)) {
-        return theme.label;
-    }
-
-    return undefined;
 }
 
 function isPlainObject(value) {
@@ -117,26 +89,6 @@ function getThemeColor(theme, token, group) {
     return null;
 }
 
-function getFirstThemeColor(theme) {
-    const colors = theme?.colors;
-    if (!isPlainObject(colors)) {
-        return null;
-    }
-
-    for (const colorGroup of Object.values(colors)) {
-        if (!isPlainObject(colorGroup)) {
-            continue;
-        }
-
-        const firstColor = Object.values(colorGroup)[0];
-        if (firstColor) {
-            return firstColor;
-        }
-    }
-
-    return null;
-}
-
 export function createAppearanceThemes(sharedThemes = {}, themeOverrides = {}) {
     const result = {};
     const keys = new Set([
@@ -174,7 +126,6 @@ export function resolveTemplateAppearance(template, config = {}) {
 
 export function buildColorTokenField(appearanceThemes, activeThemeKey, {
     key = 'style.colorToken',
-    label = '颜色',
     defaultValue,
     group = 'text',
 } = {}) {
@@ -188,15 +139,10 @@ export function buildColorTokenField(appearanceThemes, activeThemeKey, {
 
     return {
         key,
-        label,
         type: 'select',
-        control: 'color-buttons',
         defaultValue: fallbackValue,
-        options: entries.map(([token, color]) => ({
+        options: entries.map(([token]) => ({
             value: token,
-            label: token,
-            swatch: color,
-            displayValue: color?.replace(/^#/, '').toUpperCase() ?? '',
         })),
     };
 }

@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed, nextTick, ref, watch } from 'vue';
 import { parseFieldInputValue } from '../../js/core/templates/fields.js';
-import type { TemplateField, TemplateFieldIconPath, TemplateFieldOption } from '../types/template';
+import type { InspectorField, InspectorFieldIconPath, InspectorFieldOption } from '../types/inspector';
 
 type TextRadioPathDefinition = {
     className: string;
@@ -9,10 +9,10 @@ type TextRadioPathDefinition = {
     transform?: string;
 };
 
-type IconPathDefinition = Exclude<TemplateFieldIconPath, string>;
+type IconPathDefinition = Exclude<InspectorFieldIconPath, string>;
 
 const props = withDefaults(defineProps<{
-    field: TemplateField;
+    field: InspectorField;
     value: unknown;
     idPrefix?: string;
     compact?: boolean;
@@ -26,8 +26,8 @@ const props = withDefaults(defineProps<{
 });
 
 const emit = defineEmits<{
-    change: [field: TemplateField, value: unknown];
-    input: [field: TemplateField, value: unknown];
+    change: [field: InspectorField, value: unknown];
+    input: [field: InspectorField, value: unknown];
 }>();
 
 const optionOpen = ref(false);
@@ -98,11 +98,11 @@ function normalizeInputValue(value: unknown) {
     return value;
 }
 
-function optionValue(option: TemplateFieldOption) {
+function optionValue(option: InspectorFieldOption) {
     return String(option.value);
 }
 
-function isSelected(option: TemplateFieldOption) {
+function isSelected(option: InspectorFieldOption) {
     return String(fieldValue.value) === String(option.value);
 }
 
@@ -184,7 +184,7 @@ function formatSteppedNumberValue(value: number, step: number) {
     return String(Number(value.toFixed(precision)));
 }
 
-function normalizeIconPaths(paths: TemplateFieldIconPath[] | undefined): IconPathDefinition[] {
+function normalizeIconPaths(paths: InspectorFieldIconPath[] | undefined): IconPathDefinition[] {
     return (paths ?? []).map((path) => (
         typeof path === 'string' ? { d: path } : path
     ));
@@ -374,7 +374,7 @@ function openColorPicker(event: MouseEvent) {
     wrapper?.querySelector<HTMLInputElement>('.color-alpha-native-input')?.click();
 }
 
-function optionSwatch(option: TemplateFieldOption) {
+function optionSwatch(option: InspectorFieldOption) {
     const parsed = parseColor(option.swatch ?? '#111111');
     const alpha = option.opacity === undefined || option.opacity === ''
         ? parsed.alpha

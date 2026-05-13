@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import FieldControl from './FieldControl.vue';
 import type { ExportSettings } from '../types/editor';
-import type { TemplateField } from '../types/template';
+import type { InspectorField } from '../types/inspector';
 
 defineProps<{
     settings: ExportSettings;
@@ -67,7 +67,7 @@ function buildJpegQualityOptions() {
     return options;
 }
 
-const sizePresetField: TemplateField = {
+const sizePresetField: InspectorField = {
     key: 'sizePreset',
     label: '尺寸',
     type: 'select',
@@ -80,7 +80,7 @@ const sizePresetField: TemplateField = {
         { value: 'custom', label: '自定义' },
     ],
 };
-const customWidthField: TemplateField = {
+const customWidthField: InspectorField = {
     key: 'customWidth',
     label: 'W',
     type: 'number',
@@ -89,7 +89,7 @@ const customWidthField: TemplateField = {
     inputMode: 'numeric',
     placeholder: '宽度',
 };
-const customHeightField: TemplateField = {
+const customHeightField: InspectorField = {
     key: 'customHeight',
     label: 'H',
     type: 'number',
@@ -98,7 +98,7 @@ const customHeightField: TemplateField = {
     inputMode: 'numeric',
     placeholder: '高度',
 };
-const jpegQualityField: TemplateField = {
+const jpegQualityField: InspectorField = {
     key: 'jpegQuality',
     label: 'JPEG 质量',
     type: 'option-input',
@@ -110,7 +110,7 @@ const jpegQualityField: TemplateField = {
     options: buildJpegQualityOptions(),
 };
 
-function handleFieldChange(settings: ExportSettings, field: TemplateField, value: unknown) {
+function handleFieldChange(settings: ExportSettings, field: InspectorField, value: unknown) {
     switch (field.key) {
         case 'sizePreset':
             patch(settings, { sizePreset: value as ExportSettings['sizePreset'] });

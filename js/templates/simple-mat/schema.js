@@ -40,7 +40,6 @@ export const simpleMatTemplateFields = [
     ...buildFrameLayoutFields(simpleMatFrame),
     buildThinBorderToggleField({
         key: 'showThinBorder',
-        label: '内边框',
         defaultValue: false,
     }),
 ];
