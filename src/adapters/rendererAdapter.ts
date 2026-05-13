@@ -4,17 +4,8 @@ import {
 } from '../../js/renderer.ts';
 import { renderTemplateFrame } from '../../js/core/render/runtime.ts';
 import type { PhotoEntry } from '../types/photo';
-import type {
-    CalculateFrameMetrics,
-    CalculatePreviewScale,
-    RenderTemplateFrame,
-} from '../types/render';
 import type { FrameTemplate } from '../types/template';
 import type { TextModel } from '../types/text';
-
-const calculateFrameMetricsContract = calculateFrameMetrics as unknown as CalculateFrameMetrics;
-const calculatePreviewScaleContract = calculatePreviewScale as unknown as CalculatePreviewScale;
-const renderTemplateFrameContract = renderTemplateFrame as unknown as RenderTemplateFrame;
 
 export async function renderPreviewCanvas({
     canvas,
@@ -33,7 +24,7 @@ export async function renderPreviewCanvas({
     textModel?: TextModel;
     container: HTMLElement;
 }) {
-    const scale = calculatePreviewScaleContract(
+    const scale = calculatePreviewScale(
         photo.image,
         template,
         container.clientWidth,
@@ -42,7 +33,7 @@ export async function renderPreviewCanvas({
         fieldValues
     );
 
-    return renderTemplateFrameContract(canvas, photo.image, template, fieldValues, {
+    return renderTemplateFrame(canvas, photo.image, template, fieldValues, {
         scale,
         photo,
         exifOverrides,
@@ -56,7 +47,7 @@ export function getBaseFrameDimensions(
     template: FrameTemplate,
     fieldValues: Record<string, unknown>
 ) {
-    const metrics = calculateFrameMetricsContract(photo.image, template, 1, fieldValues);
+    const metrics = calculateFrameMetrics(photo.image, template, 1, fieldValues);
 
     return {
         width: metrics.fullWidth,
