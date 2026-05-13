@@ -7,24 +7,41 @@ import {
 import { resolveTemplateConfig } from '../../js/core/templates/registry.js';
 import type { FrameTemplate } from '../types/template';
 
+type GetTemplates = () => readonly FrameTemplate[];
+type GetTemplateById = (id: string) => FrameTemplate | undefined;
+type AddImportedTemplate = (template: FrameTemplate) => FrameTemplate;
+type ResolveTemplateConfig = (
+    template: FrameTemplate,
+    rawConfig?: Record<string, unknown>
+) => Record<string, unknown>;
+
+const defaultTemplateContract: FrameTemplate = defaultTemplate;
+const getTemplatesContract: GetTemplates = getTemplates;
+const getTemplateByIdContract: GetTemplateById = getSharedTemplateById;
+const addImportedTemplateContract: AddImportedTemplate = addImportedTemplateToSharedRegistry;
+const resolveTemplateConfigContract: ResolveTemplateConfig = resolveTemplateConfig;
+
 export function getDefaultTemplate(): FrameTemplate {
-    return defaultTemplate;
+    return defaultTemplateContract;
 }
 
 export function getAllTemplates(): FrameTemplate[] {
-    return getTemplates() as FrameTemplate[];
+    return [...getTemplatesContract()];
 }
 
 export function getTemplateById(id: string | null): FrameTemplate | null {
-    return id ? getSharedTemplateById(id) as FrameTemplate ?? null : null;
+    return id ? getTemplateByIdContract(id) ?? null : null;
 }
 
 export function addImportedTemplate(template: FrameTemplate): FrameTemplate {
-    return addImportedTemplateToSharedRegistry(template) as FrameTemplate;
+    return addImportedTemplateContract(template);
 }
 
-export function getResolvedTemplateConfig(template: FrameTemplate, rawConfig = {}) {
-    return resolveTemplateConfig(template, rawConfig);
+export function getResolvedTemplateConfig(
+    template: FrameTemplate,
+    rawConfig: Record<string, unknown> = {}
+) {
+    return resolveTemplateConfigContract(template, rawConfig);
 }
 
 export function getInitialTemplateValues(template: FrameTemplate) {

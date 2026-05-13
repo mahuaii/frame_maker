@@ -18,7 +18,7 @@ export type InspectorFieldIconPath = string | {
     clipRule?: string;
 };
 
-export type InspectorField = Omit<TemplateField, 'options'> & {
+export type InspectorField = Omit<TemplateField, 'options' | 'parseValue'> & {
     label: string;
     control?: string;
     controlClassName?: string;
