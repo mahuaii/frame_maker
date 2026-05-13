@@ -1,8 +1,8 @@
 import { createImportedTemplateRegistry } from './core/templates/imported-registry.ts';
-import bottomInfoBarTemplate from './templates/bottom-info-bar/index.js';
-import galleryCaptionMatTemplate from './templates/gallery-caption-mat/index.js';
-import simpleMatTemplate from './templates/simple-mat/index.js';
-import storyExifTemplate from './templates/story-exif/index.js';
+import bottomInfoBarTemplate from './templates/bottom-info-bar/index.ts';
+import galleryCaptionMatTemplate from './templates/gallery-caption-mat/index.ts';
+import simpleMatTemplate from './templates/simple-mat/index.ts';
+import storyExifTemplate from './templates/story-exif/index.ts';
 
 const builtinTemplates = [
     galleryCaptionMatTemplate,

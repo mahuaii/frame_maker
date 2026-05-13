@@ -4,7 +4,7 @@ import {
     getTemplateById as getSharedTemplateById,
     getTemplates as getSharedTemplates,
     templates,
-} from '../js/templates.js';
+} from '../js/templates.ts';
 import { defineDataTemplate, normalizeDataTemplatePackage } from '../js/core/templates/data-template.ts';
 import { createImportedTemplateRegistry } from '../js/core/templates/imported-registry.ts';
 import { exportTemplatePackage, importTemplatePackage } from '../js/core/templates/template-package.ts';

@@ -1,4 +1,4 @@
-import { buildExifMetaPrimary, buildExifMetaSecondary } from '../shared.js';
+import { buildExifMetaPrimary, buildExifMetaSecondary } from '../shared.ts';
 
 export function resolveStoryExifTemplateData(input) {
     const exif = input.exif;

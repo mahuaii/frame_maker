@@ -19,12 +19,12 @@ const sideFieldDefinitions = {
 
 const frameSideControlOrder = ['top', 'right', 'bottom', 'left'];
 
-function getFrameSideDefault(frame = {}, control) {
+function getFrameSideDefault(frame: Record<string, any> = {}, control: string) {
     const sides = frame.sides ?? {};
     return sides[control] ?? 0;
 }
 
-export function buildFrameLayoutFields(frame = {}, {
+export function buildFrameLayoutFields(frame: Record<string, any> = {}, {
     aspectRatio = FREE_FRAME_ASPECT_RATIO,
     borderWidth = 10,
 } = {}) {
@@ -140,7 +140,7 @@ export function formatIsoText(iso, separator = ' ') {
     return iso ? `ISO${separator}${iso}` : null;
 }
 
-export function buildExifMetaPrimary(formattedExif = {}, {
+export function buildExifMetaPrimary(formattedExif: Record<string, any> = {}, {
     shutterSuffix = false,
     isoSeparator = ' ',
 } = {}) {
@@ -154,7 +154,7 @@ export function buildExifMetaPrimary(formattedExif = {}, {
     ].filter(Boolean);
 }
 
-export function buildExifMetaSecondary(formattedExif = {}, {
+export function buildExifMetaSecondary(formattedExif: Record<string, any> = {}, {
     includeCamera = true,
     includeLens = false,
 } = {}) {

@@ -1,5 +1,5 @@
 import { defineDataTemplate } from '../../core/templates/data-template.ts';
-import { galleryCaptionMatTemplateSchema } from './schema.js';
+import { galleryCaptionMatTemplateSchema } from './schema.ts';
 
 const galleryCaptionMatTemplate = defineDataTemplate(galleryCaptionMatTemplateSchema);
 

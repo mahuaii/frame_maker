@@ -1,7 +1,7 @@
 import { buildDefaultConfig } from '../../core/templates/fields.ts';
 import { buildAppearanceField } from '../../core/templates/appearance.ts';
-import { createSolidAppearanceThemes } from '../appearance-presets.js';
-import { buildFrameLayoutFields } from '../shared.js';
+import { createSolidAppearanceThemes } from '../appearance-presets.ts';
+import { buildFrameLayoutFields } from '../shared.ts';
 
 export const bottomInfoBarAppearanceThemes = createSolidAppearanceThemes({
     white: {

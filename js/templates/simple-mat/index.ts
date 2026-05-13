@@ -1,5 +1,5 @@
 import { defineDataTemplate } from '../../core/templates/data-template.ts';
-import { simpleMatTemplateSchema } from './schema.js';
+import { simpleMatTemplateSchema } from './schema.ts';
 
 const simpleMatTemplate = defineDataTemplate(simpleMatTemplateSchema);
 

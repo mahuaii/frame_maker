@@ -1,5 +1,5 @@
 import { getAppearanceColor } from '../../core/templates/registry.ts';
-import { drawOptionalThinPhotoBorder } from '../photo-border.js';
+import { drawOptionalThinPhotoBorder } from '../photo-border.ts';
 
 export function renderSimpleMatTemplate(ctx, args) {
     const { appearance, config, metrics } = args;

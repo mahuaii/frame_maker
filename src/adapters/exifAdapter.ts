@@ -3,7 +3,7 @@ import {
     createEditableExifOverrideValues,
     createPhotoSource,
     extractExifData,
-} from '../../js/renderer.js';
+} from '../../js/renderer.ts';
 
 export {
     EDITABLE_EXIF_FIELDS,

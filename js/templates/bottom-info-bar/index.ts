@@ -1,5 +1,5 @@
 import { defineDataTemplate } from '../../core/templates/data-template.ts';
-import { bottomInfoBarTemplateSchema } from './schema.js';
+import { bottomInfoBarTemplateSchema } from './schema.ts';
 
 const bottomInfoBarTemplate = defineDataTemplate(bottomInfoBarTemplateSchema);
 

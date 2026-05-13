@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { createServer } from 'vite';
-import { defaultTemplate, templates } from '../js/templates.js';
+import { defaultTemplate, templates } from '../js/templates.ts';
 import { getInitialTemplateValues } from '../src/adapters/templateAdapter.ts';
 
 const server = await createServer({

@@ -3,7 +3,7 @@ import {
     defaultTemplate,
     getTemplateById as getSharedTemplateById,
     getTemplates,
-} from '../../js/templates.js';
+} from '../../js/templates.ts';
 import { resolveTemplateConfig } from '../../js/core/templates/registry.ts';
 import type { FrameTemplate } from '../types/template';
 

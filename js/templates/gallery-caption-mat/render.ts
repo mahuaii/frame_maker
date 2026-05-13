@@ -1,5 +1,5 @@
 import { getAppearanceColor } from '../../core/templates/registry.ts';
-import { drawBeveledPhotoBorder, resolvePhotoBorderWidth } from '../photo-border.js';
+import { drawBeveledPhotoBorder, resolvePhotoBorderWidth } from '../photo-border.ts';
 
 export function renderGalleryCaptionMatTemplate(ctx, args) {
     const { appearance, config, metrics } = args;
