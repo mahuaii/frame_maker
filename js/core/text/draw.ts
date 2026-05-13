@@ -1,4 +1,4 @@
-import { TEXT_ALIGNS, TEXT_ITEM_TYPES } from './schema.js';
+import { TEXT_ALIGNS, TEXT_ITEM_TYPES } from './schema.ts';
 
 function getLineOffset(itemWidth, lineWidth, align) {
     if (align === TEXT_ALIGNS.end) {

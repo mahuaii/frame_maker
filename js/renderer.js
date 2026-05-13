@@ -21,7 +21,7 @@ export {
     extractExifData,
     resolveEditableExif,
 } from './core/render/input.js';
-export { renderTextModel } from './core/text/index.js';
+export { renderTextModel } from './core/text/index.ts';
 
 export function renderFrame(canvas, image, template, fieldValues, scaleOrOptions = 1) {
     const options = typeof scaleOrOptions === 'number'

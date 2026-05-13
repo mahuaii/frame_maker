@@ -1,1 +1,1 @@
-export * from './core/fonts/index.js';
+export * from './core/fonts/index.ts';

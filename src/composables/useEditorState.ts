@@ -20,7 +20,7 @@ import {
 import {
     createDefaultTextGroup,
     createDefaultTextItem,
-} from '../../js/core/text/index.js';
+} from '../../js/core/text/index.ts';
 import { resolveTemplateConfig } from '../../js/core/templates/registry.ts';
 import type { CopiedPhotoSettings, EditableState, PhotoEditState } from '../types/editor';
 import type { FrameTemplate } from '../types/template';

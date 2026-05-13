@@ -194,7 +194,7 @@ export function getFontFamilyStack({
     fontIdZh = DEFAULT_FONT_IDS.zh,
     fontFamilyEn = FONT_FAMILIES.enDefault,
     fontFamilyZh = FONT_FAMILIES.zhDefault,
-} = {}) {
+}: Record<string, any> = {}) {
     const resolvedFontIdEn = fontIdEn ?? fontIdZh ?? DEFAULT_FONT_IDS.en;
     const resolvedFontIdZh = fontIdZh ?? fontIdEn ?? DEFAULT_FONT_IDS.zh;
     const resolvedFontFamilyEn = fontFamilyEn ?? fontFamilyZh ?? FONT_FAMILIES.enDefault;
@@ -217,7 +217,7 @@ export function buildCanvasFont({
     fontIdZh,
     fontFamilyEn,
     fontFamilyZh,
-}) {
+}: Record<string, any>) {
     return `${fontStyle} ${fontWeight} ${Math.max(fontSize, 1)}px ${getFontFamilyStack({
         fontIdEn,
         fontIdZh,
@@ -240,7 +240,7 @@ function createRuntimeFontsReadyPromise() {
             return;
         }
 
-        const fontConfigs = Object.values(FONT_REGISTRY).filter((fontConfig) => !fontConfig.system);
+        const fontConfigs = (Object.values(FONT_REGISTRY) as Record<string, any>[]).filter((fontConfig) => !fontConfig.system);
         const results = await Promise.allSettled(
             fontConfigs.map((fontConfig) => ensureRuntimeFont(fontConfig.id))
         );

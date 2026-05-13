@@ -1,18 +1,18 @@
-import { buildCanvasFont } from '../fonts/index.js';
+import { buildCanvasFont } from '../fonts/index.ts';
 import { getAppearanceColor } from '../templates/appearance.ts';
-import { loadTextImage } from './image-cache.js';
-import { DEFAULT_TEXT_STYLE, TEXT_DIRECTIONS, TEXT_ITEM_TYPES, getTextBaseUnit } from './schema.js';
+import { loadTextImage } from './image-cache.ts';
+import { DEFAULT_TEXT_STYLE, TEXT_DIRECTIONS, TEXT_ITEM_TYPES, getTextBaseUnit } from './schema.ts';
 
-function normalizeNumber(value, fallbackValue) {
+function normalizeNumber(value: unknown, fallbackValue: number) {
     const numericValue = Number(value);
     return Number.isFinite(numericValue) ? numericValue : fallbackValue;
 }
 
-function normalizePositiveNumber(value, fallbackValue) {
+function normalizePositiveNumber(value: unknown, fallbackValue: number) {
     return Math.max(normalizeNumber(value, fallbackValue), 0);
 }
 
-function measureLineWidth(ctx, text, letterSpacing = 0) {
+function measureLineWidth(ctx: CanvasRenderingContext2D, text: string, letterSpacing = 0) {
     if (!letterSpacing || text.length <= 1) {
         return ctx.measureText(text).width;
     }
@@ -28,7 +28,7 @@ function measureLineWidth(ctx, text, letterSpacing = 0) {
     return width;
 }
 
-function resolveFontIds(style) {
+function resolveFontIds(style: Record<string, any>) {
     const fontId = style.fontId ?? DEFAULT_TEXT_STYLE.fontId;
     return {
         fontIdEn: style.fontIdEn ?? fontId,
@@ -36,13 +36,13 @@ function resolveFontIds(style) {
     };
 }
 
-export function resolveAppearanceColor(appearance, colorToken, fallbackColor) {
+export function resolveAppearanceColor(appearance: unknown, colorToken: string | undefined, fallbackColor: string) {
     return colorToken
         ? getAppearanceColor(appearance, colorToken, fallbackColor)
         : fallbackColor;
 }
 
-export function resolveRenderedTextStyle(style = {}, context = {}) {
+export function resolveRenderedTextStyle(style: Record<string, any> = {}, context: Record<string, any> = {}) {
     const metrics = context.metrics ?? {};
     const appearance = context.appearance ?? {};
     const baseUnit = getTextBaseUnit(metrics);
@@ -87,7 +87,7 @@ export function resolveRenderedTextStyle(style = {}, context = {}) {
     };
 }
 
-export function measureTextItem(ctx, item, style, context = {}, parentAlign = 'start') {
+export function measureTextItem(ctx: CanvasRenderingContext2D, item: Record<string, any>, style: Record<string, any>, context: Record<string, any> = {}, parentAlign = 'start') {
     const renderedStyle = resolveRenderedTextStyle(style, context);
     const rawLines = String(item.resolvedContent ?? '').split(/\r\n|\r|\n/);
     const lines = rawLines.length > 0 ? rawLines : [''];
@@ -127,7 +127,7 @@ export function measureTextItem(ctx, item, style, context = {}, parentAlign = 's
     };
 }
 
-export function measureSeparatorItem(item, context = {}, parentDirection = TEXT_DIRECTIONS.vertical) {
+export function measureSeparatorItem(item: Record<string, any>, context: Record<string, any> = {}, parentDirection: string = TEXT_DIRECTIONS.vertical) {
     const baseUnit = getTextBaseUnit(context.metrics);
     const length = baseUnit * normalizePositiveNumber(item.lengthScale, 1.4);
     const thickness = baseUnit * normalizePositiveNumber(item.thicknessScale, 0.06);
@@ -149,7 +149,7 @@ export function measureSeparatorItem(item, context = {}, parentDirection = TEXT_
     };
 }
 
-export async function measureImageItem(item, style, context = {}) {
+export async function measureImageItem(item: Record<string, any>, style: Record<string, any>, context: Record<string, any> = {}) {
     const image = await loadTextImage(item.source);
 
     if (!image) {

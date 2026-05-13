@@ -1,5 +1,5 @@
-import { drawTextLayout } from './draw.js';
-import { layoutTextModel } from './layout.js';
+import { drawTextLayout } from './draw.ts';
+import { layoutTextModel } from './layout.ts';
 
 export {
     ANCHOR_KEYS,
@@ -20,26 +20,26 @@ export {
     getTextBaseUnit,
     mergeTextStyles,
     normalizeTextModel,
-} from './schema.js';
+} from './schema.ts';
 export {
     DEFAULT_TOKEN_RESOLVERS,
     resolveTextTokenResult,
     resolveTextTokens,
     resolveTokenValue,
-} from './tokens.js';
+} from './tokens.ts';
 export {
     clearTextImageCache,
     loadTextImage,
     releaseTextImageSource,
-} from './image-cache.js';
+} from './image-cache.ts';
 export {
     resolveAppearanceColor,
     resolveRenderedTextStyle,
-} from './measure.js';
-export { layoutTextModel } from './layout.js';
-export { drawTextLayout } from './draw.js';
+} from './measure.ts';
+export { layoutTextModel } from './layout.ts';
+export { drawTextLayout } from './draw.ts';
 
-export async function renderTextModel(ctx, args = {}) {
+export async function renderTextModel(ctx: CanvasRenderingContext2D, args: Record<string, any> = {}) {
     if (!ctx) {
         return [];
     }

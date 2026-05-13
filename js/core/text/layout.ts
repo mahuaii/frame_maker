@@ -6,9 +6,9 @@ import {
     getTextBaseUnit,
     mergeTextStyles,
     normalizeTextModel,
-} from './schema.js';
-import { measureImageItem, measureSeparatorItem, measureTextItem } from './measure.js';
-import { resolveTextTokenResult } from './tokens.js';
+} from './schema.ts';
+import { measureImageItem, measureSeparatorItem, measureTextItem } from './measure.ts';
+import { resolveTextTokenResult } from './tokens.ts';
 
 const EMPTY_TEXT_FALLBACK = 'Text';
 

@@ -1,11 +1,11 @@
-import { normalizeTextModel } from '../../js/core/text/index.js';
+import { normalizeTextModel } from '../../js/core/text/index.ts';
 import { resolveTemplateAppearance } from '../../js/core/templates/registry.ts';
 import { getPathValue, setPathValue } from '../../js/core/utils/object-path.ts';
 import {
     getFontFieldOptions,
     getFontWeightOptions,
     normalizeFontWeightForFont,
-} from '../../js/core/fonts/index.js';
+} from '../../js/core/fonts/index.ts';
 import type { InspectorField } from '../types/inspector';
 import type { FrameTemplate } from '../types/template';
 import type {

@@ -2,7 +2,7 @@ import { getPathValue } from '../utils/object-path.ts';
 
 const TOKEN_PATTERN = /\{\{\s*([A-Za-z][A-Za-z0-9_.-]*)\s*\}\}/g;
 
-function stringifyTokenValue(value) {
+function stringifyTokenValue(value: unknown) {
     if (value === null || value === undefined) {
         return '';
     }
@@ -14,19 +14,19 @@ function stringifyTokenValue(value) {
     return String(value);
 }
 
-function resolvePhoto(context = {}) {
+function resolvePhoto(context: Record<string, any> = {}) {
     return context.resolveInput?.photo ?? context.photo ?? null;
 }
 
-function resolveExif(context = {}) {
+function resolveExif(context: Record<string, any> = {}) {
     return context.resolveInput?.exif ?? context.exif ?? null;
 }
 
-function formatIso(iso) {
+function formatIso(iso: unknown) {
     return iso ? `ISO ${iso}` : null;
 }
 
-function buildMetaPrimary(formatted = {}) {
+function buildMetaPrimary(formatted: Record<string, any> = {}) {
     return [
         formatted?.focalLength,
         formatted?.aperture,
@@ -35,7 +35,7 @@ function buildMetaPrimary(formatted = {}) {
     ].filter(Boolean).join('  ');
 }
 
-function buildMetaSecondary(formatted = {}) {
+function buildMetaSecondary(formatted: Record<string, any> = {}) {
     return [
         formatted?.camera,
         formatted?.lens,
@@ -63,7 +63,7 @@ export const DEFAULT_TOKEN_RESOLVERS = Object.freeze({
     metaSecondary: ({ data, exif }) => data?.metaSecondary ?? data?.secondaryMetaText ?? buildMetaSecondary(exif?.formatted),
 });
 
-export function resolveTokenValue(tokenName, context = {}) {
+export function resolveTokenValue(tokenName: string, context: Record<string, any> = {}) {
     const photo = resolvePhoto(context);
     const exif = resolveExif(context);
     const data = context.data ?? {};
@@ -76,11 +76,11 @@ export function resolveTokenValue(tokenName, context = {}) {
     return stringifyTokenValue(getPathValue(context.tokens, tokenName));
 }
 
-export function resolveTextTokens(value, context = {}) {
+export function resolveTextTokens(value: unknown, context: Record<string, any> = {}) {
     return resolveTextTokenResult(value, context).text;
 }
 
-export function resolveTextTokenResult(value, context = {}) {
+export function resolveTextTokenResult(value: unknown, context: Record<string, any> = {}) {
     let hasTokens = false;
     let hasNonEmptyToken = false;
     const text = String(value ?? '').replace(TOKEN_PATTERN, (_, tokenName) => {

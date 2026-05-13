@@ -1,4 +1,4 @@
-import { DEFAULT_FONT_IDS, FONT_FAMILIES, getFontFieldOptions } from '../core/fonts/index.js';
+import { DEFAULT_FONT_IDS, FONT_FAMILIES, getFontFieldOptions } from '../core/fonts/index.ts';
 import {
     FRAME_ASPECT_RATIO_OPTIONS,
     FREE_FRAME_ASPECT_RATIO,

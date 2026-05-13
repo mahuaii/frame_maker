@@ -5,6 +5,8 @@ export const TEXT_ITEM_TYPES = Object.freeze({
     image: 'image',
 });
 
+type AnyRecord = Record<string, any>;
+
 export const TEXT_DIRECTIONS = Object.freeze({
     vertical: 'vertical',
     horizontal: 'horizontal',
@@ -137,8 +139,8 @@ function normalizeString(value, fallbackValue = '') {
     return String(value);
 }
 
-function normalizeStyle(style = {}, owner = {}) {
-    const normalizedStyle = {};
+function normalizeStyle(style: unknown = {}, owner: AnyRecord = {}) {
+    const normalizedStyle: AnyRecord = {};
     const styleSource = isObject(style) ? style : {};
 
     STYLE_KEYS.forEach((key) => {
@@ -181,7 +183,7 @@ function normalizeStyle(style = {}, owner = {}) {
     return normalizedStyle;
 }
 
-function hasOwnFontStyleValue(style = {}, owner = {}) {
+function hasOwnFontStyleValue(style: unknown = {}, owner: AnyRecord = {}) {
     const styleSource = isObject(style) ? style : {};
 
     return FONT_STYLE_KEYS.some((key) => styleSource[key] !== undefined || owner[key] !== undefined);
@@ -202,7 +204,7 @@ function mergeLetterSpacingScale(previousValue, nextValue) {
     return previousScale * nextScale;
 }
 
-function normalizeTextItemStyle(item) {
+function normalizeTextItemStyle(item: AnyRecord) {
     const style = normalizeStyle(item.style, item);
 
     if (style.useOwnFont === undefined) {
@@ -373,7 +375,7 @@ export function createTextObjectId(prefix = 'text') {
     return `${prefix}-${Date.now()}-${generatedTextObjectId}`;
 }
 
-export function createDefaultTextItem(type = TEXT_ITEM_TYPES.text, overrides = {}) {
+export function createDefaultTextItem(type: string = TEXT_ITEM_TYPES.text, overrides: AnyRecord = {}) {
     if (type === TEXT_ITEM_TYPES.separator) {
         return {
             ...DEFAULT_SEPARATOR_ITEM,
@@ -432,8 +434,8 @@ export function cloneTextModel(textModel = []) {
     return JSON.parse(JSON.stringify(textModel));
 }
 
-export function mergeTextStyles(...styles) {
-    return styles.reduce((result, style) => {
+export function mergeTextStyles(...styles: unknown[]) {
+    return styles.reduce<AnyRecord>((result, style) => {
         if (!isObject(style)) {
             return result;
         }
@@ -479,7 +481,7 @@ export function mergeTextStyles(...styles) {
     }, {});
 }
 
-export function getTextBaseUnit(metrics = {}) {
+export function getTextBaseUnit(metrics: AnyRecord = {}) {
     const baseUnit = Number(metrics.scaledFontSize);
     return Number.isFinite(baseUnit) && baseUnit > 0 ? baseUnit : 12;
 }
