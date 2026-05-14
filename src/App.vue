@@ -216,10 +216,7 @@ async function handleImportTemplate(file: File) {
     try {
         const { template } = await importTemplateZip(file);
         const importedTemplate = templateStore.registerImportedTemplate(template);
-        editor.selectImportedTemplate(
-            importedTemplate,
-            templateStore.getInitialTemplateValues(importedTemplate)
-        );
+        selectTemplate(importedTemplate);
     } catch (error) {
         uiState.errorMessage = error instanceof Error ? error.message : '模板导入失败';
     }

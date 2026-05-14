@@ -8,9 +8,6 @@ import {
     createTextColorPaletteItem,
     ensureSelectedTextObjectId,
     findTextObjectById,
-    getColorOptionValue,
-    getTextColorDefaultOption,
-    getTextObjectEffectiveColor,
     moveTextObjectById,
     normalizeColorValue,
     normalizeTextImageSource,
@@ -67,10 +64,35 @@ export function useEditorState(defaultTemplate: FrameTemplate, initialValues: Re
 
     const state = computed(() => history.present.value);
     const activePhotoState = computed(() => (
-        state.value.activePhotoId
-            ? state.value.photoStatesById[state.value.activePhotoId] ?? state.value.fallbackState
-            : state.value.fallbackState
+        getPhotoState(state.value, state.value.activePhotoId)
     ));
+
+    function getPhotoState(editableState: EditableState, photoId: string | null) {
+        return photoId && editableState.photoStatesById[photoId]
+            ? editableState.photoStatesById[photoId]
+            : editableState.fallbackState;
+    }
+
+    function withPhotoState(
+        editableState: EditableState,
+        photoId: string | null,
+        photoState: PhotoEditState
+    ): EditableState {
+        if (photoId && editableState.photoStatesById[photoId]) {
+            return {
+                ...editableState,
+                photoStatesById: {
+                    ...editableState.photoStatesById,
+                    [photoId]: photoState,
+                },
+            };
+        }
+
+        return {
+            ...editableState,
+            fallbackState: photoState,
+        };
+    }
 
     function collectReferencedTextObjectUrls() {
         const urls = new Set<string>();
@@ -180,21 +202,11 @@ export function useEditorState(defaultTemplate: FrameTemplate, initialValues: Re
     }
 
     function updatePhotoState(photoId: string | null, patcher: (photoState: PhotoEditState) => PhotoEditState) {
-        if (!photoId || !state.value.photoStatesById[photoId]) {
-            commitState({
-                ...state.value,
-                fallbackState: patcher(state.value.fallbackState),
-            });
-            return;
-        }
-
-        commitState({
-            ...state.value,
-            photoStatesById: {
-                ...state.value.photoStatesById,
-                [photoId]: patcher(state.value.photoStatesById[photoId]),
-            },
-        });
+        commitState(withPhotoState(
+            state.value,
+            photoId,
+            patcher(getPhotoState(state.value, photoId))
+        ));
     }
 
     function commitActiveTemplateTextState(
@@ -203,9 +215,7 @@ export function useEditorState(defaultTemplate: FrameTemplate, initialValues: Re
         { nextSelectedId }: { nextSelectedId?: string | null } = {}
     ) {
         const photoId = state.value.activePhotoId;
-        const targetState = photoId
-            ? state.value.photoStatesById[photoId] ?? state.value.fallbackState
-            : state.value.fallbackState;
+        const targetState = getPhotoState(state.value, photoId);
         const textModel = cloneEditorTextModel(getTextModelFromState(targetState, template));
         const palette = cloneJson(getTextColorPaletteFromState(targetState, template));
         const result = mutator(textModel, palette);
@@ -225,20 +235,8 @@ export function useEditorState(defaultTemplate: FrameTemplate, initialValues: Re
                 [template.id]: palette,
             },
         };
-        const nextState = photoId && state.value.photoStatesById[photoId]
-            ? {
-                ...state.value,
-                photoStatesById: {
-                    ...state.value.photoStatesById,
-                    [photoId]: nextPhotoState,
-                },
-            }
-            : {
-                ...state.value,
-                fallbackState: nextPhotoState,
-            };
 
-        commitState(nextState);
+        commitState(withPhotoState(state.value, photoId, nextPhotoState));
         selectedTextObjectId.value = ensureSelectedTextObjectId(
             textModel,
             nextSelectedId !== undefined ? nextSelectedId : selectedTextObjectId.value
@@ -285,30 +283,6 @@ export function useEditorState(defaultTemplate: FrameTemplate, initialValues: Re
         }));
     }
 
-    function setTemplateForActivePhoto(template: FrameTemplate, fallbackValues: Record<string, unknown>) {
-        selectTemplate(template, fallbackValues);
-    }
-
-    function selectImportedTemplate(template: FrameTemplate, fallbackValues: Record<string, unknown>) {
-        selectedTextObjectId.value = null;
-        updatePhotoState(state.value.activePhotoId, (photoState) => ({
-            ...photoState,
-            selectedTemplateId: template.id,
-            fieldValuesByTemplateId: {
-                ...photoState.fieldValuesByTemplateId,
-                [template.id]: cloneJson(fallbackValues),
-            },
-            textModelsByTemplateId: {
-                ...photoState.textModelsByTemplateId,
-                [template.id]: getInitialTemplateTextModel(template),
-            },
-            textColorPalettesByTemplateId: {
-                ...photoState.textColorPalettesByTemplateId,
-                [template.id]: [],
-            },
-        }));
-    }
-
     function resolveFieldValues(templateOrId: FrameTemplate | string, currentValues: Record<string, unknown>, key: string, value: unknown) {
         const nextValues = {
             ...currentValues,
@@ -343,9 +317,7 @@ export function useEditorState(defaultTemplate: FrameTemplate, initialValues: Re
 
         const templateId = typeof templateOrId === 'string' ? templateOrId : templateOrId.id;
         const photoId = state.value.activePhotoId;
-        const targetState = photoId
-            ? state.value.photoStatesById[photoId] ?? state.value.fallbackState
-            : state.value.fallbackState;
+        const targetState = getPhotoState(state.value, photoId);
         const currentValues = targetState.fieldValuesByTemplateId[templateId] ?? {};
         const nextPhotoState = {
             ...targetState,
@@ -355,20 +327,7 @@ export function useEditorState(defaultTemplate: FrameTemplate, initialValues: Re
             },
         };
 
-        const nextState = photoId && state.value.photoStatesById[photoId]
-            ? {
-                ...state.value,
-                photoStatesById: {
-                    ...state.value.photoStatesById,
-                    [photoId]: nextPhotoState,
-                },
-            }
-            : {
-                ...state.value,
-                fallbackState: nextPhotoState,
-            };
-
-        history.replacePresent(nextState);
+        history.replacePresent(withPhotoState(state.value, photoId, nextPhotoState));
     }
 
     function updateExif(key: string, value: string) {
@@ -487,11 +446,6 @@ export function useEditorState(defaultTemplate: FrameTemplate, initialValues: Re
 
     function getTextColorPalette(template: FrameTemplate) {
         return getTextColorPaletteFromState(activePhotoState.value, template);
-    }
-
-    function ensureSelectedTextObject(template: FrameTemplate) {
-        selectedTextObjectId.value = ensureSelectedTextObjectId(getTextModel(template), selectedTextObjectId.value);
-        return selectedTextObjectId.value;
     }
 
     function setSelectedTextObject(objectId: string | null) {
@@ -746,30 +700,6 @@ export function useEditorState(defaultTemplate: FrameTemplate, initialValues: Re
         });
     }
 
-    function addCurrentTextColor(template: FrameTemplate, objectId: string, tokenField: any, colorField: any) {
-        const current = findTextObjectById(getTextModel(template), objectId);
-        if (!current) {
-            return;
-        }
-
-        addTextColor(
-            template,
-            objectId,
-            tokenField.key,
-            colorField.key,
-            getTextObjectEffectiveColor(current.item, tokenField, colorField)
-        );
-    }
-
-    function selectDefaultTextColor(template: FrameTemplate, objectId: string, tokenField: any, colorField: any) {
-        const option = getTextColorDefaultOption(tokenField);
-        if (!option) {
-            return;
-        }
-
-        selectTextColor(template, objectId, tokenField.key, colorField.key, String(option.value), getColorOptionValue(option));
-    }
-
     function undo() {
         draftBaseline = null;
         history.undo();
@@ -790,8 +720,6 @@ export function useEditorState(defaultTemplate: FrameTemplate, initialValues: Re
         addPhoto,
         setActivePhoto,
         selectTemplate,
-        setTemplateForActivePhoto,
-        selectImportedTemplate,
         updateField,
         replaceFieldDraft,
         updateExif,
@@ -805,7 +733,6 @@ export function useEditorState(defaultTemplate: FrameTemplate, initialValues: Re
         getTextModel,
         getTextModelFromState,
         getTextColorPalette,
-        ensureSelectedTextObject,
         setSelectedTextObject,
         resetTextModel,
         addRootTextGroup,
@@ -820,9 +747,6 @@ export function useEditorState(defaultTemplate: FrameTemplate, initialValues: Re
         addTextColor,
         updateTextColor,
         removeTextColor,
-        addCurrentTextColor,
-        selectDefaultTextColor,
-        registerTextObjectUrl,
         releaseAllTextObjectUrls,
         undo,
         redo,

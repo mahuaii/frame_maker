@@ -1,4 +1,3 @@
-import { createTemplateRegistry } from './registry.ts';
 import type { FrameTemplate } from '../../../src/types/template';
 
 type ImportedFrameTemplate = FrameTemplate & {
@@ -60,30 +59,11 @@ export function createImportedTemplateRegistry(builtinTemplates: ImportedFrameTe
             importedTemplates.push(importedTemplate);
             return importedTemplate;
         },
-        removeImportedTemplate(id: string) {
-            const index = importedTemplates.findIndex((template) => template.id === id);
-            if (index >= 0) {
-                const [template] = importedTemplates.splice(index, 1);
-                if (typeof template.releaseAssets === 'function') {
-                    template.releaseAssets();
-                }
-            }
-        },
-        clearImportedTemplates() {
-            importedTemplates.splice(0).forEach((template) => {
-                if (typeof template.releaseAssets === 'function') {
-                    template.releaseAssets();
-                }
-            });
-        },
         get templates() {
             return Object.freeze(getTemplates());
         },
         getTemplateById(id: string) {
             return getTemplates().find((template) => template.id === id);
-        },
-        createRegistry() {
-            return createTemplateRegistry(getTemplates());
         },
     };
 }
