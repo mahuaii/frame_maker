@@ -77,39 +77,6 @@
     font-size: 12px;
 }
 
-.primary-button,
-.secondary-button {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    min-height: 30px;
-    padding: 0 12px;
-    border: 1px solid var(--color-control-border);
-    border-radius: var(--radius-sm);
-    background: var(--color-control-background);
-    color: var(--color-text-primary);
-    font-size: 12px;
-    font-weight: 500;
-    letter-spacing: 0;
-    cursor: pointer;
-    transition: background-color 0.18s ease, border-color 0.18s ease, color 0.18s ease;
-}
-
-.primary-button {
-    border-color: var(--color-control-accent);
-    background: var(--color-control-accent);
-    color: var(--color-white);
-}
-
-.primary-button:hover:not(:disabled) {
-    border-color: var(--color-accent-hover);
-    background: var(--color-accent-hover);
-}
-
-.secondary-button:hover:not(:disabled) {
-    background: var(--color-control-background-hover);
-}
-
 .vue-native-app .template-package-actions {
     display: grid;
     grid-template-columns: repeat(2, minmax(0, 1fr));

@@ -65,33 +65,42 @@
     opacity: 0.42;
 }
 
-.field-reset-button {
+.icon-button {
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    width: 24px;
-    height: 24px;
     border: none;
     padding: 0;
     background: transparent;
-    border-radius: 5px;
-    color: var(--color-control-foreground);
+    border-radius: var(--radius-sm);
+    color: var(--color-text-primary);
     cursor: pointer;
     opacity: 1;
     transition: background-color 0.18s ease, color 0.18s ease;
 }
 
-.field-reset-button:hover {
+.icon-button-sm {
+    width: 24px;
+    height: 24px;
+}
+
+.icon-button-toolbar {
+    width: 42px;
+    min-width: 42px;
+    min-height: 34px;
+}
+
+.icon-button:hover {
     background-color: var(--color-control-background-hover);
     color: var(--color-control-foreground);
 }
 
-.field-reset-button:active {
+.icon-button:active {
     background-color: var(--color-control-background-active);
     color: var(--color-control-foreground);
 }
 
-.field-reset-button svg {
+.icon-button svg {
     width: 12px;
     height: 12px;
     stroke: currentColor;
@@ -99,4 +108,8 @@
     fill: none;
     stroke-linecap: round;
     stroke-linejoin: round;
+}
+
+.field-reset-button {
+    color: var(--color-control-foreground);
 }

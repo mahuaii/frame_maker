@@ -1,5 +1,9 @@
 import {
     FRAME_ASPECT_RATIO_OPTIONS,
+    FRAME_ASPECT_RATIO_FIELD_KEY,
+    FRAME_BORDER_WIDTH_FIELD_KEY,
+    FRAME_SIDE_FIELD_KEYS,
+    FRAME_SIDE_KEYS,
     FREE_FRAME_ASPECT_RATIO,
 } from '../core/templates/frame-layout.ts';
 
@@ -8,15 +12,6 @@ export const defaultFrameFont = {
     size: 2.8,
     min: 12,
 };
-
-const sideFieldDefinitions = {
-    top: { key: 'frameTop' },
-    right: { key: 'frameRight' },
-    bottom: { key: 'frameBottom' },
-    left: { key: 'frameLeft' },
-};
-
-const frameSideControlOrder = ['top', 'right', 'bottom', 'left'];
 
 function getFrameSideDefault(frame: Record<string, any> = {}, control: string) {
     const sides = frame.sides ?? {};
@@ -29,7 +24,7 @@ export function buildFrameLayoutFields(frame: Record<string, any> = {}, {
 } = {}) {
     return [
         {
-            key: 'frameAspectRatio',
+            key: FRAME_ASPECT_RATIO_FIELD_KEY,
             type: 'select',
             defaultValue: aspectRatio,
             normalizeValueKey: 'frameAspectRatio',
@@ -37,7 +32,7 @@ export function buildFrameLayoutFields(frame: Record<string, any> = {}, {
             options: FRAME_ASPECT_RATIO_OPTIONS,
         },
         {
-            key: 'frameBorderWidth',
+            key: FRAME_BORDER_WIDTH_FIELD_KEY,
             type: 'number',
             min: 0,
             max: 100,
@@ -45,18 +40,14 @@ export function buildFrameLayoutFields(frame: Record<string, any> = {}, {
             defaultValue: borderWidth,
             normalizeValueKey: 'frameBorderWidth',
         },
-        ...frameSideControlOrder.map((control) => {
-            const definition = sideFieldDefinitions[control];
-
-            return {
-                key: definition.key,
-                type: 'number',
-                min: 0,
-                max: 80,
-                step: 0.1,
-                defaultValue: getFrameSideDefault(frame, control),
-            };
-        }),
+        ...FRAME_SIDE_KEYS.map((control) => ({
+            key: FRAME_SIDE_FIELD_KEYS[control],
+            type: 'number',
+            min: 0,
+            max: 80,
+            step: 0.1,
+            defaultValue: getFrameSideDefault(frame, control),
+        })),
     ];
 }
 

@@ -120,6 +120,3 @@ export function defineDataTemplate(schema: unknown, options: DataTemplateOptions
         releaseAssets: typeof options.releaseAssets === 'function' ? options.releaseAssets : null,
     } as unknown) as FrameTemplate);
 }
-
-export const DATA_TEMPLATE_FORMAT = TEMPLATE_FORMAT;
-export const DATA_TEMPLATE_FORMAT_VERSION = TEMPLATE_FORMAT_VERSION;

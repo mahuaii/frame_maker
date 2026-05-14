@@ -1,6 +1,12 @@
 <script setup lang="ts">
 import { computed, nextTick, ref, watch } from 'vue';
 import { parseFieldInputValue } from '../../js/core/templates/fields.ts';
+import {
+    normalizeHexDraft,
+    parseColorValue,
+    sanitizeHexDraft,
+    serializeColorValue,
+} from '../utils/colorValue';
 import type { InspectorField, InspectorFieldIconPath, InspectorFieldOption } from '../types/inspector';
 
 type TextRadioPathDefinition = {
@@ -70,7 +76,7 @@ const inputMode = computed(() => props.field.inputMode as
 
 watch(() => fieldValue.value, () => {
     if (props.field.type === 'color') {
-        const parsed = parseColor(fieldValue.value, props.field.defaultValue);
+        const parsed = parseColorValue(fieldValue.value, props.field.defaultValue as string);
         colorHexDraft.value = parsed.hex;
         colorAlphaDraft.value = String(parsed.alpha);
     }
@@ -291,82 +297,12 @@ function endNumberDrag(event: PointerEvent) {
     event.preventDefault();
 }
 
-function toHexChannel(value: unknown) {
-    return Math.round(clampNumber(value, 0, 255)).toString(16).padStart(2, '0').toUpperCase();
-}
-
-function alphaPercentToHex(alpha: unknown) {
-    return toHexChannel((clampNumber(alpha, 0, 100) / 100) * 255);
-}
-
-function alphaHexToPercent(alphaHex: string) {
-    const numericValue = Number.parseInt(alphaHex, 16);
-    return Number.isFinite(numericValue) ? Math.round((numericValue / 255) * 100) : 100;
-}
-
-function sanitizeHex(value: unknown) {
-    return String(value ?? '').trim().replace(/^#/, '').replace(/[^0-9a-f]/gi, '').slice(0, 6).toUpperCase();
-}
-
-function normalizeHex(value: unknown, fallback = '000000') {
-    const compact = sanitizeHex(value);
-    if (compact.length === 3) {
-        return compact.split('').map((character) => character + character).join('');
-    }
-    if (compact.length >= 6) return compact.slice(0, 6);
-    return fallback;
-}
-
-function parseCssAlpha(value: string) {
-    const trimmed = value.trim();
-    if (trimmed.endsWith('%')) return clampNumber(Number.parseFloat(trimmed), 0, 100);
-    return clampNumber(Number.parseFloat(trimmed) * 100, 0, 100);
-}
-
-function parseColor(value: unknown, fallbackValue: unknown = '#000000FF') {
-    if (typeof value !== 'string') {
-        return typeof fallbackValue === 'string' ? parseColor(fallbackValue) : { hex: '000000', alpha: 100 };
-    }
-
-    const trimmed = value.trim();
-    const hexMatch = trimmed.match(/^#?([0-9a-f]{3}|[0-9a-f]{6}|[0-9a-f]{8})$/i);
-    if (hexMatch) {
-        const rawHex = hexMatch[1].toUpperCase();
-        const expanded = rawHex.length === 3
-            ? rawHex.split('').map((character) => character + character).join('')
-            : rawHex;
-        return {
-            hex: expanded.slice(0, 6),
-            alpha: expanded.length === 8 ? alphaHexToPercent(expanded.slice(6, 8)) : 100,
-        };
-    }
-
-    const rgbMatch = trimmed.match(/^rgba?\((.+)\)$/i);
-    if (rgbMatch) {
-        const [red, green, blue, alpha] = rgbMatch[1].split(',').map((part) => part.trim());
-        if (red !== undefined && green !== undefined && blue !== undefined) {
-            return {
-                hex: [toHexChannel(Number.parseFloat(red)), toHexChannel(Number.parseFloat(green)), toHexChannel(Number.parseFloat(blue))].join(''),
-                alpha: alpha !== undefined ? parseCssAlpha(alpha) : 100,
-            };
-        }
-    }
-
-    return typeof fallbackValue === 'string' && fallbackValue !== value
-        ? parseColor(fallbackValue)
-        : { hex: '000000', alpha: 100 };
-}
-
-function serializeColor(hex: unknown, alpha: unknown) {
-    return `#${normalizeHex(hex)}${alphaPercentToHex(alpha)}`;
-}
-
 function commitColor(hex: unknown, alpha: unknown) {
-    const nextHex = normalizeHex(hex, colorHexDraft.value || '000000');
+    const nextHex = normalizeHexDraft(hex, colorHexDraft.value || '000000');
     const nextAlpha = Math.round(clampNumber(alpha, 0, 100));
     colorHexDraft.value = nextHex;
     colorAlphaDraft.value = String(nextAlpha);
-    commit(serializeColor(nextHex, nextAlpha));
+    commit(serializeColorValue(nextHex, nextAlpha));
 }
 
 function openColorPicker(event: MouseEvent) {
@@ -375,13 +311,13 @@ function openColorPicker(event: MouseEvent) {
 }
 
 function optionSwatch(option: InspectorFieldOption) {
-    const parsed = parseColor(option.swatch ?? '#111111');
+    const parsed = parseColorValue(option.swatch ?? '#111111');
     const alpha = option.opacity === undefined || option.opacity === ''
         ? parsed.alpha
         : Number(option.opacity) <= 1
             ? Number(option.opacity) * 100
             : Number(option.opacity);
-    return serializeColor(parsed.hex, alpha);
+    return serializeColorValue(parsed.hex, alpha);
 }
 
 function rangeProgress() {
@@ -608,7 +544,7 @@ function textRadioPathDefinitions(control: string | undefined, value: unknown): 
                     tabindex="-1"
                     aria-hidden="true"
                     :value="`#${colorHexDraft}`"
-                    @input="draft(serializeColor(($event.target as HTMLInputElement).value, colorAlphaDraft))"
+                    @input="draft(serializeColorValue(($event.target as HTMLInputElement).value, colorAlphaDraft))"
                     @change="commitColor(($event.target as HTMLInputElement).value, colorAlphaDraft)"
                 >
                 <button
@@ -619,7 +555,7 @@ function textRadioPathDefinitions(control: string | undefined, value: unknown): 
                 >
                     <span
                         class="color-alpha-swatch"
-                        :style="{ '--color-alpha-swatch-color': serializeColor(colorHexDraft, colorAlphaDraft) }"
+                        :style="{ '--color-alpha-swatch-color': serializeColorValue(colorHexDraft, colorAlphaDraft) }"
                         aria-hidden="true"
                     ></span>
                 </button>
@@ -631,7 +567,7 @@ function textRadioPathDefinitions(control: string | undefined, value: unknown): 
                     autocomplete="off"
                     :aria-label="`${field.label ?? '颜色'} HEX`"
                     :value="colorHexDraft"
-                    @input="($event.target as HTMLInputElement).value = sanitizeHex(($event.target as HTMLInputElement).value)"
+                    @input="($event.target as HTMLInputElement).value = sanitizeHexDraft(($event.target as HTMLInputElement).value)"
                     @change="commitColor(($event.target as HTMLInputElement).value, colorAlphaDraft)"
                     @keydown.enter="commitColor(($event.target as HTMLInputElement).value, colorAlphaDraft)"
                 >
@@ -644,7 +580,7 @@ function textRadioPathDefinitions(control: string | undefined, value: unknown): 
                     inputmode="numeric"
                     :aria-label="`${field.label ?? '颜色'}不透明度`"
                     :value="colorAlphaDraft"
-                    @input="draft(serializeColor(colorHexDraft, ($event.target as HTMLInputElement).value))"
+                    @input="draft(serializeColorValue(colorHexDraft, ($event.target as HTMLInputElement).value))"
                     @change="commitColor(colorHexDraft, ($event.target as HTMLInputElement).value)"
                 >
                 <span class="color-alpha-unit">%</span>
@@ -706,8 +642,8 @@ function textRadioPathDefinitions(control: string | undefined, value: unknown): 
                         @click="commit(option.value)"
                     >
                         <span class="color-option-swatch" aria-hidden="true"></span>
-                        <span class="color-option-value">{{ parseColor(optionSwatch(option)).hex }}</span>
-                        <span class="color-option-opacity">{{ parseColor(optionSwatch(option)).alpha }}</span>
+                        <span class="color-option-value">{{ parseColorValue(optionSwatch(option)).hex }}</span>
+                        <span class="color-option-opacity">{{ parseColorValue(optionSwatch(option)).alpha }}</span>
                         <span class="color-option-unit">%</span>
                     </button>
                 </div>

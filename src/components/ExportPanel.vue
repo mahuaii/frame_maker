@@ -162,7 +162,7 @@ function handleFieldChange(settings: ExportSettings, field: InspectorField, valu
                 @change="(field, value) => handleFieldChange(settings, field, value)"
             />
         </div>
-        <button class="primary-button vue-export-menu-action" type="button" :disabled="disabled" @click="emit('export')">
+        <button class="btn btn-primary vue-export-menu-action" type="button" :disabled="disabled" @click="emit('export')">
             导出 JPG
         </button>
     </div>

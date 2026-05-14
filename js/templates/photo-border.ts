@@ -48,17 +48,3 @@ export function resolvePhotoBorderWidth(rect, widthRatio = 0.0022) {
 
     return Math.max(Math.min(rect.width, rect.height) * resolvedWidthRatio, 1);
 }
-
-export function drawOptionalThinPhotoBorder(ctx, {
-    enabled,
-    rect,
-    color,
-    widthRatio = 0.0022,
-}) {
-    if (!enabled || !rect || !color) {
-        return;
-    }
-
-    const borderWidth = resolvePhotoBorderWidth(rect, widthRatio);
-    drawBeveledPhotoBorder(ctx, rect, borderWidth, color);
-}

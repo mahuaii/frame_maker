@@ -713,8 +713,9 @@ export function useEditorState(defaultTemplate: FrameTemplate, initialValues: Re
     }
 
     return {
-        ...history,
         state,
+        canUndo: history.canUndo,
+        canRedo: history.canRedo,
         activePhotoState,
         selectedTextObjectId,
         addPhoto,
@@ -729,7 +730,6 @@ export function useEditorState(defaultTemplate: FrameTemplate, initialValues: Re
         copyActivePhotoSettings,
         pasteSettingsToActivePhoto,
         applyActivePhotoSettingsToAll,
-        getInitialTemplateTextModel,
         getTextModel,
         getTextModelFromState,
         getTextColorPalette,

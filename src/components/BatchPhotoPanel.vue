@@ -34,11 +34,11 @@ function formatDimensions(photo: PhotoEntry) {
         </div>
         <div class="inspector-section-content">
             <div class="batch-actions inspector-content-contained">
-                <button class="btn-small text-object-action batch-action-button" type="button" :disabled="!activePhotoId" @click="emit('copySettings')">
+                <button class="btn-small inspector-small-button batch-action-button" type="button" :disabled="!activePhotoId" @click="emit('copySettings')">
                 复制设置
                 </button>
                 <button
-                    class="btn-small text-object-action batch-action-button"
+                    class="btn-small inspector-small-button batch-action-button"
                     type="button"
                     :disabled="!activePhotoId || !copiedSettingsAvailable"
                     @click="emit('pasteSettings')"
@@ -46,7 +46,7 @@ function formatDimensions(photo: PhotoEntry) {
                 粘贴设置
                 </button>
                 <button
-                    class="btn-small text-object-action batch-action-button"
+                    class="btn-small inspector-small-button batch-action-button"
                     type="button"
                     :disabled="!activePhotoId || photos.length === 0"
                     @click="emit('applySettingsToAll')"
@@ -67,7 +67,6 @@ function formatDimensions(photo: PhotoEntry) {
                         photo.id === activePhotoId,
                         photoStatesById[photo.id]?.selectedForExport,
                         photo.thumbnailUrl,
-                        photo.objectUrl,
                         photo.name,
                         photo.width,
                         photo.height
@@ -81,7 +80,7 @@ function formatDimensions(photo: PhotoEntry) {
                     @keydown.enter.prevent="emit('selectPhoto', photo.id)"
                     @keydown.space.prevent="emit('selectPhoto', photo.id)"
                 >
-                    <img class="batch-photo-thumbnail" :src="photo.thumbnailUrl || photo.objectUrl" alt="" aria-hidden="true">
+                    <img class="batch-photo-thumbnail" :src="photo.thumbnailUrl" alt="" aria-hidden="true">
                     <span class="batch-photo-info">
                         <span class="batch-photo-name">{{ photo.name ?? '未命名照片' }}</span>
                         <span class="batch-photo-meta">{{ formatDimensions(photo) }}</span>

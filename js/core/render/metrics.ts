@@ -1,14 +1,12 @@
-import { ORIGINAL_FRAME_ASPECT_RATIO, parseFrameAspectRatio } from '../templates/frame-layout.ts';
+import {
+    FRAME_SIDE_FIELD_KEYS,
+    FRAME_SIDE_KEYS,
+    ORIGINAL_FRAME_ASPECT_RATIO,
+    parseFrameAspectRatio,
+} from '../templates/frame-layout.ts';
 import { resolveTemplateConfig } from '../templates/registry.ts';
 
-const FRAME_SIDE_KEYS = ['top', 'right', 'bottom', 'left'];
 const TEXT_REGION_KEYS = ['top', 'right', 'bottom', 'left', 'center'];
-const FRAME_SIDE_FIELD_KEYS = {
-    top: 'frameTop',
-    right: 'frameRight',
-    bottom: 'frameBottom',
-    left: 'frameLeft',
-};
 const ANCHOR_COLUMNS = ['left', 'center', 'right'];
 const ANCHOR_ROWS = ['top', 'middle', 'bottom'];
 
@@ -257,8 +255,7 @@ function buildFixedAspectRatioFrame({ imageWidth, imageHeight, config }) {
     };
 }
 
-export function calculateFrameMetrics(image, template, scale = 1, rawConfig = {}) {
-    const config = resolveTemplateConfig(template, rawConfig);
+export function calculateFrameMetricsFromConfig(image, template, scale = 1, config = {}) {
     const imageWidth = image.naturalWidth;
     const imageHeight = image.naturalHeight;
     const photoRatio = imageWidth / imageHeight;
@@ -348,6 +345,15 @@ export function calculateFrameMetrics(image, template, scale = 1, rawConfig = {}
         scaledAnchors: scaleAnchors(anchors, scale),
         scaledFontSize: fontSize * scale,
     };
+}
+
+export function calculateFrameMetrics(image, template, scale = 1, rawConfig = {}) {
+    return calculateFrameMetricsFromConfig(
+        image,
+        template,
+        scale,
+        resolveTemplateConfig(template, rawConfig)
+    );
 }
 
 export function calculatePreviewScale(image, template, containerWidth, containerHeight, padding = 0.9, rawConfig = {}) {

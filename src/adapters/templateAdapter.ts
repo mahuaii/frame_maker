@@ -23,13 +23,6 @@ export function addImportedTemplate(template: FrameTemplate): FrameTemplate {
     return addImportedTemplateToSharedRegistry(template);
 }
 
-export function getResolvedTemplateConfig(
-    template: FrameTemplate,
-    rawConfig: Record<string, unknown> = {}
-) {
-    return resolveTemplateConfig(template, rawConfig);
-}
-
 export function getInitialTemplateValues(template: FrameTemplate) {
-    return getResolvedTemplateConfig(template, template.defaultConfig ?? {});
+    return resolveTemplateConfig(template, template.defaultConfig ?? {});
 }

@@ -59,27 +59,6 @@ export function defineTemplate(template: FrameTemplate): FrameTemplate {
     });
 }
 
-export function createTemplateRegistry(templateModules: FrameTemplate[]) {
-    const templateMap = new Map<string, FrameTemplate>();
-
-    templateModules.forEach((template) => {
-        if (templateMap.has(template.id)) {
-            throw new Error(`Duplicate template id "${template.id}".`);
-        }
-
-        templateMap.set(template.id, template);
-    });
-
-    const templates = Object.freeze([...templateMap.values()]);
-
-    return {
-        templates,
-        getTemplateById(id) {
-            return templateMap.get(id);
-        },
-    };
-}
-
 export function resolveTemplateConfig(template: FrameTemplate, rawConfig: Record<string, unknown> = {}) {
     return normalizeTemplateConfig(template.fields, {
         ...template.defaultConfig,

@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import { ref } from 'vue';
+import HiddenFileInput from './HiddenFileInput.vue';
 import type { FrameTemplate } from '../types/template';
 
 defineProps<{
@@ -10,8 +12,14 @@ const emit = defineEmits<{
     exportTemplate: [];
 }>();
 
-function pickFile(files: FileList | null) {
-    const file = files?.[0];
+const fileInputRef = ref<InstanceType<typeof HiddenFileInput> | null>(null);
+
+function openFilePicker() {
+    fileInputRef.value?.open();
+}
+
+function pickFile(files: FileList) {
+    const file = files[0];
     if (file) {
         emit('importTemplate', file);
     }
@@ -20,10 +28,14 @@ function pickFile(files: FileList | null) {
 
 <template>
     <div class="template-package-actions">
-        <label class="btn inspector-template-package-button">
+        <button class="btn inspector-template-package-button" type="button" @click="openFilePicker">
             导入模板
-            <input type="file" accept=".zip,.frame-template.zip,application/zip" hidden @change="pickFile(($event.target as HTMLInputElement).files)">
-        </label>
+        </button>
+        <HiddenFileInput
+            ref="fileInputRef"
+            accept=".zip,.frame-template.zip,application/zip"
+            @change="pickFile"
+        />
         <button class="btn inspector-template-package-button" type="button" @click="emit('exportTemplate')">
             导出模板
         </button>

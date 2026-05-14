@@ -2,25 +2,19 @@
 import { computed, reactive, watch } from 'vue';
 import { EDITABLE_EXIF_FIELDS } from '../adapters/exifAdapter';
 import { buildInspectorField } from '../adapters/inspectorFieldAdapter';
+import {
+    FRAME_BORDER_WIDTH_FIELD_KEY,
+    FRAME_LAYOUT_FIELD_KEYS,
+    FRAME_SIDE_FIELD_KEYS,
+    FREE_FRAME_ASPECT_RATIO,
+} from '../../js/core/templates/frame-layout.ts';
 import FieldControl from './FieldControl.vue';
+import ResetIconButton from './ResetIconButton.vue';
 import type { FrameTemplate, TemplateField } from '../types/template';
 import type { InspectorField } from '../types/inspector';
 
-const FREE_FRAME_ASPECT_RATIO = 'free';
-const LAYOUT_FIELD_KEYS = new Set([
-    'frameAspectRatio',
-    'frameBorderWidth',
-    'frameTop',
-    'frameRight',
-    'frameBottom',
-    'frameLeft',
-]);
-const FRAME_SIDE_FIELD_KEYS = new Set([
-    'frameTop',
-    'frameRight',
-    'frameBottom',
-    'frameLeft',
-]);
+const LAYOUT_FIELD_KEYS = new Set(FRAME_LAYOUT_FIELD_KEYS);
+const FRAME_SIDE_TEMPLATE_FIELD_KEYS = new Set<string>(Object.values(FRAME_SIDE_FIELD_KEYS));
 const APPEARANCE_FIELD_KEYS = new Set([
     'colorScheme',
     'showThinBorder',
@@ -61,7 +55,7 @@ const appearanceControlFields = computed(() => (
 ));
 const aspectField = computed(() => layoutFields.value.find((field) => field.key === 'frameAspectRatio'));
 const borderField = computed(() => layoutFields.value.find((field) => field.key === 'frameBorderWidth'));
-const sideFields = computed(() => layoutFields.value.filter((field) => FRAME_SIDE_FIELD_KEYS.has(field.key)));
+const sideFields = computed(() => layoutFields.value.filter((field) => FRAME_SIDE_TEMPLATE_FIELD_KEYS.has(field.key)));
 const aspectControlField = computed(() => (
     aspectField.value ? buildInspectorField(props.template, aspectField.value) : null
 ));
@@ -81,6 +75,16 @@ const primaryExifFields = computed(() => PRIMARY_EXIF_FIELD_KEYS
 const remainingExifFields = computed(() => EDITABLE_EXIF_FIELDS.filter((field) => (
     !PRIMARY_EXIF_FIELD_KEYS.includes(field.key)
 )));
+const exifFieldSections = computed(() => [
+    {
+        className: 'inspector-field-grid inspector-field-grid-contained',
+        fields: primaryExifFields.value,
+    },
+    {
+        className: 'editor-collapsible-content',
+        fields: remainingExifFields.value,
+    },
+]);
 
 watch(() => props.values, () => {
     Object.keys(textDrafts).forEach((key) => {
@@ -97,11 +101,11 @@ function shouldShowTemplateField(field: TemplateField) {
         return false;
     }
 
-    if (field.key === 'frameBorderWidth') {
+    if (field.key === FRAME_BORDER_WIDTH_FIELD_KEY) {
         return !isFreeFrameLayout.value;
     }
 
-    if (FRAME_SIDE_FIELD_KEYS.has(field.key)) {
+    if (FRAME_SIDE_TEMPLATE_FIELD_KEYS.has(field.key)) {
         return isFreeFrameLayout.value;
     }
 
@@ -153,19 +157,13 @@ function commitDraft(field: InspectorField) {
         <section class="inspector-section">
             <header class="inspector-section-header">
                 <h2 class="inspector-section-title">版式</h2>
-                <button
-                    class="field-reset-button inspector-section-reset-button"
-                    type="button"
-                    aria-label="重置版式"
+                <ResetIconButton
+                    class="inspector-section-reset-button"
+                    ariaLabel="重置版式"
                     title="重置版式"
                     :disabled="layoutFieldsWithDefaults.length === 0"
                     @click="emit('resetLayout')"
-                >
-                    <svg viewBox="0 0 16 16" aria-hidden="true" focusable="false">
-                        <path d="M3.2 8a4.8 4.8 0 1 0 1.406-3.394"></path>
-                        <path d="M3.2 3.6v2.4h2.4"></path>
-                    </svg>
-                </button>
+                />
             </header>
             <div class="inspector-section-content">
                 <FieldControl
@@ -208,33 +206,21 @@ function commitDraft(field: InspectorField) {
         <section class="inspector-section">
             <header class="inspector-section-header">
                 <h2 class="inspector-section-title">拍摄信息</h2>
-                <button
-                    class="field-reset-button inspector-section-reset-button"
-                    type="button"
-                    aria-label="重置拍摄信息"
+                <ResetIconButton
+                    class="inspector-section-reset-button"
+                    ariaLabel="重置拍摄信息"
                     title="重置拍摄信息"
                     @click="emit('resetExif')"
-                >
-                    <svg viewBox="0 0 16 16" aria-hidden="true" focusable="false">
-                        <path d="M3.2 8a4.8 4.8 0 1 0 1.406-3.394"></path>
-                        <path d="M3.2 3.6v2.4h2.4"></path>
-                    </svg>
-                </button>
+                />
             </header>
             <div class="inspector-section-content exif-editor-content">
-                <div class="inspector-field-grid inspector-field-grid-contained">
+                <div
+                    v-for="section in exifFieldSections"
+                    :key="section.className"
+                    :class="section.className"
+                >
                     <FieldControl
-                        v-for="field in primaryExifFields"
-                        :key="field.key"
-                        :field="{ ...field, type: field.type ?? 'input', defaultValue: '' }"
-                        :value="exifOverrides[field.key] ?? ''"
-                        id-prefix="field-exif"
-                        @change="(_, value) => emit('updateExif', field.key, String(value ?? ''))"
-                    />
-                </div>
-                <div class="editor-collapsible-content">
-                    <FieldControl
-                        v-for="field in remainingExifFields"
+                        v-for="field in section.fields"
                         :key="field.key"
                         :field="{ ...field, type: field.type ?? 'input', defaultValue: '' }"
                         :value="exifOverrides[field.key] ?? ''"

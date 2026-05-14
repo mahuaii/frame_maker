@@ -31,10 +31,3 @@ export type EditableState = {
     fallbackState: PhotoEditState;
     copiedSettings: CopiedPhotoSettings | null;
 };
-
-export type UiState = {
-    inspectorPanel: 'settings' | 'export';
-    isDraggingFile: boolean;
-    isExporting: boolean;
-    errorMessage: string | null;
-};

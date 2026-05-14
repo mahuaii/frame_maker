@@ -12,7 +12,7 @@ function getExtensionForMimeType(mimeType: string) {
     return 'jpg';
 }
 
-export function buildExportFilename(photoName: string | null, mimeType: string) {
+function buildExportFilename(photoName: string | null, mimeType: string) {
     const extension = getExtensionForMimeType(mimeType);
     const baseName = photoName
         ? photoName.replace(/\.[^.]+$/, '')

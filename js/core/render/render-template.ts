@@ -2,7 +2,7 @@ import { renderTextModel } from '../text/index.ts';
 import { resolveTemplateAppearance, resolveTemplateConfig } from '../templates/registry.ts';
 import { buildTemplateResolveInput, createGlobalRenderSettings } from './input.ts';
 import { copyCanvasInto, setupCanvas } from './canvas.ts';
-import { calculateFrameMetrics } from './metrics.ts';
+import { calculateFrameMetricsFromConfig } from './metrics.ts';
 import { renderDeclarativeOverlays } from './overlays.ts';
 import { applyGlobalPostProcessing } from './post-processing.ts';
 import { drawSurfaceBackground } from './surface.ts';
@@ -16,7 +16,7 @@ export async function renderTemplateFrame(canvas: HTMLCanvasElement, image: HTML
         scale,
         mode: options.mode ?? options.global?.mode ?? 'preview',
     });
-    const layoutMetrics = calculateFrameMetrics(image, template, scale, config);
+    const layoutMetrics = calculateFrameMetricsFromConfig(image, template, scale, config);
     const displayWidth = Math.round(layoutMetrics.fullWidth * scale);
     const displayHeight = Math.round(layoutMetrics.fullHeight * scale);
     const canvasSetup = setupCanvas(canvas, displayWidth, displayHeight, scale);

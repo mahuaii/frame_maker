@@ -11,6 +11,14 @@ const server = await createServer({
 
 try {
     const { useEditorState } = await server.ssrLoadModule('/src/composables/useEditorState.ts');
+    const {
+        normalizeColorValue,
+        normalizeHexDraft,
+        parseColorValue,
+        sanitizeHexDraft,
+        serializeColorValue,
+    } = await server.ssrLoadModule('/src/utils/colorValue.ts');
+    const { FRAME_LAYOUT_FIELD_KEYS } = await server.ssrLoadModule('/js/core/templates/frame-layout.ts');
 
     const alternateTemplate = templates.find((template) => (
         template.id !== defaultTemplate.id && template.textGroups?.length > 0
@@ -43,6 +51,28 @@ try {
         '1:1',
         'field commits should resolve template config for aspect ratio changes'
     );
+    draftEditor.updateField(defaultTemplate, 'showThinBorder', false);
+    draftEditor.updateField(defaultTemplate, 'frameBorderWidth', 32);
+    draftEditor.resetLayoutFields(defaultTemplate, [...FRAME_LAYOUT_FIELD_KEYS], defaultValues);
+    assert.equal(
+        draftEditor.activePhotoState.value.fieldValuesByTemplateId[defaultTemplate.id].frameBorderWidth,
+        defaultValues.frameBorderWidth,
+        'layout reset should restore shared frame layout fields'
+    );
+    assert.equal(
+        draftEditor.activePhotoState.value.fieldValuesByTemplateId[defaultTemplate.id].showThinBorder,
+        false,
+        'layout reset should not touch appearance-only fields'
+    );
+
+    assert.deepEqual(parseColorValue('#abc'), { hex: 'AABBCC', alpha: 100 });
+    assert.deepEqual(parseColorValue('#11223380'), { hex: '112233', alpha: 50 });
+    assert.deepEqual(parseColorValue('rgba(10, 20, 30, 0.25)'), { hex: '0A141E', alpha: 25 });
+    assert.deepEqual(parseColorValue('rgba(10, 20, 30, 40%)'), { hex: '0A141E', alpha: 40 });
+    assert.equal(normalizeColorValue('not-a-color', '#12345678'), '#12345678');
+    assert.equal(sanitizeHexDraft('#1g2h3i4j5k6'), '123456');
+    assert.equal(normalizeHexDraft('abc'), 'AABBCC');
+    assert.equal(serializeColorValue('abcdef', 33), '#ABCDEF54');
 
     editor.addPhoto('photo-a', { make: 'Sony' });
     editor.addPhoto('photo-b', { make: 'Canon' });

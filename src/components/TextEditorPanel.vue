@@ -30,6 +30,8 @@ import {
     type TextEditorField,
 } from '../utils/textModelEditor';
 import FieldControl from './FieldControl.vue';
+import HiddenFileInput from './HiddenFileInput.vue';
+import ResetIconButton from './ResetIconButton.vue';
 import type { InspectorFieldOption } from '../types/inspector';
 import type { FrameTemplate } from '../types/template';
 import type {
@@ -98,7 +100,7 @@ const emit = defineEmits<{
 const pendingDeleteObjectId = ref<string | null>(null);
 const draggingObjectId = ref<string | null>(null);
 const dropTarget = ref<{ targetId: string; position: TextObjectDropPosition } | null>(null);
-const imageInputRef = ref<HTMLInputElement | null>(null);
+const imageInputRef = ref<InstanceType<typeof HiddenFileInput> | null>(null);
 
 const rows = computed(() => flattenTextModel(props.textModel));
 const selectedLocation = computed(() => (
@@ -422,16 +424,14 @@ function isSelectedOption(field: TextEditorField, option: InspectorFieldOption) 
 }
 
 function chooseImage() {
-    imageInputRef.value?.click();
+    imageInputRef.value?.open();
 }
 
-function handleImageSelected(event: Event) {
-    const input = event.target as HTMLInputElement;
-    const file = input.files?.[0];
+function handleImageSelected(files: FileList) {
+    const file = files[0];
     if (file && selectedItem.value?.type === 'image') {
         emit('replaceImage', selectedItem.value.id, file);
     }
-    input.value = '';
 }
 
 function colorTokenRows(tokenField: TextEditorField) {
@@ -562,12 +562,7 @@ function visibilityIconPaths(row: FlatTextObject) {
                 <div class="text-object-tree-header">
                     <span>组 / 项</span>
                     <div class="text-object-tree-actions">
-                        <button class="field-reset-button" type="button" aria-label="重置文本" title="重置文本" @click="emit('resetTextModel')">
-                            <svg viewBox="0 0 16 16" aria-hidden="true" focusable="false">
-                                <path d="M3.2 8a4.8 4.8 0 1 0 1.406-3.394"></path>
-                                <path d="M3.2 3.6v2.4h2.4"></path>
-                            </svg>
-                        </button>
+                        <ResetIconButton ariaLabel="重置文本" title="重置文本" @click="emit('resetTextModel')" />
                         <button class="btn-small text-object-add-button" type="button" @click="emit('addRootGroup')">
                             新增文本组
                         </button>
@@ -606,7 +601,7 @@ function visibilityIconPaths(row: FlatTextObject) {
                                 <span class="text-object-label">{{ getTextObjectDisplayLabel(row.item, row.depth) }}</span>
                             </button>
                             <button
-                                class="text-object-delete-button"
+                                class="icon-button icon-button-sm text-object-delete-button"
                                 :class="{ confirming: pendingDeleteObjectId === row.item.id }"
                                 type="button"
                                 :title="pendingDeleteObjectId === row.item.id ? '再次点击删除' : '删除'"
@@ -619,7 +614,7 @@ function visibilityIconPaths(row: FlatTextObject) {
                                 </svg>
                             </button>
                             <button
-                                class="text-object-visibility-button"
+                                class="icon-button icon-button-sm text-object-visibility-button"
                                 type="button"
                                 :title="row.selfHidden ? '显示' : '隐藏'"
                                 :aria-label="row.selfHidden ? '显示' : '隐藏'"
@@ -847,7 +842,7 @@ function visibilityIconPaths(row: FlatTextObject) {
                         <div class="inspector-section-header">
                             <h2 class="inspector-section-title">颜色</h2>
                             <button
-                                class="text-color-add-button"
+                                class="icon-button icon-button-sm text-color-add-button"
                                 type="button"
                                 aria-label="添加自定义颜色"
                                 title="添加自定义颜色"
@@ -921,7 +916,7 @@ function visibilityIconPaths(row: FlatTextObject) {
                                             </template>
                                         </div>
                                         <button
-                                            class="text-color-row-remove"
+                                            class="icon-button icon-button-sm text-color-row-remove"
                                             type="button"
                                             aria-label="删除自定义颜色"
                                             title="删除自定义颜色"
@@ -937,11 +932,11 @@ function visibilityIconPaths(row: FlatTextObject) {
 
                     <div v-if="selectedItem.type === 'image'" class="image-source-control inspector-content-contained">
                         <div class="field-group-label">{{ objectImageName(selectedItem) }}</div>
-                        <input ref="imageInputRef" type="file" accept="image/*" hidden @change="handleImageSelected">
-                        <button class="secondary-button" type="button" @click="chooseImage">
+                        <HiddenFileInput ref="imageInputRef" accept="image/*" @change="handleImageSelected" />
+                        <button class="btn btn-secondary image-source-button" type="button" @click="chooseImage">
                             {{ selectedItem.source ? '替换图片' : '选择图片' }}
                         </button>
-                        <button class="secondary-button" type="button" :disabled="!selectedItem.source" @click="clearImage">
+                        <button class="btn btn-secondary image-source-button" type="button" :disabled="!selectedItem.source" @click="clearImage">
                             清除图片
                         </button>
                     </div>

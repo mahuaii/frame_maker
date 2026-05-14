@@ -2,6 +2,20 @@ import type { TemplateFieldOption, TemplatePrimitiveValue } from '../../../src/t
 
 export const FREE_FRAME_ASPECT_RATIO = 'free';
 export const ORIGINAL_FRAME_ASPECT_RATIO = 'original';
+export const FRAME_SIDE_KEYS = ['top', 'right', 'bottom', 'left'] as const;
+export const FRAME_SIDE_FIELD_KEYS = Object.freeze({
+    top: 'frameTop',
+    right: 'frameRight',
+    bottom: 'frameBottom',
+    left: 'frameLeft',
+});
+export const FRAME_ASPECT_RATIO_FIELD_KEY = 'frameAspectRatio';
+export const FRAME_BORDER_WIDTH_FIELD_KEY = 'frameBorderWidth';
+export const FRAME_LAYOUT_FIELD_KEYS = Object.freeze([
+    FRAME_ASPECT_RATIO_FIELD_KEY,
+    FRAME_BORDER_WIDTH_FIELD_KEY,
+    ...Object.values(FRAME_SIDE_FIELD_KEYS),
+]);
 
 export const FRAME_ASPECT_RATIO_OPTIONS: TemplateFieldOption[] = [
     { value: FREE_FRAME_ASPECT_RATIO },

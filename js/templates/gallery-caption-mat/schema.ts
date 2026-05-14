@@ -1,7 +1,7 @@
 import { buildDefaultConfig } from '../../core/templates/fields.ts';
 import { buildAppearanceField } from '../../core/templates/appearance.ts';
 import { createSolidAppearanceThemes } from '../appearance-presets.ts';
-import { buildFrameLayoutFields } from '../shared.ts';
+import { buildFrameLayoutFields, buildThinBorderToggleField } from '../shared.ts';
 
 export const galleryCaptionMatAppearanceThemes = createSolidAppearanceThemes({
     white: {
@@ -44,11 +44,10 @@ export const galleryCaptionMatTemplateFields = [
         aspectRatio: '1:1',
         borderWidth: 24,
     }),
-    {
+    buildThinBorderToggleField({
         key: 'showThinBorder',
-        type: 'toggle',
         defaultValue: true,
-    },
+    }),
 ];
 
 export const galleryCaptionMatTemplateSchema = {

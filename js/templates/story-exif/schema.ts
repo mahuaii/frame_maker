@@ -1,7 +1,7 @@
 import { buildDefaultConfig } from '../../core/templates/fields.ts';
 import { buildAppearanceField } from '../../core/templates/appearance.ts';
 import { createSolidAppearanceThemes } from '../appearance-presets.ts';
-import { buildFrameLayoutFields } from '../shared.ts';
+import { buildFrameLayoutFields, defaultFrameFont } from '../shared.ts';
 
 export const storyExifAppearanceThemes = createSolidAppearanceThemes({
     white: {
@@ -34,11 +34,7 @@ export const storyExifFrame = {
         bottom: 14,
         left: 0,
     },
-    font: {
-        basis: 'height',
-        size: 2.8,
-        min: 12,
-    },
+    font: defaultFrameFont,
 };
 
 export const storyExifTemplateFields = [

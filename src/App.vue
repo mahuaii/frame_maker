@@ -8,6 +8,7 @@ import {
 } from './constants/ui';
 import BatchPhotoPanel from './components/BatchPhotoPanel.vue';
 import ExportPanel from './components/ExportPanel.vue';
+import HiddenFileInput from './components/HiddenFileInput.vue';
 import InspectorPanel from './components/InspectorPanel.vue';
 import PreviewCanvas from './components/PreviewCanvas.vue';
 import TemplateList from './components/TemplateList.vue';
@@ -19,6 +20,7 @@ import { exportTemplateZip, importTemplateZip } from './adapters/templatePackage
 import { useEditorState } from './composables/useEditorState';
 import { usePhotoStore } from './composables/usePhotoStore';
 import { useTemplateStore } from './composables/useTemplateStore';
+import { FRAME_LAYOUT_FIELD_KEYS } from '../js/core/templates/frame-layout.ts';
 import type { ExportSettings } from './types/editor';
 import type { FrameTemplate } from './types/template';
 
@@ -37,7 +39,7 @@ const exportSettings = ref<ExportSettings>({
 });
 const activeInspectorPanel = ref<'basic' | 'text' | 'batch'>('basic');
 const exportMenuOpen = ref(false);
-const vueFileInputRef = ref<HTMLInputElement | null>(null);
+const vueFileInputRef = ref<InstanceType<typeof HiddenFileInput> | null>(null);
 const vueAppRef = ref<HTMLElement | null>(null);
 const vueRightPanelRef = ref<HTMLElement | null>(null);
 const inspectorWidth = ref(DEFAULT_INSPECTOR_WIDTH);
@@ -74,7 +76,6 @@ const currentTextModel = computed(() => editor.getTextModel(selectedTemplate.val
 const currentTextColorPalette = computed(() => editor.getTextColorPalette(selectedTemplate.value));
 const defaultFieldValues = computed(() => templateStore.getInitialTemplateValues(selectedTemplate.value));
 const exifOverrides = computed(() => activePhotoEditState.value.exifOverrides);
-const layoutFieldKeys = ['frameTop', 'frameRight', 'frameBottom', 'frameLeft', 'frameBorderWidth', 'frameAspectRatio'];
 const vueAppStyle = computed(() => ({
     '--inspector-width': `${inspectorWidth.value}px`,
 }));
@@ -197,13 +198,7 @@ function updateExportSettings(settings: ExportSettings) {
 }
 
 function triggerVueUpload() {
-    vueFileInputRef.value?.click();
-}
-
-function handleVueFileInputChange(event: Event) {
-    const input = event.target as HTMLInputElement;
-    void handleUpload(input.files ?? []);
-    input.value = '';
+    vueFileInputRef.value?.open();
 }
 
 function setActiveInspectorPanel(panel: 'basic' | 'text' | 'batch') {
@@ -312,7 +307,7 @@ async function handleExport() {
             <div class="inspector-action-area">
                 <div class="inspector-action-row">
                     <button
-                        class="btn inspector-upload-button"
+                        class="btn icon-button icon-button-toolbar inspector-upload-button"
                         type="button"
                         aria-label="上传照片"
                         title="上传照片"
@@ -443,11 +438,11 @@ async function handleExport() {
                     @update-field="(key, value) => editor.updateField(selectedTemplate, key, value)"
                     @draft-field="(key, value) => editor.replaceFieldDraft(selectedTemplate, key, value)"
                     @update-exif="editor.updateExif"
-                    @reset-layout="editor.resetLayoutFields(selectedTemplate, layoutFieldKeys, defaultFieldValues)"
+                    @reset-layout="editor.resetLayoutFields(selectedTemplate, [...FRAME_LAYOUT_FIELD_KEYS], defaultFieldValues)"
                     @reset-exif="editor.resetExif"
                 />
             </div>
         </aside>
-        <input ref="vueFileInputRef" type="file" accept="image/*" multiple hidden @change="handleVueFileInputChange">
+        <HiddenFileInput ref="vueFileInputRef" accept="image/*" multiple @change="handleUpload" />
     </main>
 </template>
