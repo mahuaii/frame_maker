@@ -37,7 +37,7 @@ export async function renderTemplateFrame(canvas: HTMLCanvasElement, image: HTML
             type: null,
             size: null,
         },
-        customText: config,
+        config,
         exifOverrides: options.exifOverrides ?? {},
         global: globalSettings,
     });

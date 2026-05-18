@@ -17,8 +17,7 @@ Frame Maker 是一个基于 Vue 3 + Vite 的相框生成工具。应用入口是
 - `src/types/`：TypeScript 类型定义。
 - `src/utils/`：Vue 文本模型编辑工具。
 - `src/styles/`：Vue 原生 UI 样式入口和模块。
-- `js/renderer.js`：渲染聚合入口，转发 `js/core/render/` 的运行时 API。
-- `js/core/render/`：Canvas 渲染、布局度量、EXIF 输入归一化、导出尺寸计算。
+- `js/core/render/`：Canvas 渲染、布局度量、EXIF 输入归一化、导出尺寸计算和运行时 API。
 - `js/core/templates/`：模板注册、字段归一化、外观主题、配置读写。
 - `js/core/fonts/`：字体注册、字体加载和 Canvas 字体字符串构造。
 - `js/templates.js`：模板注册列表和默认模板。
@@ -157,7 +156,7 @@ Vue 应用中的核心运行状态：
 - `appearanceFieldKey`：外观字段 key，默认 `colorScheme`。
 - `appearanceDefaultKey`：默认外观主题 key。
 - `appearanceThemes`：外观主题对象。存在时必须有对应的外观字段。
-- `resolveData(input)`：把 `photo`、`exif`、`customText`、`global` 转成模板渲染数据。
+- `resolveData(input)`：把 `photo`、`exif`、`config`、`global` 转成模板渲染数据。
 - `renderOverlay(ctx, args)`：绘制声明式背景、照片、文字之外的 overlay，例如细框、信息栏、分隔线。
 
 模板注册在 `js/templates.js`。当前顺序为：
@@ -276,14 +275,14 @@ EXIF 解析位于 `js/core/render/input.js`，当前主要面向 JPEG。可编�
 
 - `photo`：归一化照片对象。
 - `exif`：由右侧拍摄信息编辑值归一化得到；没有任何显式值时为 `null`。
-- `customText`：模板配置，即归一化后的 `fieldValues`。
+- `config`：模板配置，即归一化后的字段值。
 - `global`：全局渲染设置，如 `scale`、`mode`、`resize`、`compression`、`watermark`。
 
 注意：上传图片后，EXIF 原始值会先转为右侧可编辑文本；模板实际读取的是 `exifOverrideValues` 归一化结果。
 
 ## 渲染和导出流程
 
-公共入口是 `renderFrame(canvas, image, template, fieldValues, scaleOrOptions)`，内部调用 `renderTemplateFrame()`。
+公共入口是 `renderTemplateFrame(canvas, image, template, rawConfig, options)`。
 
 渲染顺序：
 

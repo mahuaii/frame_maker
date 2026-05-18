@@ -3,7 +3,7 @@ import {
     createEditableExifOverrideValues,
     createPhotoSource,
     extractExifData,
-} from '../adapters/exifAdapter';
+} from '../../js/core/render/input.ts';
 import {
     createImageThumbnailObjectUrl,
 } from '../../js/core/render/thumbnail.ts';

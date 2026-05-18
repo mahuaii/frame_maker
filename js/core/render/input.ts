@@ -395,14 +395,14 @@ export function createGlobalRenderSettings({
 
 export function buildTemplateResolveInput({
     photo,
-    customText = {},
+    config = {},
     exifOverrides = {},
     global = {},
 }) {
     return {
         photo,
         exif: resolveEditableExif(exifOverrides),
-        customText,
+        config,
         global,
     };
 }

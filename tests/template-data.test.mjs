@@ -6,6 +6,7 @@ import {
     templates,
 } from '../js/templates.ts';
 import { defineDataTemplate, normalizeDataTemplatePackage } from '../js/core/templates/data-template.ts';
+import { buildTemplateResolveInput } from '../js/core/render/input.ts';
 import { createImportedTemplateRegistry } from '../js/core/templates/imported-registry.ts';
 import { exportTemplatePackage, importTemplatePackage } from '../js/core/templates/template-package.ts';
 
@@ -33,6 +34,31 @@ async function readTemplateJsonFromPackage(blob) {
 }
 
 assert.equal(templates.length, 4, 'expected four built-in templates');
+
+const storyResolveInput = buildTemplateResolveInput({
+    photo: {
+        file: null,
+        image: null,
+        width: 0,
+        height: 0,
+        name: null,
+        type: null,
+        size: null,
+    },
+    config: {
+        fallbackNote: 'No capture data',
+    },
+});
+assert.equal(
+    storyResolveInput.config.fallbackNote,
+    'No capture data',
+    'template resolve input should expose current config values'
+);
+assert.equal(
+    Object.hasOwn(storyResolveInput, 'customText'),
+    false,
+    'template resolve input should not expose legacy customText config'
+);
 
 for (const template of templates) {
     const dataTemplate = defineDataTemplate(template);

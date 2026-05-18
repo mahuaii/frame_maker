@@ -131,8 +131,7 @@ frame_maker/
 ├── js/
 │   ├── core/                   # 共享渲染、模板、字体能力
 │   ├── templates/              # 各模板实现
-│   ├── templates.js            # 模板注册表
-│   └── renderer.js             # 渲染入口
+│   └── templates.js            # 模板注册表
 ├── legacy/
 │   ├── css/                    # 旧版原生 UI 样式归档
 │   └── js/                     # 旧版原生 UI 应用归档

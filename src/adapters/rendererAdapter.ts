@@ -1,8 +1,8 @@
 import {
     calculateFrameMetrics,
     calculatePreviewScale,
-} from '../../js/renderer.ts';
-import { renderTemplateFrame } from '../../js/core/render/runtime.ts';
+    renderTemplateFrame,
+} from '../../js/core/render/runtime.ts';
 import type { PhotoEntry } from '../types/photo';
 import type { FrameTemplate } from '../types/template';
 import type { TextModel } from '../types/text';

@@ -90,7 +90,7 @@ export type GlobalRenderSettings = {
 export type TemplateResolveInput = {
     photo: PhotoEntry;
     exif: Record<string, unknown> | null;
-    customText: Record<string, unknown>;
+    config: Record<string, unknown>;
     global: GlobalRenderSettings;
 };
 

@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed, reactive, watch } from 'vue';
-import { EDITABLE_EXIF_FIELDS } from '../adapters/exifAdapter';
+import { EDITABLE_EXIF_FIELDS } from '../../js/core/render/input.ts';
 import { buildInspectorField } from '../adapters/inspectorFieldAdapter';
 import {
     FRAME_BORDER_WIDTH_FIELD_KEY,
