@@ -17,11 +17,11 @@ Frame Maker 是一个基于 Vue 3 + Vite 的相框生成工具。应用入口是
 - `src/types/`：TypeScript 类型定义。
 - `src/utils/`：Vue 文本模型编辑工具。
 - `src/styles/`：Vue 原生 UI 样式入口和模块。
-- `js/core/render/`：Canvas 渲染、布局度量、EXIF 输入归一化、导出尺寸计算和运行时 API。
-- `js/core/templates/`：模板注册、字段归一化、外观主题、配置读写。
-- `js/core/fonts/`：字体注册、字体加载和 Canvas 字体字符串构造。
-- `js/templates.js`：模板注册列表和默认模板。
-- `js/templates/`：模板实现。每个模板通常包含 `schema.js`、`index.js`，按需包含 `render.js` 和 `resolve-data.js`。
+- `js/core/render/`：Canvas 渲染、布局度量、EXIF 输入归一化、导出尺寸计算和运行时 API，当前为 TypeScript 模块。
+- `js/core/templates/`：模板注册、字段归一化、外观主题、模板包和导入注册能力，当前为 TypeScript 模块。
+- `js/core/fonts/`：字体注册、字体加载和 Canvas 字体字符串构造，当前为 TypeScript 模块。
+- `js/templates.ts`：模板注册列表和默认模板。
+- `js/templates/`：模板实现。每个模板通常包含 `schema.ts`、`index.ts`，按需在 `index.ts` 中实现 `resolveData`，或通过 `overlays` 声明照片边框等 overlay。
 - `legacy/`：旧版原生 DOM UI 归档，包含旧 `css/`、`js/app.js`、`js/app/` 和 `js/ui/`；当前 Vue 应用不从该目录加载运行时代码。
 - `assets/fonts/`：字体文件。当前跟踪 MiSans 与 `times.ttf`；`assets/fonts/Angie_Sans_Std.otf` 被 `.gitignore` 排除。
 - `thumbnails/`：模板缩略图。当前跟踪 `.jpg` 缩略图。
@@ -69,6 +69,14 @@ npm run dev -- --port 8001
 ```bash
 npm run build
 ```
+
+本地预览生产构建：
+
+```bash
+npm run preview -- --port 8001
+```
+
+GitHub Pages 部署由 `.github/workflows/deploy-pages.yml` 处理：`main` 分支 push 或手动触发时使用 Node 22，执行 `npm ci`、`npm run test:templates` 和 `npm run build`，再发布 `dist/`。
 
 ## 测试和检查命令
 
@@ -119,7 +127,7 @@ Vue 应用中的核心运行状态：
 
 ## 字段和右侧面板约定
 
-模板字段对象由 `js/core/templates/fields.js` 归一化，常用属性包括：
+模板字段对象由 `js/core/templates/fields.ts` 归一化，常用属性包括：
 
 - `key`：字段键名，必须稳定。
 - `label`：右侧面板显示标签。
@@ -132,7 +140,7 @@ Vue 应用中的核心运行状态：
 
 右侧基础字段分区由 `src/components/InspectorPanel.vue` 的字段 key 判断：
 
-- 版式字段：`frameTop`、`frameRight`、`frameBottom`、`frameLeft`、`frameVerticalSides`、`frameHorizontalSides`
+- 版式字段：`frameAspectRatio`、`frameBorderWidth`、`frameTop`、`frameRight`、`frameBottom`、`frameLeft`
 - 外观字段：`colorScheme`、`showThinBorder`
 - 其他可见模板字段默认进入文本区
 - EXIF 区不来自模板字段，而来自 `EDITABLE_EXIF_FIELDS`
@@ -159,7 +167,7 @@ Vue 应用中的核心运行状态：
 - `resolveData(input)`：把 `photo`、`exif`、`config`、`global` 转成模板渲染数据。
 - `renderOverlay(ctx, args)`：绘制声明式背景、照片、文字之外的 overlay，例如细框、信息栏、分隔线。
 
-模板注册在 `js/templates.js`。当前顺序为：
+模板注册在 `js/templates.ts`。当前顺序为：
 
 ```js
 galleryCaptionMatTemplate,
@@ -168,7 +176,7 @@ bottomInfoBarTemplate,
 storyExifTemplate,
 ```
 
-当前默认模板由 `js/templates.js` 的 `defaultTemplate` 和 Vue 状态初始化共同决定。调整默认模板时要同步检查 `js/templates.js`、`src/composables/useTemplateStore.ts` 和 `src/App.vue` 的初始化链路。
+当前默认模板由 `js/templates.ts` 的 `defaultTemplate` 和 Vue 状态初始化共同决定。调整默认模板时要同步检查 `js/templates.ts`、`src/composables/useTemplateStore.ts` 和 `src/App.vue` 的初始化链路。
 
 ## 模板几何和字段命名
 
@@ -176,16 +184,16 @@ storyExifTemplate,
 
 - `top` / `bottom` 以原照片高度为基准。
 - `left` / `right` 以原照片宽度为基准。
-- `frame.fixedAspectRatio` 可指定整体固定比例，例如 `1:1`。运行时会先按百分比计算四边，再补足宽或高，使最终画布满足目标比例。
+- `frameAspectRatio` 字段可指定整体固定比例，例如 `1:1`。自由比例时使用四边百分比；固定比例时使用 `frameBorderWidth` 结合照片比例补足宽或高，使最终画布满足目标比例。
 
-`buildFrameSideFields(frame, controls)` 用于生成相框边距字段：
+`buildFrameLayoutFields(frame, options)` 用于生成相框比例、固定比例边框宽度和自由比例四边边距字段：
 
 - `top` -> `frameTop`
 - `right` -> `frameRight`
 - `bottom` -> `frameBottom`
 - `left` -> `frameLeft`
-- `verticalSides` -> `frameVerticalSides`
-- `horizontalSides` -> `frameHorizontalSides`
+- `aspectRatio` -> `frameAspectRatio`
+- `borderWidth` -> `frameBorderWidth`
 
 运行时 `calculateFrameMetrics()` 会生成：
 
@@ -204,35 +212,31 @@ storyExifTemplate,
 
 ## 声明式文字约定
 
-`textGroups` 中每组文字常用属性：
+`textGroups` 中每组文字对象当前使用文本模型结构，常用属性：
 
-- `region`：`top`、`right`、`bottom`、`left`，默认 `bottom`。
+- `region`：`top`、`right`、`bottom`、`left`、`center`，默认 `bottom`。
 - `anchor`：使用该 region 的锚点，默认 `center`。
-- `textAlign`：覆盖根据锚点推导的对齐方式。
-- `maxWidthBasis` / `maxWidthRatio`：控制整组文字最大宽度。
-- `gapBasis` / `gapRatio` / `minGap`：控制多行文字间距。
-- `offsetBasis` / `offsetX` / `offsetY` / `offsetXRatio` / `offsetYRatio`：控制相对锚点偏移。
-- `fontId` / `fontIdConfigKey`：字体来源。
-- `fontSizeRatio` / `fontSizeRatioConfigKey` / `minFontSize`：字号缩放和下限。
-- `fontWeight` / `fontWeightConfigKey` / `fontStyle`：字体样式。
-- `colorKey`：从外观主题 `colors` 中读取颜色。
+- `direction`：`vertical` 或 `horizontal`。
+- `align`：`start`、`center`、`end`。
+- `gapScale`：控制组内项目间距。
+- `offsetXScale` / `offsetYScale`：控制相对锚点偏移。
+- `style`：组级文字样式，例如 `fontId`、`fontScale`、`fontWeight`、`fontStyle`、`colorToken`、`color`、`letterSpacingScale`。
+- `items`：组内文字、分隔线或图片项目。
 
-`texts` 中每条文字常用属性：
+`items` 中每条文字常用属性：
 
-- `text`：固定文本。
-- `configPath`：从归一化后的模板配置读取文本。
-- `dataPath`：从 `resolveData()` 返回数据读取文本。
-- `fallbackText`：空文本 fallback。
-- `whenConfig`：配置路径为真时显示。
-- `whenData`：数据路径为真时显示。
+- `type: 'text'`：普通文字项目。
+- `content`：固定文本内容。
+- `fallbackContent`：空文本 fallback。
+- `hideWhenEmptyToken`：用于按数据 token 为空时隐藏。
 - `visible`：显式布尔开关。
-- `colorKeyDataPath`：从数据里读取颜色 token key。
+- `style`：项目级样式，可覆盖组级样式。
 
-声明式文字会自动用 `runtime.fitText()` 在最大宽度内收缩字号。复杂图形、线条或信息栏应放在模板 `render.js` 的 `renderOverlay()` 中。
+声明式文字由 `js/core/text/` 的布局和绘制逻辑处理。复杂图形、线条或信息栏可放在模板 `renderOverlay()` 中；照片边框等通用图形优先使用模板 `overlays` 声明。
 
 ## 外观主题约定
 
-外观主题相关 API 位于 `js/core/templates/appearance.js`：
+外观主题相关 API 位于 `js/core/templates/appearance.ts`：
 
 - `buildAppearanceField(themes)` 生成 `colorScheme` 字段，默认渲染为颜色按钮。
 - `createAppearanceThemes(sharedThemes, themeOverrides)` 合并共享主题和模板覆盖。
@@ -259,7 +263,7 @@ storyExifTemplate,
 
 ## EXIF 和渲染输入
 
-EXIF 解析位于 `js/core/render/input.js`，当前主要面向 JPEG。可编辑字段由 `EDITABLE_EXIF_FIELDS` 固定：
+EXIF 解析位于 `js/core/render/input.ts`，当前主要面向 JPEG。可编辑字段由 `EDITABLE_EXIF_FIELDS` 固定：
 
 - `make`
 - `model`
@@ -321,7 +325,7 @@ EXIF 解析位于 `js/core/render/input.js`，当前主要面向 JPEG。可编�
 - `safeArea(inset)`
 - `drawSurface(area, surface, image)`
 
-导出尺寸由 `js/core/render/sizing.js` 处理：
+导出尺寸由 `js/core/render/sizing.ts` 处理：
 
 - `sizePreset: 'original'` 不缩放。
 - `sizePreset: '1080'` / `'2048'` 按长边缩放。
@@ -331,7 +335,7 @@ EXIF 解析位于 `js/core/render/input.js`，当前主要面向 JPEG。可编�
 
 ## 字体约定
 
-字体注册在 `js/core/fonts/index.js`：
+字体注册在 `js/core/fonts/index.ts`：
 
 - `angieSansStd`：`Angie Sans Std`，资产路径是 `assets/fonts/Angie_Sans_Std.otf`，该文件被忽略，不应提交。
 - `miSans`：`MiSans`，资产路径是 `assets/fonts/MiSans-Regular.woff2`。
@@ -346,18 +350,18 @@ EXIF 解析位于 `js/core/render/input.js`，当前主要面向 JPEG。可编�
 
 新增字体时需要同步检查：
 
-- `js/core/fonts/index.js`
+- `js/core/fonts/index.ts`
 - `src/styles/fonts-local.css`
 - 是否涉及字体授权或私有字体提交限制
 
 ## 新增或修改模板流程
 
 1. 在 `js/templates/<template-id>/` 中创建或修改模板。
-2. 在 `schema.js` 定义 `id`、`appearanceThemes`、`frame`、`textGroups`、`fields`、`defaultConfig`。
-3. 如需把输入数据转为渲染数据，实现 `resolve-data.js` 并在 `index.js` 传入 `resolveData`。
-4. 如需绘制照片、背景和声明式文字之外的图形，实现 `render.js` 并在 `index.js` 传入 `renderOverlay`。
+2. 在 `schema.ts` 定义 `id`、`appearanceThemes`、`frame`、`textGroups`、`fields`、`defaultConfig`。
+3. 如需把输入数据转为渲染数据，在 `index.ts` 中传入 `resolveData`，或按模板目录现有方式拆分后再导入。
+4. 如需绘制照片、背景和声明式文字之外的图形，在 `index.ts` 中传入 `renderOverlay`；照片边框等通用图形优先使用 `overlays` 声明。
 5. 通过 `defineTemplate()` 导出模板。
-6. 在 `js/templates.js` 注册模板，并确认默认模板是否需要调整。
+6. 在 `js/templates.ts` 注册模板，并确认默认模板是否需要调整。
 7. 准备匹配的缩略图 `thumbnails/<template-id>_thumbnail.jpg` 或 `.png`。
 8. 检查新增字段是否会被右侧面板正确分区。
 9. 本地验证上传、模板切换、字段编辑、预览和导出。
@@ -372,14 +376,14 @@ EXIF 解析位于 `js/core/render/input.js`，当前主要面向 JPEG。可编�
 ## 修改代码时的注意事项
 
 - 不要回退用户已有改动。当前项目可能有未提交文件或本地生成文件，修改前先看 `git status --short`。
-- 修改模板后，同时检查 `js/templates.js` 注册顺序、模板 `id`、默认配置和缩略图文件名是否一致。
+- 修改模板后，同时检查 `js/templates.ts` 注册顺序、模板 `id`、默认配置和缩略图文件名是否一致。
 - 新增或调整字段后，检查 `src/components/InspectorPanel.vue` 的基础字段分区逻辑，以及 `src/components/TextEditorPanel.vue` 是否需要配合文本模型能力。
-- 改动布局计算、`frame.sides`、`fixedAspectRatio`、anchors 或文本区域时，要做浏览器渲染验证；若布局校验脚本恢复存在，也运行对应脚本。
+- 改动布局计算、`frame.sides`、`frameAspectRatio`、anchors 或文本区域时，要做浏览器渲染验证；若布局校验脚本恢复存在，也运行对应脚本。
 - 改动缩略图相关逻辑、模板默认外观或模板列表后，按需重建缩略图并确认输出文件。
 - 字体加载同时影响 UI 和 Canvas 导出。字体相关改动要检查本地服务和导出结果。
-- `js/core/templates/config-store.js` 当前 `saveTemplateConfig()` 是空实现；如需持久化用户配置，需要先确认预期存储策略。
-- `render.js` 只处理声明式文字、背景、照片之外的 overlay。不要把可声明的普通文字布局硬写到 overlay。
-- 优先复用 `js/templates/shared.js` 的工具函数，例如 `buildFrameSideFields()`、`buildFontSelectField()`、`buildExifMetaPrimary()`、`buildExifMetaSecondary()`。
+- 当前未发现运行中的模板配置持久化模块；如需持久化用户配置，需要先确认预期存储策略。
+- `renderOverlay()` 只处理声明式文字、背景、照片之外的 overlay。不要把可声明的普通文字布局硬写到 overlay。
+- 优先复用 `js/templates/shared.ts` 的工具函数，例如 `buildFrameLayoutFields()`、`buildThinBorderToggleField()`、`buildExifMetaPrimary()`、`buildExifMetaSecondary()`。
 
 ## 不应该改动的文件或目录
 
@@ -395,7 +399,7 @@ EXIF 解析位于 `js/core/render/input.js`，当前主要面向 JPEG。可编�
 
 - 确认页面能通过本地静态服务器打开。
 - 至少手动验证上传、模板切换、右侧字段编辑、EXIF 编辑、预览和导出 JPG。
-- 确认新增模板已在 `js/templates.js` 注册，并有匹配的 `thumbnails/<template-id>_thumbnail.(png|jpg)`。
+- 确认新增模板已在 `js/templates.ts` 注册，并有匹配的 `thumbnails/<template-id>_thumbnail.(png|jpg)`。
 - 确认没有提交 `.DS_Store`、`.playwright-cli/`、`assets/fonts/Angie_Sans_Std.otf` 或其他本地生成文件。
 - 如后续恢复了布局校验或缩略图脚本，按改动范围运行对应脚本。
 - lint、format、发布检查：当前仍待确认。
