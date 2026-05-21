@@ -10,7 +10,7 @@
     font-size: 14px;
     font-weight: 500;
     cursor: pointer;
-    transition: background-color 0.18s ease, border-color 0.18s ease, box-shadow 0.18s ease;
+    transition: background-color var(--control-transition-duration) ease, border-color var(--control-transition-duration) ease, box-shadow var(--control-transition-duration) ease;
     background: var(--color-toolbar-control);
     backdrop-filter: blur(10px);
     -webkit-backdrop-filter: blur(10px);
@@ -71,7 +71,7 @@
     color: var(--color-text-primary);
     cursor: pointer;
     opacity: 1;
-    transition: background-color 0.18s ease, color 0.18s ease;
+    transition: background-color var(--control-transition-duration) ease, color var(--control-transition-duration) ease;
 }
 
 .icon-button-sm {

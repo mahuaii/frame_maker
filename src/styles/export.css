@@ -35,7 +35,7 @@
     background: var(--color-control-accent);
     color: var(--color-white);
     box-shadow: none;
-    transition: background-color 0.18s ease, border-color 0.18s ease;
+    transition: background-color var(--control-transition-duration) ease, border-color var(--control-transition-duration) ease;
 }
 
 .export-split-button:hover,
@@ -74,7 +74,7 @@
     width: 32px;
     border-left: 1px solid color-mix(in srgb, var(--color-white) 34%, transparent);
     border-radius: 0 calc(var(--radius-sm) - 1px) calc(var(--radius-sm) - 1px) 0;
-    transition: background-color 0.18s ease, border-color 0.18s ease;
+    transition: background-color var(--control-transition-duration) ease, border-color var(--control-transition-duration) ease;
 }
 
 .export-menu-toggle::before {

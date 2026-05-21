@@ -1,7 +1,6 @@
 /* === Option Inputs === */
 .option-input-control {
     --option-input-toggle-width: 24px;
-    --option-input-border-hover: var(--field-frame-border-hover);
     --option-input-toggle-hover-background: color-mix(in srgb, var(--color-gray-dark) 12%, var(--color-gray-light));
 
     position: relative;
@@ -13,34 +12,18 @@
     border: 1px solid var(--field-frame-border);
     border-radius: var(--field-radius);
     background: var(--field-frame-background);
-    transition: border-color 0.18s ease, box-shadow 0.18s ease, background-color 0.18s ease;
-}
-
-.option-input-control::after {
-    content: '';
-    position: absolute;
-    inset: -1px;
-    z-index: 2;
-    border: 1px solid var(--option-input-border-hover);
-    border-radius: var(--field-radius);
-    opacity: 0;
-    pointer-events: none;
+    transition: border-color var(--control-transition-duration) ease, box-shadow var(--control-transition-duration) ease, background-color var(--control-transition-duration) ease;
 }
 
 .option-input-control:hover,
-.option-input-control:focus-within {
-    border-color: var(--field-frame-border);
+.option-input-control.is-open {
+    border-color: var(--field-frame-border-hover);
     background: var(--field-frame-background-hover);
 }
 
 .option-input-control:focus-within {
     border-color: var(--field-frame-border-focus);
     background: var(--field-frame-background-focus);
-}
-
-.option-input-control:hover::after,
-.option-input-control.is-open::after {
-    opacity: 1;
 }
 
 .field-group .option-input-control input {
@@ -77,7 +60,7 @@
     background: transparent;
     color: var(--color-text-secondary);
     cursor: pointer;
-    transition: background-color 0.18s ease, border-color 0.18s ease, color 0.18s ease;
+    transition: background-color var(--control-transition-duration) ease, border-color var(--control-transition-duration) ease, color var(--control-transition-duration) ease;
 }
 
 .option-input-toggle::before {

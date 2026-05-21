@@ -61,7 +61,7 @@
     border-radius: var(--radius-sm);
     box-sizing: border-box;
     cursor: pointer;
-    transition: border-color 0.15s ease, transform 0.15s ease, box-shadow 0.15s ease;
+    transition: border-color var(--control-transition-duration) ease, transform var(--control-transition-duration) ease, box-shadow var(--control-transition-duration) ease;
     background: transparent;
     overflow: hidden;
 }

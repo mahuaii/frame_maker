@@ -1,7 +1,7 @@
 /* === Option Buttons === */
 :root {
-    --option-button-transition: border-color 0.15s ease, background-color 0.15s ease, box-shadow 0.15s ease;
-    --icon-option-button-transition: var(--option-button-transition), color 0.15s ease;
+    --option-button-transition: border-color var(--control-transition-duration) ease, background-color var(--control-transition-duration) ease, box-shadow var(--control-transition-duration) ease;
+    --icon-option-button-transition: var(--option-button-transition), color var(--control-transition-duration) ease;
 }
 
 .option-button-group {

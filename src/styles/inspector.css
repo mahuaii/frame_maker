@@ -56,7 +56,7 @@
     line-height: 24px;
     letter-spacing: 0;
     cursor: pointer;
-    transition: background-color 0.18s ease, color 0.18s ease;
+    transition: background-color var(--control-transition-duration) ease, color var(--control-transition-duration) ease;
 }
 
 .inspector-panel-tab:hover {
@@ -180,7 +180,7 @@
     width: 1px;
     background: transparent;
     transform: translateX(-50%);
-    transition: background-color 0.18s ease;
+    transition: background-color var(--control-transition-duration) ease;
 }
 
 .inspector-resizer:hover::before,
@@ -226,7 +226,7 @@ body.is-resizing-inspector {
 .inspector-section-reset-button {
     flex: 0 0 auto;
     margin: -3px 0;
-    transition: color 0.18s ease;
+    transition: color var(--control-transition-duration) ease;
 }
 
 .inspector-section-content {
@@ -431,7 +431,7 @@ body.is-resizing-inspector {
     opacity: 0.92;
     line-height: 1;
     user-select: none;
-    transition: background-color 0.18s ease, color 0.18s ease;
+    transition: background-color var(--control-transition-duration) ease, color var(--control-transition-duration) ease;
 }
 
 .editor-collapsible-summary::-webkit-details-marker {
@@ -450,7 +450,7 @@ body.is-resizing-inspector {
     border-bottom: 1.5px solid currentColor;
     transform: rotate(-45deg) translateY(-1px);
     transform-origin: center;
-    transition: transform 0.18s ease;
+    transition: transform var(--control-transition-duration) ease;
     opacity: 0.72;
 }
 
@@ -911,9 +911,11 @@ body.is-resizing-inspector {
 }
 
 .text-color-row {
+    --text-color-row-columns: 26px minmax(0, 1fr) 38px 16px;
+
     position: relative;
     display: grid;
-    grid-template-columns: 26px minmax(0, 1fr) 38px 16px;
+    grid-template-columns: var(--text-color-row-columns);
     align-items: center;
     width: 100%;
     height: var(--field-height);
@@ -925,11 +927,7 @@ body.is-resizing-inspector {
     color: var(--color-text-primary);
     cursor: pointer;
     overflow: hidden;
-    transition: border-color 0.18s ease, background-color 0.18s ease;
-}
-
-.text-color-row-custom {
-    grid-template-columns: 26px minmax(0, 1fr) 38px 16px;
+    transition: border-color var(--control-transition-duration) ease, box-shadow var(--control-transition-duration) ease, background-color var(--control-transition-duration) ease;
 }
 
 .text-color-row::after {
@@ -988,6 +986,10 @@ body.is-resizing-inspector {
 
 .text-color-opacity {
     text-align: right;
+}
+
+.text-color-value {
+    text-align: left;
 }
 
 .text-color-unit {

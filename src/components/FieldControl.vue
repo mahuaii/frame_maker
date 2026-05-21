@@ -683,7 +683,7 @@ function textRadioPathDefinitions(control: string | undefined, value: unknown): 
                 <button
                     v-for="option in field.options ?? []"
                     :key="optionValue(option)"
-                    class="nine-grid-picker-button"
+                    class="picker-radio-button nine-grid-picker-button"
                     :class="{ selected: isSelected(option) }"
                     type="button"
                     role="radio"
@@ -711,7 +711,7 @@ function textRadioPathDefinitions(control: string | undefined, value: unknown): 
                 <button
                     v-for="option in field.options ?? []"
                     :key="optionValue(option)"
-                    class="frame-region-picker-button"
+                    class="picker-radio-button frame-region-picker-button"
                     :class="[`frame-region-picker-${option.value}`, { selected: isSelected(option) }]"
                     type="button"
                     role="radio"

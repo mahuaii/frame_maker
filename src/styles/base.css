@@ -47,6 +47,7 @@
     --radius-md: var(--radius-sm);
     --radius-lg: var(--radius-sm);
     --radius-pill: var(--radius-sm);
+    --control-transition-duration: 0.15s;
     --toolbar-control-height: 34px;
     --inspector-default-width: 360px;
 
