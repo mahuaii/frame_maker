@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict';
 import { zipSync, unzipSync, strFromU8, strToU8 } from 'fflate';
 import {
+    addImportedTemplate as addSharedImportedTemplate,
     getTemplateById as getSharedTemplateById,
     getTemplates as getSharedTemplates,
     templates,
@@ -117,24 +118,13 @@ assert.equal(importedOne.id, `${templates[0].id}--imported-1`);
 assert.equal(importedTwo.id, `${templates[0].id}--imported-2`);
 assert.equal(registry.templates.length, 6);
 
-const adapter = await import('../src/adapters/templateAdapter.ts');
 const sharedTemplateCount = getSharedTemplates().length;
-const importedViaAdapter = adapter.addImportedTemplate(templates[0]);
+const importedViaSharedRegistry = addSharedImportedTemplate(templates[0]);
 
 assert.equal(
-    getSharedTemplateById(importedViaAdapter.id),
-    importedViaAdapter,
-    'Vue template adapter should add templates to the shared template registry'
-);
-assert.equal(
-    adapter.getTemplateById(importedViaAdapter.id),
-    importedViaAdapter,
-    'Vue template adapter should read templates from the shared template registry'
-);
-assert.deepEqual(
-    adapter.getAllTemplates().map((template) => template.id),
-    getSharedTemplates().map((template) => template.id),
-    'Vue template adapter and shared template module should expose the same template list'
+    getSharedTemplateById(importedViaSharedRegistry.id),
+    importedViaSharedRegistry,
+    'shared template registry should expose imported templates by id'
 );
 assert.equal(getSharedTemplates().length, sharedTemplateCount + 1);
 

@@ -1,5 +1,6 @@
 import { nextTick, onBeforeUnmount, ref, watch, type Ref } from 'vue';
-import { renderPreviewCanvas } from '../adapters/rendererAdapter';
+import { calculatePreviewScale } from '../../js/core/render/metrics.ts';
+import { renderTemplateFrame } from '../../js/core/render/render-template.ts';
 import type { PhotoEntry } from '../types/photo';
 import type { FrameTemplate } from '../types/template';
 import type { TextModel } from '../types/text';
@@ -38,14 +39,21 @@ export function useRenderer({
 
         isRendering.value = true;
         try {
-            await renderPreviewCanvas({
-                canvas,
+            const scale = calculatePreviewScale(
+                currentPhoto.image,
+                currentTemplate,
+                container.clientWidth,
+                container.clientHeight,
+                0.9,
+                fieldValues.value
+            );
+
+            await renderTemplateFrame(canvas, currentPhoto.image, currentTemplate, fieldValues.value, {
+                scale,
                 photo: currentPhoto,
-                template: currentTemplate,
-                fieldValues: fieldValues.value,
                 exifOverrides: exifOverrides.value,
                 textModel: textModel.value,
-                container,
+                mode: 'preview',
             });
         } finally {
             isRendering.value = false;

@@ -46,7 +46,6 @@ export function usePhotoStore() {
                 name: photoSource.name,
                 type: photoSource.type,
                 size: photoSource.size,
-                originalExif,
             };
 
             photos.value = [...photos.value, entry];

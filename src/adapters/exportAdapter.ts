@@ -1,6 +1,6 @@
-import { renderTemplateFrame } from '../../js/core/render/runtime.ts';
+import { calculateFrameMetrics } from '../../js/core/render/metrics.ts';
+import { renderTemplateFrame } from '../../js/core/render/render-template.ts';
 import { resolveResizeDimensions } from '../../js/core/render/sizing.ts';
-import { getBaseFrameDimensions } from './rendererAdapter';
 import type { ExportSettings } from '../types/editor';
 import type { PhotoEntry } from '../types/photo';
 import type { FrameTemplate } from '../types/template';
@@ -49,7 +49,11 @@ export async function exportCurrentPhoto({
     textModel?: TextModel;
     settings: ExportSettings;
 }) {
-    const baseDimensions = getBaseFrameDimensions(photo, template, fieldValues);
+    const metrics = calculateFrameMetrics(photo.image, template, 1, fieldValues);
+    const baseDimensions = {
+        width: metrics.fullWidth,
+        height: metrics.fullHeight,
+    };
     const resize = resolveResizeDimensions({
         sizePreset: settings.sizePreset,
         customWidth: settings.customWidth,

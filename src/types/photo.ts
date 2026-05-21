@@ -9,5 +9,4 @@ export type PhotoEntry = {
     name: string | null;
     type: string | null;
     size: number | null;
-    originalExif: unknown | null;
 };

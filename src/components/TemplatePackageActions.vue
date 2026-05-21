@@ -1,11 +1,6 @@
 <script setup lang="ts">
 import { ref } from 'vue';
 import HiddenFileInput from './HiddenFileInput.vue';
-import type { FrameTemplate } from '../types/template';
-
-defineProps<{
-    template: FrameTemplate;
-}>();
 
 const emit = defineEmits<{
     importTemplate: [file: File];

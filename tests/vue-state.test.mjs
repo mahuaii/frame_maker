@@ -1,7 +1,11 @@
 import assert from 'node:assert/strict';
 import { createServer } from 'vite';
 import { defaultTemplate, templates } from '../js/templates.ts';
-import { getInitialTemplateValues } from '../src/adapters/templateAdapter.ts';
+import { resolveTemplateConfig } from '../js/core/templates/registry.ts';
+
+function getInitialTemplateValues(template) {
+    return resolveTemplateConfig(template, template.defaultConfig ?? {});
+}
 
 const server = await createServer({
     server: { middlewareMode: true },

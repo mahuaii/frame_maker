@@ -1,30 +1,33 @@
 import { computed, ref } from 'vue';
 import {
     addImportedTemplate,
-    getAllTemplates,
-    getDefaultTemplate,
-    getInitialTemplateValues,
+    defaultTemplate,
     getTemplateById,
-} from '../adapters/templateAdapter';
+    getTemplates,
+} from '../../js/templates.ts';
+import { resolveTemplateConfig } from '../../js/core/templates/registry.ts';
 import type { FrameTemplate } from '../types/template';
 
 export function useTemplateStore() {
     const refreshIndex = ref(0);
-    const defaultTemplate = getDefaultTemplate();
 
     const templates = computed(() => {
         refreshIndex.value;
-        return getAllTemplates();
+        return [...getTemplates()];
     });
 
     function findTemplate(id: string | null) {
-        return getTemplateById(id) ?? defaultTemplate;
+        return id ? getTemplateById(id) ?? defaultTemplate : defaultTemplate;
     }
 
     function registerImportedTemplate(template: FrameTemplate) {
         const imported = addImportedTemplate(template);
         refreshIndex.value += 1;
         return imported;
+    }
+
+    function getInitialTemplateValues(template: FrameTemplate) {
+        return resolveTemplateConfig(template, template.defaultConfig ?? {});
     }
 
     return {

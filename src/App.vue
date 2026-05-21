@@ -16,11 +16,12 @@ import TemplatePackageActions from './components/TemplatePackageActions.vue';
 import TextEditorPanel from './components/TextEditorPanel.vue';
 import UndoRedoToolbar from './components/UndoRedoToolbar.vue';
 import { downloadBlob, exportCurrentPhoto } from './adapters/exportAdapter';
-import { exportTemplateZip, importTemplateZip } from './adapters/templatePackageAdapter';
+import { exportTemplateZip } from './adapters/templatePackageAdapter';
 import { useEditorState } from './composables/useEditorState';
 import { usePhotoStore } from './composables/usePhotoStore';
 import { useTemplateStore } from './composables/useTemplateStore';
 import { FRAME_LAYOUT_FIELD_KEYS } from '../js/core/templates/frame-layout.ts';
+import { importTemplatePackage } from '../js/core/templates/template-package.ts';
 import type { ExportSettings } from './types/editor';
 import type { FrameTemplate } from './types/template';
 
@@ -209,7 +210,7 @@ function setActiveInspectorPanel(panel: 'basic' | 'text' | 'batch') {
 async function handleImportTemplate(file: File) {
     uiState.errorMessage = null;
     try {
-        const { template } = await importTemplateZip(file);
+        const { template } = await importTemplatePackage(file);
         const importedTemplate = templateStore.registerImportedTemplate(template);
         selectTemplate(importedTemplate);
     } catch (error) {
@@ -351,7 +352,6 @@ async function handleExport() {
                     </div>
                 </div>
                 <TemplatePackageActions
-                    :template="selectedTemplate"
                     @import-template="handleImportTemplate"
                     @export-template="handleExportTemplate"
                 />

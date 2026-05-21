@@ -1,7 +1,4 @@
-import {
-    exportTemplatePackage,
-    importTemplatePackage,
-} from '../../js/core/templates/template-package.ts';
+import { exportTemplatePackage } from '../../js/core/templates/template-package.ts';
 import type { FrameTemplate } from '../types/template';
 
 function getBuiltinThumbnailUrl(template: FrameTemplate) {
@@ -34,8 +31,4 @@ export async function exportTemplateZip(template: FrameTemplate) {
         blob,
         filename: `${template.id}.frame-template.zip`,
     };
-}
-
-export async function importTemplateZip(file: File) {
-    return importTemplatePackage(file);
 }
