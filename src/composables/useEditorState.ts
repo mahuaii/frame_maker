@@ -536,27 +536,62 @@ export function useEditorState(defaultTemplate: FrameTemplate, initialValues: Re
     ) {
         commitActiveTemplateTextState(template, (textModel) => (
             moveTextObjectById(textModel, sourceId, targetId, position) ? undefined : false
-        ), {
-            nextSelectedId: sourceId,
-        });
+        ));
+    }
+
+    function buildTextObjectFieldState(
+        template: FrameTemplate,
+        objectId: string,
+        fieldKey: string,
+        nextValue: unknown
+    ) {
+        const photoId = state.value.activePhotoId;
+        const targetState = getPhotoState(state.value, photoId);
+        const textModel = cloneEditorTextModel(getTextModelFromState(targetState, template));
+        const current = findTextObjectById(textModel, objectId);
+        if (!current) {
+            return null;
+        }
+
+        if (fieldKey === 'style.fontId') {
+            setTextObjectFontId(current.item, String(nextValue));
+        } else {
+            setTextObjectFieldValue(current.item, fieldKey, nextValue);
+        }
+
+        const nextPhotoState: PhotoEditState = {
+            ...targetState,
+            textModelsByTemplateId: {
+                ...targetState.textModelsByTemplateId,
+                [template.id]: cloneEditorTextModel(textModel),
+            },
+        };
+
+        return withPhotoState(state.value, photoId, nextPhotoState);
     }
 
     function updateTextObjectField(template: FrameTemplate, objectId: string, fieldKey: string, nextValue: unknown) {
-        commitActiveTemplateTextState(template, (textModel) => {
-            const current = findTextObjectById(textModel, objectId);
-            if (!current) {
-                return false;
-            }
+        const nextState = buildTextObjectFieldState(template, objectId, fieldKey, nextValue);
+        if (!nextState) {
+            return;
+        }
 
-            if (fieldKey === 'style.fontId') {
-                setTextObjectFontId(current.item, String(nextValue));
-                return;
-            }
+        commitState(nextState);
+        selectedTextObjectId.value = objectId;
+    }
 
-            setTextObjectFieldValue(current.item, fieldKey, nextValue);
-        }, {
-            nextSelectedId: objectId,
-        });
+    function replaceTextObjectFieldDraft(template: FrameTemplate, objectId: string, fieldKey: string, nextValue: unknown) {
+        const nextState = buildTextObjectFieldState(template, objectId, fieldKey, nextValue);
+        if (!nextState) {
+            return;
+        }
+
+        if (!draftBaseline) {
+            draftBaseline = cloneJson(state.value);
+        }
+
+        history.replacePresent(nextState);
+        selectedTextObjectId.value = objectId;
     }
 
     function replaceTextImageSource(
@@ -741,6 +776,7 @@ export function useEditorState(defaultTemplate: FrameTemplate, initialValues: Re
         deleteTextObject,
         moveTextObject,
         updateTextObjectField,
+        replaceTextObjectFieldDraft,
         replaceTextImageFile,
         clearTextImageSource,
         selectTextColor,

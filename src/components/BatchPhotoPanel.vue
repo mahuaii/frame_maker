@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { computed } from 'vue';
+import CheckboxControl from './CheckboxControl.vue';
 import type { PhotoEditState } from '../types/editor';
 import type { PhotoEntry } from '../types/photo';
 
@@ -34,11 +35,11 @@ function formatDimensions(photo: PhotoEntry) {
         </div>
         <div class="inspector-section-content">
             <div class="batch-actions inspector-content-contained">
-                <button class="btn-small inspector-small-button batch-action-button" type="button" :disabled="!activePhotoId" @click="emit('copySettings')">
+                <button class="btn-small batch-action-button" type="button" :disabled="!activePhotoId" @click="emit('copySettings')">
                 复制设置
                 </button>
                 <button
-                    class="btn-small inspector-small-button batch-action-button"
+                    class="btn-small batch-action-button"
                     type="button"
                     :disabled="!activePhotoId || !copiedSettingsAvailable"
                     @click="emit('pasteSettings')"
@@ -46,7 +47,7 @@ function formatDimensions(photo: PhotoEntry) {
                 粘贴设置
                 </button>
                 <button
-                    class="btn-small inspector-small-button batch-action-button"
+                    class="btn-small batch-action-button"
                     type="button"
                     :disabled="!activePhotoId || photos.length === 0"
                     @click="emit('applySettingsToAll')"
@@ -85,16 +86,13 @@ function formatDimensions(photo: PhotoEntry) {
                         <span class="batch-photo-name">{{ photo.name ?? '未命名照片' }}</span>
                         <span class="batch-photo-meta">{{ formatDimensions(photo) }}</span>
                     </span>
-                    <span class="checkbox-field batch-photo-check-wrap" @click.stop>
-                        <input
-                            class="batch-photo-checkbox"
-                            type="checkbox"
-                            :checked="photoStatesById[photo.id]?.selectedForExport ?? false"
-                            :aria-label="`选择导出 ${photo.name ?? '照片'}`"
-                            @click.stop
-                            @change="emit('toggleExport', photo.id, ($event.target as HTMLInputElement).checked)"
-                    >
-                    </span>
+                    <CheckboxControl
+                        class-name="batch-photo-check-wrap"
+                        :checked="photoStatesById[photo.id]?.selectedForExport ?? false"
+                        :aria-label="`选择导出 ${photo.name ?? '照片'}`"
+                        @click.stop
+                        @change="emit('toggleExport', photo.id, $event)"
+                    />
                 </div>
             </div>
         </div>

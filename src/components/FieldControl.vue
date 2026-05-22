@@ -7,6 +7,7 @@ import {
     sanitizeHexDraft,
     serializeColorValue,
 } from '../utils/colorValue';
+import CheckboxControl from './CheckboxControl.vue';
 import type { InspectorField, InspectorFieldIconPath, InspectorFieldOption } from '../types/inspector';
 
 type TextRadioPathDefinition = {
@@ -367,19 +368,14 @@ function textRadioPathDefinitions(control: string | undefined, value: unknown): 
 
 <template>
     <fieldset :class="groupClass">
-        <label
+        <CheckboxControl
             v-if="field.type === 'toggle'"
-            class="checkbox-field"
-        >
-            <input
-                :id="fieldId"
-                type="checkbox"
-                :data-field-key="field.key"
-                :checked="Boolean(fieldValue)"
-                @change="commit(($event.target as HTMLInputElement).checked)"
-            >
-            <span v-if="displayLabel">{{ displayLabel }}</span>
-        </label>
+            :checked="Boolean(fieldValue)"
+            :label="displayLabel"
+            :input-id="fieldId"
+            :data-field-key="field.key"
+            @change="commit"
+        />
 
         <template v-else>
             <label

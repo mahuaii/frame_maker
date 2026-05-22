@@ -205,69 +205,14 @@
 }
 
 .color-option-row {
-    position: relative;
-    --field-frame-background: var(--color-control-background-muted);
-    --field-frame-background-hover: var(--color-control-background-hover);
-    --field-frame-border: var(--color-control-background-muted);
-    --field-frame-border-hover: var(--color-field-border-hover);
-    --field-frame-divider: var(--color-white);
-    display: grid;
-    grid-template-columns: 26px minmax(0, 1fr) 38px 16px;
-    align-items: center;
-    width: 100%;
-    height: var(--field-height);
-    min-height: var(--field-height);
-    padding: 0 6px 0 var(--field-inline-padding);
-    border-color: var(--field-frame-border);
-    border-radius: var(--field-radius);
-    background: var(--field-frame-background);
-    color: var(--color-text-primary);
     text-align: left;
 }
 
-.color-option-row::after {
-    content: '';
-    position: absolute;
-    top: 1px;
-    bottom: 1px;
-    right: 60px;
-    width: 1px;
-    background: var(--field-frame-divider);
-    pointer-events: none;
-}
-
-.color-option-row:hover {
-    border-color: var(--field-frame-border-hover);
-    background: var(--field-frame-background-hover);
-}
-
 .color-option-swatch {
-    width: 18px;
-    height: 18px;
-    border-radius: calc(var(--field-radius) - 1px);
     background-color: var(--option-swatch);
-}
-
-.color-option-value,
-.color-option-opacity,
-.color-option-unit {
-    overflow: hidden;
-    color: var(--color-text-primary);
-    font-size: var(--field-font-size);
-    font-weight: 400;
-    letter-spacing: 0;
-    line-height: 1;
-    text-overflow: ellipsis;
-    white-space: nowrap;
 }
 
 .color-option-opacity {
     padding-left: 4px;
     border-left: 0;
-    text-align: right;
-}
-
-.color-option-unit {
-    color: var(--color-text-secondary);
-    text-align: right;
 }

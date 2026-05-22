@@ -83,6 +83,7 @@
     width: 42px;
     min-width: 42px;
     min-height: 34px;
+    --icon-button-icon-size: 20px;
 }
 
 .icon-button:hover {
@@ -96,10 +97,10 @@
 }
 
 .icon-button svg {
-    width: 12px;
-    height: 12px;
+    width: var(--icon-button-icon-size, 12px);
+    height: var(--icon-button-icon-size, 12px);
     stroke: currentColor;
-    stroke-width: 1.35;
+    stroke-width: var(--icon-button-stroke-width, 1.35);
     fill: none;
     stroke-linecap: round;
     stroke-linejoin: round;

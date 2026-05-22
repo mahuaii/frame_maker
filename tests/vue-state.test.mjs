@@ -69,6 +69,47 @@ try {
         'layout reset should not touch appearance-only fields'
     );
 
+    const textFieldDraftEditor = useEditorState(defaultTemplate, getInitialTemplateValues(defaultTemplate));
+    textFieldDraftEditor.addPhoto('text-field-draft-photo', {});
+    const titleItem = textFieldDraftEditor.getTextModel(defaultTemplate)[0]?.items?.[0];
+    assert.ok(titleItem, 'expected a default text item for text field draft coverage');
+    const originalTitle = titleItem.content;
+    textFieldDraftEditor.replaceTextObjectFieldDraft(defaultTemplate, titleItem.id, 'content', 'Draft title');
+    textFieldDraftEditor.replaceTextObjectFieldDraft(defaultTemplate, titleItem.id, 'content', 'Final title');
+    assert.equal(
+        textFieldDraftEditor.canUndo.value,
+        false,
+        'draft text object field updates should preview without entering edit history'
+    );
+    textFieldDraftEditor.updateTextObjectField(defaultTemplate, titleItem.id, 'content', 'Final title');
+    assert.equal(
+        textFieldDraftEditor.canUndo.value,
+        true,
+        'committing a drafted text object field should enter history once'
+    );
+    textFieldDraftEditor.undo();
+    assert.equal(
+        textFieldDraftEditor.getTextModel(defaultTemplate)[0]?.items?.[0]?.content,
+        originalTitle,
+        'undo should restore the text object value before the draft interaction'
+    );
+
+    const dragEditor = useEditorState(defaultTemplate, getInitialTemplateValues(defaultTemplate));
+    dragEditor.addPhoto('drag-photo', {});
+    const dragRoot = dragEditor.getTextModel(defaultTemplate)[0];
+    assert.ok(dragRoot, 'expected a root text group for drag selection coverage');
+    dragEditor.addTextObject(defaultTemplate, dragRoot.id, 'separator');
+    const draggedObjectId = dragEditor.selectedTextObjectId.value;
+    dragEditor.addTextObject(defaultTemplate, dragRoot.id, 'image');
+    const targetObjectId = dragEditor.selectedTextObjectId.value;
+    dragEditor.setSelectedTextObject(dragRoot.id);
+    dragEditor.moveTextObject(defaultTemplate, draggedObjectId, targetObjectId, 'after');
+    assert.equal(
+        dragEditor.selectedTextObjectId.value,
+        dragRoot.id,
+        'dragging a text object should keep the previous selection'
+    );
+
     assert.deepEqual(parseColorValue('#abc'), { hex: 'AABBCC', alpha: 100 });
     assert.deepEqual(parseColorValue('#11223380'), { hex: '112233', alpha: 50 });
     assert.deepEqual(parseColorValue('rgba(10, 20, 30, 0.25)'), { hex: '0A141E', alpha: 25 });

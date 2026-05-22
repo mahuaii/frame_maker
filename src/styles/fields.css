@@ -137,8 +137,8 @@
     background: transparent;
 }
 
-.color-alpha-control {
-    position: relative;
+.color-alpha-control,
+.color-option-row {
     --field-frame-background: var(--color-control-background-muted);
     --field-frame-background-hover: var(--color-control-background-hover);
     --field-frame-background-focus: var(--color-control-background-muted);
@@ -146,6 +146,14 @@
     --field-frame-border-hover: var(--color-field-border-hover);
     --field-frame-border-focus: var(--color-field-border-focus);
     --field-frame-divider: var(--color-white);
+}
+
+.field-group .color-alpha-control,
+.field-group .color-option-row,
+.text-color-panel .text-color-row {
+    --color-row-swatch-size: 18px;
+
+    position: relative;
     display: grid;
     grid-template-columns: 26px minmax(0, 1fr) 38px 16px;
     align-items: center;
@@ -155,31 +163,36 @@
     padding: 0 6px 0 var(--field-inline-padding);
     border: 1px solid var(--field-frame-border);
     border-radius: var(--field-radius);
-    background-color: var(--field-frame-background);
+    background: var(--field-frame-background);
     color: var(--color-text-primary);
     overflow: hidden;
-    transition: border-color var(--control-transition-duration) ease, background-color var(--control-transition-duration) ease;
+    transition: border-color var(--control-transition-duration) ease, box-shadow var(--control-transition-duration) ease, background-color var(--control-transition-duration) ease;
 }
 
-.color-alpha-control::after {
+.field-group .color-alpha-control::after,
+.field-group .color-option-row::after,
+.text-color-panel .text-color-row::after {
     content: '';
     position: absolute;
     top: 1px;
-    bottom: 1px;
     right: 60px;
+    bottom: 1px;
     width: 1px;
     background: var(--field-frame-divider);
     pointer-events: none;
 }
 
-.color-alpha-control:hover {
+.field-group .color-alpha-control:hover,
+.field-group .color-option-row:hover,
+.text-color-panel .text-color-row:hover,
+.text-color-panel .text-color-row:focus-visible {
     border-color: var(--field-frame-border-hover);
-    background-color: var(--field-frame-background-hover);
+    background: var(--field-frame-background-hover);
 }
 
 .color-alpha-control:focus-within {
     border-color: var(--field-frame-border-focus);
-    background-color: var(--field-frame-background-focus);
+    background: var(--field-frame-background-focus);
 }
 
 .field-group input.color-alpha-native-input[type="color"] {
@@ -199,8 +212,8 @@
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    width: 18px;
-    height: 18px;
+    width: var(--color-row-swatch-size);
+    height: var(--color-row-swatch-size);
     min-height: 0;
     padding: 0;
     border: 0;
@@ -209,15 +222,22 @@
     cursor: pointer;
 }
 
-.color-alpha-swatch {
-    width: 100%;
-    height: 100%;
+.color-alpha-swatch,
+.color-option-swatch,
+.text-color-swatch {
+    width: var(--color-row-swatch-size);
+    height: var(--color-row-swatch-size);
     border-radius: calc(var(--field-radius) - 1px);
+}
+
+.color-alpha-swatch {
     background-color: var(--color-alpha-swatch-color, #000000ff);
 }
 
 .field-group .color-alpha-control .color-alpha-hex-input,
-.field-group .color-alpha-control .color-alpha-opacity-input {
+.field-group .color-alpha-control .color-alpha-opacity-input,
+.text-color-panel .text-color-row input.text-color-hex-input,
+.text-color-panel .text-color-row input.text-color-alpha-input {
     width: 100% !important;
     min-width: 0;
     height: calc(var(--field-height) - 2px) !important;
@@ -227,16 +247,23 @@
     border-radius: 0 !important;
     background: transparent !important;
     box-shadow: none !important;
+    outline: none;
     color: var(--color-text-primary);
     font-size: var(--field-font-size);
+    font-weight: 400;
+    letter-spacing: 0;
     line-height: 1;
 }
 
 .field-group .color-alpha-control .color-alpha-hex-input:hover,
 .field-group .color-alpha-control .color-alpha-hex-input:focus,
 .field-group .color-alpha-control .color-alpha-opacity-input:hover,
-.field-group .color-alpha-control .color-alpha-opacity-input:focus {
-    border: 0;
+.field-group .color-alpha-control .color-alpha-opacity-input:focus,
+.text-color-panel .text-color-row input.text-color-hex-input:hover,
+.text-color-panel .text-color-row input.text-color-hex-input:focus,
+.text-color-panel .text-color-row input.text-color-alpha-input:hover,
+.text-color-panel .text-color-row input.text-color-alpha-input:focus {
+    border: 0 !important;
     background: transparent !important;
     box-shadow: none !important;
 }
@@ -268,6 +295,31 @@
     -webkit-appearance: none;
 }
 
+.color-option-value,
+.color-option-opacity,
+.color-option-unit,
+.text-color-value,
+.text-color-opacity,
+.text-color-unit {
+    min-width: 0;
+    overflow: hidden;
+    color: var(--color-text-primary);
+    font-size: var(--field-font-size);
+    font-weight: 400;
+    letter-spacing: 0;
+    line-height: 1;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.color-option-opacity,
+.text-color-opacity,
+.color-alpha-opacity-input {
+    text-align: right;
+}
+
+.color-option-unit,
+.text-color-unit,
 .color-alpha-unit {
     color: var(--color-text-secondary);
     font-size: var(--field-font-size);

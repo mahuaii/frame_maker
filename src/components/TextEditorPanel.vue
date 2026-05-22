@@ -30,6 +30,7 @@ import {
     type TextEditorField,
 } from '../utils/textModelEditor';
 import FieldControl from './FieldControl.vue';
+import CheckboxControl from './CheckboxControl.vue';
 import HiddenFileInput from './HiddenFileInput.vue';
 import ResetIconButton from './ResetIconButton.vue';
 import type { InspectorFieldOption } from '../types/inspector';
@@ -81,6 +82,7 @@ const emit = defineEmits<{
     deleteObject: [objectId: string];
     moveObject: [sourceId: string, targetId: string, position: TextObjectDropPosition];
     updateField: [objectId: string, fieldKey: string, value: unknown];
+    draftField: [objectId: string, fieldKey: string, value: unknown];
     replaceImage: [objectId: string, file: File];
     clearImage: [objectId: string];
     selectColor: [objectId: string, tokenFieldKey: string, colorFieldKey: string, token: string, color: string];
@@ -272,6 +274,14 @@ function updateField(field: TextEditorField, value: unknown) {
     emit('updateField', selectedItem.value.id, field.key, normalizeFieldInputValue(field, value));
 }
 
+function draftField(field: TextEditorField, value: unknown) {
+    if (!selectedItem.value) {
+        return;
+    }
+
+    emit('draftField', selectedItem.value.id, field.key, normalizeFieldInputValue(field, value));
+}
+
 function getFieldByKey(fields: TextEditorField[], key: string) {
     return fields.find((field) => field.key === key) ?? null;
 }
@@ -415,8 +425,8 @@ function shouldRenderCompact(field: TextEditorField) {
     ].includes(field.key);
 }
 
-function updateToggleAction(field: TextEditorField, event: Event) {
-    updateField(field, (event.target as HTMLInputElement).checked);
+function updateToggleAction(field: TextEditorField, checked: boolean) {
+    updateField(field, checked);
 }
 
 function isSelectedOption(field: TextEditorField, option: InspectorFieldOption) {
@@ -665,26 +675,23 @@ function visibilityIconPaths(row: FlatTextObject) {
                             :value="fieldValue(field)"
                             :id-prefix="`text-${selectedItem.id}`"
                             @change="updateField"
-                            @input="updateField"
+                            @input="draftField"
                         />
                     </div>
 
                     <section v-if="layoutFields.length" class="inspector-section">
                         <div class="inspector-section-header">
                             <h2 class="inspector-section-title">{{ selectedItem.type === 'separator' ? '分隔线' : '布局' }}</h2>
-                            <label
+                            <CheckboxControl
                                 v-if="layoutHeaderActionField"
-                                class="text-section-checkbox-action checkbox-field"
+                                class-name="text-section-checkbox-action"
+                                label-class-name="text-section-checkbox-action-label"
+                                label="强制显示"
                                 title="强制显示"
                                 aria-label="强制显示"
-                            >
-                                <span class="text-section-checkbox-action-label">强制显示</span>
-                                <input
-                                    type="checkbox"
-                                    :checked="Boolean(fieldValue(layoutHeaderActionField))"
-                                    @change="updateToggleAction(layoutHeaderActionField, $event)"
-                                >
-                            </label>
+                                :checked="Boolean(fieldValue(layoutHeaderActionField))"
+                                @change="updateToggleAction(layoutHeaderActionField, $event)"
+                            />
                         </div>
                         <div class="inspector-section-content text-object-sectioned-fields">
                             <template v-for="(block, blockIndex) in layoutFieldBlocks" :key="`${block.type}-${blockIndex}`">
@@ -697,7 +704,7 @@ function visibilityIconPaths(row: FlatTextObject) {
                                     :compact-title="compactTitle(block.field)"
                                     :label="compactLabel(block.field)"
                                     @change="updateField"
-                                    @input="updateField"
+                                    @input="draftField"
                                 />
 
                                 <div
@@ -711,7 +718,7 @@ function visibilityIconPaths(row: FlatTextObject) {
                                         :value="fieldValue(field)"
                                         :id-prefix="`text-${selectedItem.id}`"
                                         @change="updateField"
-                                        @input="updateField"
+                                        @input="draftField"
                                     />
                                 </div>
 
@@ -730,7 +737,7 @@ function visibilityIconPaths(row: FlatTextObject) {
                                             compact
                                             :label="compactLabel(field)"
                                             @change="updateField"
-                                            @input="updateField"
+                                            @input="draftField"
                                         />
                                     </div>
                                 </div>
@@ -749,7 +756,7 @@ function visibilityIconPaths(row: FlatTextObject) {
                                         :compact-title="compactTitle(field)"
                                         :label="compactLabel(field)"
                                         @change="updateField"
-                                        @input="updateField"
+                                        @input="draftField"
                                     />
                                 </div>
                             </template>
@@ -759,19 +766,16 @@ function visibilityIconPaths(row: FlatTextObject) {
                     <section v-if="fontFields.length" class="inspector-section">
                         <div class="inspector-section-header">
                             <h2 class="inspector-section-title">字体</h2>
-                            <label
+                            <CheckboxControl
                                 v-if="fontHeaderActionField"
-                                class="text-section-checkbox-action checkbox-field"
+                                class-name="text-section-checkbox-action"
+                                label-class-name="text-section-checkbox-action-label"
+                                label="覆盖"
                                 title="字体覆盖"
                                 aria-label="字体覆盖"
-                            >
-                                <span class="text-section-checkbox-action-label">覆盖</span>
-                                <input
-                                    type="checkbox"
-                                    :checked="Boolean(fieldValue(fontHeaderActionField))"
-                                    @change="updateToggleAction(fontHeaderActionField, $event)"
-                                >
-                            </label>
+                                :checked="Boolean(fieldValue(fontHeaderActionField))"
+                                @change="updateToggleAction(fontHeaderActionField, $event)"
+                            />
                         </div>
                         <div class="inspector-section-content text-object-sectioned-fields">
                             <template v-for="(block, blockIndex) in fontFieldBlocks" :key="`${block.type}-${blockIndex}`">
@@ -784,7 +788,7 @@ function visibilityIconPaths(row: FlatTextObject) {
                                     :compact-title="compactTitle(block.field)"
                                     :label="compactLabel(block.field)"
                                     @change="updateField"
-                                    @input="updateField"
+                                    @input="draftField"
                                 />
 
                                 <div
@@ -798,7 +802,7 @@ function visibilityIconPaths(row: FlatTextObject) {
                                         :id-prefix="`text-${selectedItem.id}`"
                                         label=""
                                         @change="updateField"
-                                        @input="updateField"
+                                        @input="draftField"
                                     />
                                     <div
                                         v-if="block.variantFields.length"
@@ -812,7 +816,7 @@ function visibilityIconPaths(row: FlatTextObject) {
                                             :id-prefix="`text-${selectedItem.id}`"
                                             label=""
                                             @change="updateField"
-                                            @input="updateField"
+                                            @input="draftField"
                                         />
                                     </div>
                                 </div>
@@ -831,7 +835,7 @@ function visibilityIconPaths(row: FlatTextObject) {
                                         :compact-title="compactTitle(field)"
                                         :label="compactLabel(field)"
                                         @change="updateField"
-                                        @input="updateField"
+                                        @input="draftField"
                                     />
                                 </div>
                             </template>

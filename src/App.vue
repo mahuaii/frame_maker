@@ -42,7 +42,7 @@ const activeInspectorPanel = ref<'basic' | 'text' | 'batch'>('basic');
 const exportMenuOpen = ref(false);
 const vueFileInputRef = ref<InstanceType<typeof HiddenFileInput> | null>(null);
 const vueAppRef = ref<HTMLElement | null>(null);
-const vueRightPanelRef = ref<HTMLElement | null>(null);
+const inspectorSidebarRef = ref<HTMLElement | null>(null);
 const inspectorWidth = ref(DEFAULT_INSPECTOR_WIDTH);
 const activeResizePointerId = ref<number | null>(null);
 const uiState = reactive({
@@ -96,7 +96,7 @@ function getInspectorMaxWidth() {
     );
 }
 
-function clampVueInspectorWidth(width: number) {
+function clampInspectorWidth(width: number) {
     if (!Number.isFinite(width)) {
         return DEFAULT_INSPECTOR_WIDTH;
     }
@@ -107,11 +107,11 @@ function clampVueInspectorWidth(width: number) {
     );
 }
 
-function setVueInspectorWidth(width: number) {
-    inspectorWidth.value = clampVueInspectorWidth(width);
+function setInspectorWidth(width: number) {
+    inspectorWidth.value = clampInspectorWidth(width);
 }
 
-function stopVueInspectorResize() {
+function stopInspectorResize() {
     if (activeResizePointerId.value === null) {
         return;
     }
@@ -120,7 +120,7 @@ function stopVueInspectorResize() {
     document.body.classList.remove('is-resizing-inspector');
 }
 
-function handleVueInspectorResizePointerDown(event: PointerEvent) {
+function handleInspectorResizePointerDown(event: PointerEvent) {
     if (event.button !== 0) {
         return;
     }
@@ -129,20 +129,20 @@ function handleVueInspectorResizePointerDown(event: PointerEvent) {
     event.preventDefault();
     activeResizePointerId.value = event.pointerId;
     resizeStartX = event.clientX;
-    resizeStartWidth = vueRightPanelRef.value?.getBoundingClientRect().width ?? inspectorWidth.value;
+    resizeStartWidth = inspectorSidebarRef.value?.getBoundingClientRect().width ?? inspectorWidth.value;
     target.setPointerCapture(event.pointerId);
     document.body.classList.add('is-resizing-inspector');
 }
 
-function handleVueInspectorResizePointerMove(event: PointerEvent) {
+function handleInspectorResizePointerMove(event: PointerEvent) {
     if (event.pointerId !== activeResizePointerId.value) {
         return;
     }
 
-    setVueInspectorWidth(resizeStartWidth + resizeStartX - event.clientX);
+    setInspectorWidth(resizeStartWidth + resizeStartX - event.clientX);
 }
 
-function handleVueInspectorResizeKeyDown(event: KeyboardEvent) {
+function handleInspectorResizeKeyDown(event: KeyboardEvent) {
     if (event.key !== 'ArrowLeft' && event.key !== 'ArrowRight') {
         return;
     }
@@ -150,17 +150,17 @@ function handleVueInspectorResizeKeyDown(event: KeyboardEvent) {
     event.preventDefault();
     const direction = event.key === 'ArrowLeft' ? 1 : -1;
     const step = event.shiftKey ? 32 : 12;
-    const currentWidth = vueRightPanelRef.value?.getBoundingClientRect().width ?? inspectorWidth.value;
-    setVueInspectorWidth(currentWidth + direction * step);
+    const currentWidth = inspectorSidebarRef.value?.getBoundingClientRect().width ?? inspectorWidth.value;
+    setInspectorWidth(currentWidth + direction * step);
 }
 
 function handleWindowResize() {
-    setVueInspectorWidth(inspectorWidth.value);
+    setInspectorWidth(inspectorWidth.value);
 }
 
 onMounted(() => {
     window.addEventListener('resize', handleWindowResize);
-    setVueInspectorWidth(DEFAULT_INSPECTOR_WIDTH);
+    setInspectorWidth(DEFAULT_INSPECTOR_WIDTH);
 });
 
 onBeforeUnmount(() => {
@@ -297,14 +297,14 @@ async function handleExport() {
             :aria-valuemax="getInspectorMaxWidth()"
             :aria-valuenow="inspectorWidth"
             tabindex="0"
-            @pointerdown="handleVueInspectorResizePointerDown"
-            @pointermove="handleVueInspectorResizePointerMove"
-            @pointerup="stopVueInspectorResize"
-            @pointercancel="stopVueInspectorResize"
-            @keydown="handleVueInspectorResizeKeyDown"
+            @pointerdown="handleInspectorResizePointerDown"
+            @pointermove="handleInspectorResizePointerMove"
+            @pointerup="stopInspectorResize"
+            @pointercancel="stopInspectorResize"
+            @keydown="handleInspectorResizeKeyDown"
         ></div>
 
-        <aside ref="vueRightPanelRef" class="vue-native-right-panel text-editor">
+        <aside ref="inspectorSidebarRef" class="inspector-sidebar inspector-shell">
             <div class="inspector-action-area">
                 <div class="inspector-action-row">
                     <button
@@ -422,6 +422,7 @@ async function handleExport() {
                     @delete-object="(objectId) => editor.deleteTextObject(selectedTemplate, objectId)"
                     @move-object="(sourceId, targetId, position) => editor.moveTextObject(selectedTemplate, sourceId, targetId, position)"
                     @update-field="(objectId, fieldKey, value) => editor.updateTextObjectField(selectedTemplate, objectId, fieldKey, value)"
+                    @draft-field="(objectId, fieldKey, value) => editor.replaceTextObjectFieldDraft(selectedTemplate, objectId, fieldKey, value)"
                     @replace-image="(objectId, file) => editor.replaceTextImageFile(selectedTemplate, objectId, file)"
                     @clear-image="(objectId) => editor.clearTextImageSource(selectedTemplate, objectId)"
                     @select-color="(objectId, tokenFieldKey, colorFieldKey, token, color) => editor.selectTextColor(selectedTemplate, objectId, tokenFieldKey, colorFieldKey, token, color)"
