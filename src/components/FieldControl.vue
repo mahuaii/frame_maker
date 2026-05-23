@@ -60,7 +60,7 @@ const dragHandlePaths = computed(() => normalizeIconPaths(props.field.dragHandle
 ]));
 const groupClass = computed(() => [
     'field-group',
-    props.compact ? 'field-group-compact' : '',
+    props.compact ? 'field-density-compact field-frame-gray' : '',
     props.field.groupClassName ?? '',
 ].filter(Boolean).join(' '));
 const inputMode = computed(() => props.field.inputMode as
@@ -532,7 +532,7 @@ function textRadioPathDefinitions(control: string | undefined, value: unknown): 
 
             <div
                 v-else-if="field.type === 'color'"
-                class="color-alpha-control"
+                class="color-alpha-control color-row-control"
             >
                 <input
                     class="color-alpha-native-input"
@@ -550,13 +550,13 @@ function textRadioPathDefinitions(control: string | undefined, value: unknown): 
                     @click="openColorPicker"
                 >
                     <span
-                        class="color-alpha-swatch"
+                        class="color-alpha-swatch color-row-swatch"
                         :style="{ '--color-alpha-swatch-color': serializeColorValue(colorHexDraft, colorAlphaDraft) }"
                         aria-hidden="true"
                     ></span>
                 </button>
                 <input
-                    class="color-alpha-hex-input"
+                    class="color-alpha-hex-input color-row-input color-row-value-input"
                     type="text"
                     maxlength="6"
                     inputmode="text"
@@ -568,7 +568,7 @@ function textRadioPathDefinitions(control: string | undefined, value: unknown): 
                     @keydown.enter="commitColor(($event.target as HTMLInputElement).value, colorAlphaDraft)"
                 >
                 <input
-                    class="color-alpha-opacity-input"
+                    class="color-alpha-opacity-input color-row-input color-row-opacity-input"
                     type="number"
                     min="0"
                     max="100"
@@ -579,7 +579,7 @@ function textRadioPathDefinitions(control: string | undefined, value: unknown): 
                     @input="draft(serializeColorValue(colorHexDraft, ($event.target as HTMLInputElement).value))"
                     @change="commitColor(colorHexDraft, ($event.target as HTMLInputElement).value)"
                 >
-                <span class="color-alpha-unit">%</span>
+                <span class="color-alpha-unit color-row-unit">%</span>
             </div>
 
             <div
@@ -627,7 +627,7 @@ function textRadioPathDefinitions(control: string | undefined, value: unknown): 
                     class="color-option-grid-row"
                 >
                     <button
-                        class="option-button color-option-row"
+                        class="option-button color-option-row color-row-control"
                         :class="{ selected: isSelected(option) }"
                         type="button"
                         role="radio"
@@ -637,10 +637,10 @@ function textRadioPathDefinitions(control: string | undefined, value: unknown): 
                         :style="{ '--option-swatch': optionSwatch(option) }"
                         @click="commit(option.value)"
                     >
-                        <span class="color-option-swatch" aria-hidden="true"></span>
-                        <span class="color-option-value">{{ parseColorValue(optionSwatch(option)).hex }}</span>
-                        <span class="color-option-opacity">{{ parseColorValue(optionSwatch(option)).alpha }}</span>
-                        <span class="color-option-unit">%</span>
+                        <span class="color-option-swatch color-row-swatch" aria-hidden="true"></span>
+                        <span class="color-option-value color-row-value">{{ parseColorValue(optionSwatch(option)).hex }}</span>
+                        <span class="color-option-opacity color-row-opacity">{{ parseColorValue(optionSwatch(option)).alpha }}</span>
+                        <span class="color-option-unit color-row-unit">%</span>
                     </button>
                 </div>
             </div>

@@ -250,7 +250,7 @@ body.is-resizing-inspector {
 .batch-photo-card {
     position: relative;
     display: grid;
-    grid-template-columns: 48px minmax(0, 1fr) 20px;
+    grid-template-columns: minmax(0, 1fr) 20px;
     gap: 10px;
     align-items: center;
     width: 100%;
@@ -262,7 +262,6 @@ body.is-resizing-inspector {
     color: var(--color-text-primary);
     font: inherit;
     text-align: left;
-    cursor: pointer;
 }
 
 .batch-photo-card:hover {
@@ -279,15 +278,35 @@ body.is-resizing-inspector {
     border-color: var(--color-accent);
 }
 
-.batch-photo-card:focus-visible {
+.batch-photo-select-button {
+    display: grid;
+    grid-template-columns: 48px minmax(0, 1fr);
+    gap: 10px;
+    align-items: center;
+    min-width: 0;
+    min-height: 48px;
+    padding: 0;
+    border: 0;
+    border-radius: var(--radius-sm);
+    background: transparent;
+    color: inherit;
+    font: inherit;
+    text-align: left;
+    cursor: pointer;
+}
+
+.batch-photo-select-button:focus-visible {
     outline: 2px solid var(--color-field-focus-ring);
     outline-offset: 2px;
+}
+
+.batch-photo-check-cell {
+    justify-self: end;
 }
 
 .batch-photo-check-wrap {
     --field-radius: 5px;
 
-    justify-self: end;
     width: 16px;
     min-height: 16px;
 }
@@ -328,11 +347,11 @@ body.is-resizing-inspector {
     line-height: 1.25;
 }
 
-.inspector-field-grid-contained {
+.inspector-field-contained {
     padding: 0 var(--inspector-inline-padding, 16px);
 }
 
-.field-group>.inspector-field-grid-contained {
+.field-group>.inspector-field-contained {
     padding-inline: 0;
 }
 
@@ -340,7 +359,7 @@ body.is-resizing-inspector {
     padding-inline: var(--inspector-inline-padding, 16px);
 }
 
-.inspector-field-grid-contained .field-group {
+.inspector-field-contained .field-group {
     padding-inline: 0;
 }
 
@@ -365,7 +384,7 @@ body.is-resizing-inspector {
     margin: 0 0 var(--settings-field-gap);
 }
 
-.inspector-shell .btn {
+.inspector-shell .btn:not(.icon-button) {
     min-height: 30px;
     padding: 0 12px;
     gap: 6px;
@@ -377,56 +396,7 @@ body.is-resizing-inspector {
     height: 16px;
 }
 
-.editor-collapsible-section {
-    display: flex;
-    flex-direction: column;
-    gap: 12px;
-}
-
-.editor-collapsible-summary {
-    position: relative;
-    display: inline-flex;
-    align-items: center;
-    gap: 8px;
-    list-style: none;
-    cursor: pointer;
-    width: fit-content;
-    font-size: 11px;
-    font-weight: 500;
-    color: var(--color-text-secondary);
-    letter-spacing: 0.12em;
-    text-transform: uppercase;
-    opacity: 0.92;
-    line-height: 1;
-    user-select: none;
-    transition: background-color var(--control-transition-duration) ease, color var(--control-transition-duration) ease;
-}
-
-.editor-collapsible-summary::-webkit-details-marker {
-    display: none;
-}
-
-.editor-collapsible-summary:hover {
-    color: var(--color-text-primary);
-}
-
-.editor-collapsible-summary::before {
-    content: '';
-    width: 7px;
-    height: 7px;
-    border-right: 1.5px solid currentColor;
-    border-bottom: 1.5px solid currentColor;
-    transform: rotate(-45deg) translateY(-1px);
-    transform-origin: center;
-    transition: transform var(--control-transition-duration) ease;
-    opacity: 0.72;
-}
-
-.editor-collapsible-section[open] .editor-collapsible-summary::before {
-    transform: rotate(45deg) translateY(-1px);
-}
-
-.editor-collapsible-content {
+.inspector-field-stack {
     display: flex;
     flex-direction: column;
     gap: 0;
@@ -487,10 +457,6 @@ body.is-resizing-inspector {
     display: inline-flex;
     align-items: center;
     gap: 6px;
-}
-
-.text-object-action.danger {
-    color: #b91c1c;
 }
 
 .text-object-tree-list {
@@ -686,7 +652,7 @@ body.is-resizing-inspector {
 }
 
 .text-object-delete-button.confirming {
-    color: #b91c1c;
+    color: var(--color-danger);
 }
 
 .text-object-delete-button:hover,
@@ -711,7 +677,7 @@ body.is-resizing-inspector {
 .text-object-delete-button.confirming,
 .text-object-delete-button.confirming:hover,
 .text-object-delete-button.confirming:focus-visible {
-    color: #b91c1c;
+    color: var(--color-danger);
 }
 
 .text-object-empty {
@@ -727,10 +693,6 @@ body.is-resizing-inspector {
     display: flex;
     flex-wrap: wrap;
     gap: 6px;
-}
-
-.text-object-properties .editor-collapsible-content {
-    gap: 0;
 }
 
 .text-group-anchor-layout {

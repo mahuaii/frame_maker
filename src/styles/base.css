@@ -11,6 +11,10 @@
     --color-control-background-active: color-mix(in srgb, var(--color-gray-light) 90%, var(--color-gray-dark));
     --color-control-foreground: var(--color-gray-dark);
     --color-control-accent: var(--color-accent);
+    --color-danger: #b91c1c;
+    --color-error: #b42318;
+    --color-error-border: color-mix(in srgb, var(--color-error) 34%, var(--color-white));
+    --color-error-background: #fff7f6;
 
     --color-bg-primary: var(--color-gray-light);
     --color-bg-secondary: var(--color-gray-light);

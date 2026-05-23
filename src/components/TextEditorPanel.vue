@@ -709,7 +709,7 @@ function visibilityIconPaths(row: FlatTextObject) {
 
                                 <div
                                     v-else-if="block.type === 'anchor'"
-                                    class="text-group-anchor-layout inspector-field-grid-contained"
+                                    class="text-group-anchor-layout inspector-field-contained"
                                 >
                                     <FieldControl
                                         v-for="field in block.fields"
@@ -724,7 +724,7 @@ function visibilityIconPaths(row: FlatTextObject) {
 
                                 <div
                                     v-else-if="block.type === 'offset'"
-                                    class="text-object-offset-fields inspector-field-grid-contained"
+                                    class="text-object-offset-fields inspector-field-contained"
                                 >
                                     <div class="field-group-label">偏移</div>
                                     <div class="inspector-field-grid text-object-offset-grid">
@@ -744,7 +744,7 @@ function visibilityIconPaths(row: FlatTextObject) {
 
                                 <div
                                     v-else-if="block.type === 'grid'"
-                                    class="inspector-field-grid inspector-field-grid-contained"
+                                    class="inspector-field-grid inspector-field-contained"
                                 >
                                     <FieldControl
                                         v-for="field in block.fields"
@@ -823,7 +823,7 @@ function visibilityIconPaths(row: FlatTextObject) {
 
                                 <div
                                     v-else-if="block.type === 'grid'"
-                                    class="inspector-field-grid inspector-field-grid-contained"
+                                    class="inspector-field-grid inspector-field-contained"
                                 >
                                     <FieldControl
                                         v-for="field in block.fields"
@@ -861,16 +861,16 @@ function visibilityIconPaths(row: FlatTextObject) {
                                     <button
                                         v-for="row in colorTokenRows(colorFields.tokenField)"
                                         :key="String(row.token)"
-                                        class="text-color-row"
+                                        class="text-color-row color-row-control"
                                         :class="{ selected: row.selected }"
                                         type="button"
                                         :style="{ '--text-color-swatch': row.color }"
                                         @click="selectTokenColor(colorFields.tokenField, colorFields.colorField, String(row.token), row.color)"
                                     >
-                                        <span class="text-color-swatch"></span>
-                                        <span class="text-color-value">{{ formatColorHex(row.color) }}</span>
-                                        <span class="text-color-opacity">{{ formatColorAlpha(row.color) }}</span>
-                                        <span class="text-color-unit">%</span>
+                                        <span class="text-color-swatch color-row-swatch"></span>
+                                        <span class="text-color-value color-row-value">{{ formatColorHex(row.color) }}</span>
+                                        <span class="text-color-opacity color-row-opacity">{{ formatColorAlpha(row.color) }}</span>
+                                        <span class="text-color-unit color-row-unit">%</span>
                                     </button>
 
                                     <div
@@ -879,7 +879,7 @@ function visibilityIconPaths(row: FlatTextObject) {
                                         class="text-color-row-shell text-color-row-shell-custom"
                                     >
                                         <div
-                                            class="text-color-row text-color-row-custom"
+                                            class="text-color-row text-color-row-custom color-row-control"
                                             :class="{ selected: row.selected }"
                                             role="button"
                                             tabindex="0"
@@ -888,10 +888,10 @@ function visibilityIconPaths(row: FlatTextObject) {
                                             @keydown.enter.prevent="selectTokenColor(colorFields.tokenField, colorFields.colorField, '', row.color)"
                                             @keydown.space.prevent="selectTokenColor(colorFields.tokenField, colorFields.colorField, '', row.color)"
                                         >
-                                            <span class="text-color-swatch"></span>
+                                            <span class="text-color-swatch color-row-swatch"></span>
                                             <template v-if="row.selected">
                                                 <input
-                                                    class="text-color-value text-color-hex-input"
+                                                    class="text-color-value text-color-hex-input color-row-input color-row-value-input"
                                                     type="text"
                                                     maxlength="6"
                                                     :value="parseColorValue(row.color).hex"
@@ -901,7 +901,7 @@ function visibilityIconPaths(row: FlatTextObject) {
                                                     @change="updatePaletteHex(row.paletteItem, colorFields.tokenField, colorFields.colorField, normalizeHexDraft(($event.target as HTMLInputElement).value, parseColorValue(row.color).hex), String(parseColorValue(row.color).alpha))"
                                                 >
                                                 <input
-                                                    class="text-color-opacity text-color-alpha-input"
+                                                    class="text-color-opacity text-color-alpha-input color-row-input color-row-opacity-input"
                                                     type="number"
                                                     min="0"
                                                     max="100"
@@ -911,12 +911,12 @@ function visibilityIconPaths(row: FlatTextObject) {
                                                     @click.stop
                                                     @input="updatePaletteAlpha(row.paletteItem, colorFields.tokenField, colorFields.colorField, parseColorValue(row.color).hex, ($event.target as HTMLInputElement).value)"
                                                 >
-                                                <span class="text-color-unit">%</span>
+                                                <span class="text-color-unit color-row-unit">%</span>
                                             </template>
                                             <template v-else>
-                                                <span class="text-color-value">{{ formatColorHex(row.color) }}</span>
-                                                <span class="text-color-opacity">{{ formatColorAlpha(row.color) }}</span>
-                                                <span class="text-color-unit">%</span>
+                                                <span class="text-color-value color-row-value">{{ formatColorHex(row.color) }}</span>
+                                                <span class="text-color-opacity color-row-opacity">{{ formatColorAlpha(row.color) }}</span>
+                                                <span class="text-color-unit color-row-unit">%</span>
                                             </template>
                                         </div>
                                         <button

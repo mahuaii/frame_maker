@@ -77,11 +77,11 @@ const remainingExifFields = computed(() => EDITABLE_EXIF_FIELDS.filter((field) =
 )));
 const exifFieldSections = computed(() => [
     {
-        className: 'inspector-field-grid inspector-field-grid-contained',
+        className: 'inspector-field-grid inspector-field-contained',
         fields: primaryExifFields.value,
     },
     {
-        className: 'editor-collapsible-content',
+        className: 'inspector-field-stack',
         fields: remainingExifFields.value,
     },
 ]);
@@ -175,7 +175,7 @@ function commitDraft(field: InspectorField) {
                 />
                 <div v-if="isFreeFrameLayout && sideControlFields.length" class="field-group">
                     <div class="field-group-label">边界宽度</div>
-                    <div class="inspector-field-grid inspector-field-grid-contained">
+                    <div class="inspector-field-grid inspector-field-contained">
                         <FieldControl
                             v-for="field in sideControlFields"
                             :key="field.key"
@@ -190,7 +190,7 @@ function commitDraft(field: InspectorField) {
                 </div>
                 <div v-else-if="borderControlField" class="field-group">
                     <div class="field-group-label">边界宽度</div>
-                    <div class="inspector-field-grid inspector-field-grid-contained">
+                    <div class="inspector-field-grid inspector-field-contained">
                         <FieldControl
                             :field="borderControlField"
                             :value="fieldValue(borderControlField)"

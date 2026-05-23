@@ -304,11 +304,11 @@ async function handleExport() {
             @keydown="handleInspectorResizeKeyDown"
         ></div>
 
-        <aside ref="inspectorSidebarRef" class="inspector-sidebar inspector-shell">
+        <aside ref="inspectorSidebarRef" class="inspector-shell">
             <div class="inspector-action-area">
                 <div class="inspector-action-row">
                     <button
-                        class="btn icon-button icon-button-toolbar inspector-upload-button"
+                        class="icon-button icon-button-toolbar"
                         type="button"
                         aria-label="上传照片"
                         title="上传照片"

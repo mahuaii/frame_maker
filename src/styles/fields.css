@@ -35,8 +35,7 @@
     --field-frame-divider: var(--color-divider);
 }
 
-.field-frame-gray,
-.field-group-compact {
+.field-frame-gray {
     --field-frame-background: var(--color-control-background-muted);
     --field-frame-background-hover: var(--color-control-background-hover);
     --field-frame-background-focus: var(--color-control-background-muted);
@@ -137,8 +136,8 @@
     background: transparent;
 }
 
-.color-alpha-control,
-.color-option-row {
+.field-group .color-row-control {
+    --color-row-swatch-size: 18px;
     --field-frame-background: var(--color-control-background-muted);
     --field-frame-background-hover: var(--color-control-background-hover);
     --field-frame-background-focus: var(--color-control-background-muted);
@@ -146,13 +145,6 @@
     --field-frame-border-hover: var(--color-field-border-hover);
     --field-frame-border-focus: var(--color-field-border-focus);
     --field-frame-divider: var(--color-white);
-}
-
-.field-group .color-alpha-control,
-.field-group .color-option-row,
-.text-color-panel .text-color-row {
-    --color-row-swatch-size: 18px;
-
     position: relative;
     display: grid;
     grid-template-columns: 26px minmax(0, 1fr) 38px 16px;
@@ -169,9 +161,7 @@
     transition: border-color var(--control-transition-duration) ease, box-shadow var(--control-transition-duration) ease, background-color var(--control-transition-duration) ease;
 }
 
-.field-group .color-alpha-control::after,
-.field-group .color-option-row::after,
-.text-color-panel .text-color-row::after {
+.field-group .color-row-control::after {
     content: '';
     position: absolute;
     top: 1px;
@@ -182,10 +172,8 @@
     pointer-events: none;
 }
 
-.field-group .color-alpha-control:hover,
-.field-group .color-option-row:hover,
-.text-color-panel .text-color-row:hover,
-.text-color-panel .text-color-row:focus-visible {
+.field-group .color-row-control:hover,
+.field-group .color-row-control:focus-visible {
     border-color: var(--field-frame-border-hover);
     background: var(--field-frame-background-hover);
 }
@@ -222,9 +210,7 @@
     cursor: pointer;
 }
 
-.color-alpha-swatch,
-.color-option-swatch,
-.text-color-swatch {
+.color-row-swatch {
     width: var(--color-row-swatch-size);
     height: var(--color-row-swatch-size);
     border-radius: calc(var(--field-radius) - 1px);
@@ -234,19 +220,16 @@
     background-color: var(--color-alpha-swatch-color, #000000ff);
 }
 
-.field-group .color-alpha-control .color-alpha-hex-input,
-.field-group .color-alpha-control .color-alpha-opacity-input,
-.text-color-panel .text-color-row input.text-color-hex-input,
-.text-color-panel .text-color-row input.text-color-alpha-input {
-    width: 100% !important;
+.field-group .color-row-control input.color-row-input {
+    width: 100%;
     min-width: 0;
-    height: calc(var(--field-height) - 2px) !important;
-    min-height: calc(var(--field-height) - 2px) !important;
-    padding: 0 !important;
-    border: 0 !important;
-    border-radius: 0 !important;
-    background: transparent !important;
-    box-shadow: none !important;
+    height: calc(var(--field-height) - 2px);
+    min-height: calc(var(--field-height) - 2px);
+    padding: 0;
+    border: 0;
+    border-radius: 0;
+    background: transparent;
+    box-shadow: none;
     outline: none;
     color: var(--color-text-primary);
     font-size: var(--field-font-size);
@@ -255,25 +238,19 @@
     line-height: 1;
 }
 
-.field-group .color-alpha-control .color-alpha-hex-input:hover,
-.field-group .color-alpha-control .color-alpha-hex-input:focus,
-.field-group .color-alpha-control .color-alpha-opacity-input:hover,
-.field-group .color-alpha-control .color-alpha-opacity-input:focus,
-.text-color-panel .text-color-row input.text-color-hex-input:hover,
-.text-color-panel .text-color-row input.text-color-hex-input:focus,
-.text-color-panel .text-color-row input.text-color-alpha-input:hover,
-.text-color-panel .text-color-row input.text-color-alpha-input:focus {
-    border: 0 !important;
-    background: transparent !important;
-    box-shadow: none !important;
+.field-group .color-row-control input.color-row-input:hover,
+.field-group .color-row-control input.color-row-input:focus {
+    border: 0;
+    background: transparent;
+    box-shadow: none;
 }
 
 .color-alpha-hex-input {
     text-transform: uppercase;
 }
 
-.color-alpha-opacity-input {
-    border-left: 0 !important;
+.color-row-opacity-input {
+    border-left: 0;
     text-align: right;
 }
 
@@ -295,12 +272,9 @@
     -webkit-appearance: none;
 }
 
-.color-option-value,
-.color-option-opacity,
-.color-option-unit,
-.text-color-value,
-.text-color-opacity,
-.text-color-unit {
+.color-row-value,
+.color-row-opacity,
+.color-row-unit {
     min-width: 0;
     overflow: hidden;
     color: var(--color-text-primary);
@@ -312,15 +286,12 @@
     white-space: nowrap;
 }
 
-.color-option-opacity,
-.text-color-opacity,
-.color-alpha-opacity-input {
+.color-row-opacity,
+.color-row-opacity-input {
     text-align: right;
 }
 
-.color-option-unit,
-.text-color-unit,
-.color-alpha-unit {
+.color-row-unit {
     color: var(--color-text-secondary);
     font-size: var(--field-font-size);
     line-height: 1;

@@ -100,10 +100,23 @@ try {
     assert.ok(dragRoot, 'expected a root text group for drag selection coverage');
     dragEditor.addTextObject(defaultTemplate, dragRoot.id, 'separator');
     const draggedObjectId = dragEditor.selectedTextObjectId.value;
+    assert.ok(draggedObjectId, 'expected separator insertion to select the dragged object');
     dragEditor.addTextObject(defaultTemplate, dragRoot.id, 'image');
     const targetObjectId = dragEditor.selectedTextObjectId.value;
+    assert.ok(targetObjectId, 'expected image insertion to select the target object');
     dragEditor.setSelectedTextObject(dragRoot.id);
     dragEditor.moveTextObject(defaultTemplate, draggedObjectId, targetObjectId, 'after');
+    const movedRoot = dragEditor.getTextModel(defaultTemplate).find((item) => item.id === dragRoot.id);
+    assert.ok(movedRoot, 'expected dragged root group to remain in the text model');
+    const movedOrder = movedRoot.items?.map((item) => item.id) ?? [];
+    assert.ok(
+        movedOrder.indexOf(targetObjectId) !== -1 && movedOrder.indexOf(draggedObjectId) !== -1,
+        'expected dragged and target objects to remain under the root group'
+    );
+    assert.ok(
+        movedOrder.indexOf(targetObjectId) < movedOrder.indexOf(draggedObjectId),
+        'moving after the target should reorder the dragged object after the target'
+    );
     assert.equal(
         dragEditor.selectedTextObjectId.value,
         dragRoot.id,

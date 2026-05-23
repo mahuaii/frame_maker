@@ -145,7 +145,7 @@ function handleFieldChange(settings: ExportSettings, field: InspectorField, valu
             />
         </div>
         <div
-            class="export-custom-size inspector-field-grid inspector-field-grid-contained"
+            class="export-custom-size inspector-field-grid inspector-field-contained"
             :class="{ hidden: settings.sizePreset !== 'custom' }"
             id="export-custom-size"
         >

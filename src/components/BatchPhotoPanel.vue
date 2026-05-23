@@ -74,25 +74,31 @@ function formatDimensions(photo: PhotoEntry) {
                     ]"
                     class="batch-photo-card"
                     :class="{ selected: photo.id === activePhotoId }"
-                    role="button"
-                    tabindex="0"
-                    :aria-pressed="photo.id === activePhotoId"
-                    @click="emit('selectPhoto', photo.id)"
-                    @keydown.enter.prevent="emit('selectPhoto', photo.id)"
-                    @keydown.space.prevent="emit('selectPhoto', photo.id)"
                 >
-                    <img class="batch-photo-thumbnail" :src="photo.thumbnailUrl" alt="" aria-hidden="true">
-                    <span class="batch-photo-info">
-                        <span class="batch-photo-name">{{ photo.name ?? '未命名照片' }}</span>
-                        <span class="batch-photo-meta">{{ formatDimensions(photo) }}</span>
-                    </span>
-                    <CheckboxControl
-                        class-name="batch-photo-check-wrap"
-                        :checked="photoStatesById[photo.id]?.selectedForExport ?? false"
-                        :aria-label="`选择导出 ${photo.name ?? '照片'}`"
+                    <button
+                        class="batch-photo-select-button"
+                        type="button"
+                        :aria-pressed="photo.id === activePhotoId"
+                        @click="emit('selectPhoto', photo.id)"
+                    >
+                        <img class="batch-photo-thumbnail" :src="photo.thumbnailUrl" alt="" aria-hidden="true">
+                        <span class="batch-photo-info">
+                            <span class="batch-photo-name">{{ photo.name ?? '未命名照片' }}</span>
+                            <span class="batch-photo-meta">{{ formatDimensions(photo) }}</span>
+                        </span>
+                    </button>
+                    <span
+                        class="batch-photo-check-cell"
                         @click.stop
-                        @change="emit('toggleExport', photo.id, $event)"
-                    />
+                        @keydown.stop
+                    >
+                        <CheckboxControl
+                            class-name="batch-photo-check-wrap"
+                            :checked="photoStatesById[photo.id]?.selectedForExport ?? false"
+                            :aria-label="`选择导出 ${photo.name ?? '照片'}`"
+                            @change="emit('toggleExport', photo.id, $event)"
+                        />
+                    </span>
                 </div>
             </div>
         </div>
