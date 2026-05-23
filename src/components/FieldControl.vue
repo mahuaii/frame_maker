@@ -60,8 +60,8 @@ const dragHandlePaths = computed(() => normalizeIconPaths(props.field.dragHandle
 ]));
 const groupClass = computed(() => [
     'field-group',
-    props.compact ? 'field-density-compact field-frame-gray' : '',
-    props.field.groupClassName ?? '',
+    props.field.frameVariant === 'white' ? 'field-frame-white' : '',
+    props.compact || props.field.frameVariant === 'gray' ? 'field-frame-gray' : '',
 ].filter(Boolean).join(' '));
 const inputMode = computed(() => props.field.inputMode as
     | 'text'

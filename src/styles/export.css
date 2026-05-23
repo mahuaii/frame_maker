@@ -11,12 +11,6 @@
     display: none;
 }
 
-.export-size-separator {
-    display: none;
-    color: var(--color-text-placeholder);
-    font-size: 13px;
-}
-
 .export-primary-fields {
     display: grid;
     grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
@@ -27,8 +21,8 @@
     position: relative;
     display: inline-flex;
     align-items: stretch;
-    width: 104px;
-    min-width: 104px;
+    width: 88px;
+    min-width: 88px;
     min-height: 34px;
     border: 1px solid var(--color-control-accent);
     border-radius: var(--radius-sm);
@@ -36,6 +30,10 @@
     color: var(--color-white);
     box-shadow: none;
     transition: background-color var(--control-transition-duration) ease, border-color var(--control-transition-duration) ease;
+}
+
+.inspector-action-area .export-split-button {
+    align-self: stretch;
 }
 
 .export-split-button:hover,
@@ -114,4 +112,28 @@
 
 .export-settings-menu[hidden] {
     display: none;
+}
+
+.export-settings-menu .export-controls {
+    min-width: 260px;
+    gap: var(--settings-field-gap);
+}
+
+.export-settings-menu .field-group {
+    padding-inline: 0;
+    margin-bottom: 0;
+}
+
+.export-settings-menu .export-custom-size {
+    padding-inline: 0;
+}
+
+.export-settings-menu .vue-export-menu-action {
+    justify-content: center;
+    width: 100%;
+    min-height: 30px;
+    margin-top: 10px;
+    padding: 0 12px;
+    border-radius: var(--radius-sm);
+    font-size: 12px;
 }

@@ -72,7 +72,7 @@ const sizePresetField: InspectorField = {
     label: '尺寸',
     type: 'select',
     defaultValue: 'original',
-    groupClassName: 'export-field export-size-field field-frame-gray',
+    frameVariant: 'gray',
     options: [
         { value: 'original', label: '原始尺寸' },
         { value: '1080', label: '长边 1080px' },
@@ -104,7 +104,7 @@ const jpegQualityField: InspectorField = {
     type: 'option-input',
     inputMode: 'numeric',
     defaultValue: 1,
-    groupClassName: 'export-field export-quality-field field-frame-gray',
+    frameVariant: 'gray',
     formatValue: formatJpegQualityLabel,
     parseValue: parseJpegQualityInput,
     options: buildJpegQualityOptions(),

@@ -83,3 +83,33 @@
     display: block;
     background: transparent;
 }
+
+@media (max-width: 980px) {
+    .frame-selector {
+        width: 100%;
+        min-width: 0;
+        flex-direction: row;
+        overflow-x: auto;
+        border-right: 0;
+        border-bottom: 1px solid var(--color-divider);
+    }
+
+    .selector-title {
+        position: sticky;
+        left: 0;
+        align-self: center;
+        padding-right: 8px;
+        background: var(--color-bg-primary);
+    }
+
+    .selector-list {
+        flex-direction: row;
+        overflow-x: auto;
+        overflow-y: hidden;
+    }
+
+    .template-card {
+        width: 132px;
+        flex: 0 0 auto;
+    }
+}

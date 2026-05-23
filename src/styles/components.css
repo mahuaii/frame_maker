@@ -86,14 +86,19 @@
     --icon-button-icon-size: 20px;
 }
 
-.icon-button:hover {
+.icon-button:hover:not(:disabled) {
     background-color: var(--color-control-background-hover);
     color: var(--color-control-foreground);
 }
 
-.icon-button:active {
+.icon-button:active:not(:disabled) {
     background-color: var(--color-control-background-active);
     color: var(--color-control-foreground);
+}
+
+.icon-button:disabled {
+    cursor: default;
+    opacity: 0.42;
 }
 
 .icon-button svg {
@@ -108,4 +113,15 @@
 
 .field-reset-button {
     color: var(--color-control-foreground);
+}
+
+.undo-toolbar {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--spacing-1);
+}
+
+.undo-toolbar-button {
+    color: var(--color-control-foreground);
+    --icon-button-icon-size: 14px;
 }

@@ -1,0 +1,125 @@
+/* === Batch Photo Panel === */
+.batch-actions {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 6px;
+    width: 100%;
+    max-width: 100%;
+    margin-bottom: 10px;
+}
+
+.batch-action-button {
+    justify-content: center;
+    min-width: 0;
+    width: 100%;
+    padding-inline: 4px;
+}
+
+.batch-summary {
+    margin-bottom: 10px;
+    color: var(--color-text-secondary);
+    font-size: 12px;
+    line-height: 1.4;
+}
+
+.batch-photo-list {
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-2);
+    padding-bottom: var(--spacing-4);
+}
+
+.batch-photo-card {
+    position: relative;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 20px;
+    gap: 10px;
+    align-items: center;
+    width: 100%;
+    min-height: 58px;
+    padding: 4px 8px 4px 4px;
+    border: 2px solid transparent;
+    border-radius: var(--radius-sm);
+    background: transparent;
+    color: var(--color-text-primary);
+    font: inherit;
+    text-align: left;
+}
+
+.batch-photo-card:hover {
+    border-color: var(--color-control-background-hover);
+    background: var(--color-control-background-hover);
+}
+
+.batch-photo-card.selected {
+    border-color: var(--color-accent);
+}
+
+.batch-photo-select-button {
+    display: grid;
+    grid-template-columns: 48px minmax(0, 1fr);
+    gap: 10px;
+    align-items: center;
+    min-width: 0;
+    min-height: 48px;
+    padding: 0;
+    border: 0;
+    border-radius: var(--radius-sm);
+    background: transparent;
+    color: inherit;
+    font: inherit;
+    text-align: left;
+    cursor: pointer;
+}
+
+.batch-photo-select-button:focus-visible {
+    outline: 2px solid var(--color-field-focus-ring);
+    outline-offset: 2px;
+}
+
+.batch-photo-check-cell {
+    justify-self: end;
+}
+
+.batch-photo-check-wrap {
+    --field-radius: 5px;
+
+    width: 16px;
+    min-height: 16px;
+}
+
+.batch-photo-thumbnail {
+    width: 48px;
+    height: 48px;
+    display: block;
+    object-fit: cover;
+    border-radius: var(--radius-sm);
+    background: var(--color-bg-preview);
+}
+
+.batch-photo-info {
+    display: flex;
+    min-width: 0;
+    flex-direction: column;
+    gap: 3px;
+}
+
+.batch-photo-name,
+.batch-photo-meta {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    letter-spacing: 0;
+}
+
+.batch-photo-name {
+    font-size: 12px;
+    font-weight: 600;
+    line-height: 1.25;
+}
+
+.batch-photo-meta {
+    color: var(--color-text-secondary);
+    font-size: 11px;
+    line-height: 1.25;
+}

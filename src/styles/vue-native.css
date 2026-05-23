@@ -9,6 +9,8 @@
 @import url("./preview.css");
 @import url("./template-selector.css");
 @import url("./inspector.css");
+@import url("./batch-photo.css");
+@import url("./text-editor.css");
 
 .vue-native-app {
     --inspector-width: 276px;
@@ -32,75 +34,6 @@
     grid-template-rows: minmax(0, 1fr);
     min-width: 0;
     min-height: 0;
-}
-
-.vue-native-app .preview-surface {
-    padding: 0;
-}
-
-.vue-native-app .preview-empty p:first-of-type {
-    font-size: 16px;
-}
-
-.vue-native-app .inspector-panel {
-    display: block;
-}
-
-.vue-native-app .inspector-scroll-area {
-    flex: 1 1 auto;
-    min-height: 0;
-}
-
-.vue-native-app .export-settings-menu .export-controls {
-    min-width: 260px;
-}
-
-.vue-native-app .export-settings-menu .vue-export-menu-action {
-    justify-content: center;
-    width: 100%;
-    min-height: 30px;
-    margin-top: 10px;
-    padding: 0 12px;
-    border-radius: var(--radius-sm);
-    font-size: 12px;
-}
-
-.vue-native-app .template-package-actions {
-    display: grid;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 8px;
-}
-
-.vue-native-app .template-package-actions input {
-    display: none;
-}
-
-.vue-native-app .batch-actions {
-    width: 100%;
-    max-width: 100%;
-}
-
-.vue-native-app .batch-action-button {
-    padding-inline: 4px;
-}
-
-.vue-native-app .text-editor-panel {
-    display: block;
-    gap: 0;
-}
-
-.vue-native-app .text-editor-panel .inspector-section {
-    padding: 0;
-    border-bottom: 0;
-}
-
-.vue-native-app .text-editor-panel .inspector-section-title {
-    margin: 0;
-}
-
-.vue-native-app .text-align-radio-fallback {
-    font-size: 10px;
-    line-height: 1;
 }
 
 .vue-native-app .error-message {
@@ -128,31 +61,4 @@
         min-height: 100%;
     }
 
-    .vue-native-app .frame-selector {
-        width: 100%;
-        min-width: 0;
-        flex-direction: row;
-        overflow-x: auto;
-        border-right: 0;
-        border-bottom: 1px solid var(--color-divider);
-    }
-
-    .vue-native-app .selector-title {
-        position: sticky;
-        left: 0;
-        align-self: center;
-        padding-right: 8px;
-        background: var(--color-bg-primary);
-    }
-
-    .vue-native-app .selector-list {
-        flex-direction: row;
-        overflow-x: auto;
-        overflow-y: hidden;
-    }
-
-    .vue-native-app .template-card {
-        width: 132px;
-        flex: 0 0 auto;
-    }
 }

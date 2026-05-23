@@ -27,9 +27,7 @@ import type {
     TextStyle,
 } from '../types/text';
 
-export type TextEditorField = InspectorField & {
-    groupClassName?: string;
-};
+export type TextEditorField = InspectorField;
 
 const TEXT_EDITOR_GRAY_EXCLUDED_FIELD_KEYS = new Set(['label', 'style.fontId', 'style.fontStyle']);
 const TEXT_EDITOR_WHITE_FIELD_KEYS = new Set(['rotation', 'align', 'direction', 'style.fontWeight']);
@@ -439,17 +437,11 @@ function applyTextEditorFieldFrameStyle(fields: TextEditorField[] = []) {
             return field;
         }
 
-        const classNames = new Set(String(field.groupClassName ?? '').split(/\s+/).filter(Boolean));
-        if (TEXT_EDITOR_WHITE_FIELD_KEYS.has(field.key)) {
-            classNames.delete('field-frame-gray');
-            classNames.add('field-frame-white');
-        } else {
-            classNames.add('field-frame-gray');
-        }
+        const frameVariant: InspectorField['frameVariant'] = TEXT_EDITOR_WHITE_FIELD_KEYS.has(field.key) ? 'white' : 'gray';
 
         return {
             ...field,
-            groupClassName: Array.from(classNames).join(' '),
+            frameVariant,
         };
     });
 }

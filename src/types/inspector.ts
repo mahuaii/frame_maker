@@ -22,7 +22,7 @@ export type InspectorField = Omit<TemplateField, 'options' | 'parseValue'> & {
     label: string;
     control?: string;
     controlClassName?: string;
-    groupClassName?: string;
+    frameVariant?: 'white' | 'gray';
     valueClassName?: string;
     valueUnit?: string;
     valueInput?: boolean;

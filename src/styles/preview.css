@@ -1,5 +1,4 @@
 /* === 预览区 === */
-.preview-area,
 .preview-surface {
     flex: 1;
     display: flex;
@@ -11,12 +10,10 @@
     cursor: default;
 }
 
-.preview-area.has-image,
 .preview-surface.has-image {
     cursor: default;
 }
 
-.preview-area.drag-over,
 .preview-surface.drag-over {
     background: var(--color-bg-preview);
     outline: 3px dashed var(--color-accent);
@@ -53,49 +50,12 @@
     display: none;
 }
 
-.upload-notice {
-    position: absolute;
-    top: var(--spacing-4);
-    left: 50%;
-    z-index: 2;
-    max-width: min(420px, calc(100% - var(--spacing-8)));
-    padding: var(--spacing-2) var(--spacing-3);
-    border: 1px solid var(--color-control-border);
-    border-radius: var(--radius-sm);
-    background: var(--color-bg-elevated);
-    color: var(--color-text-primary);
-    box-shadow: var(--color-shadow-soft);
-    font-size: 13px;
-    line-height: 1.5;
-    letter-spacing: 0;
-    text-align: center;
-    pointer-events: none;
-    opacity: 0;
-    transform: translate(-50%, -6px);
-    transition: opacity 180ms ease, transform 180ms ease;
-}
-
-.upload-notice.visible {
-    opacity: 1;
-    transform: translate(-50%, 0);
-}
-
-.upload-notice[hidden] {
-    display: none;
-}
-
 /* Canvas 预览 */
-#preview-canvas,
 .preview-canvas {
-    display: none;
+    display: block;
     width: auto;
     height: auto;
     max-width: none;
     max-height: none;
     flex: 0 0 auto;
-}
-
-#preview-canvas.visible,
-.preview-canvas {
-    display: block;
 }

@@ -19,10 +19,10 @@ const FRAME_SIDE_META = {
 };
 const FIELD_META: Record<string, Partial<InspectorField>> = {
     colorScheme: { label: '主题', control: 'theme-radio' },
-    frameAspectRatio: { label: '画幅', type: 'option-input', groupClassName: 'field-frame-white' },
+    frameAspectRatio: { label: '画幅', type: 'option-input', frameVariant: 'white' },
     frameBorderWidth: {
         label: '边界宽度',
-        groupClassName: 'field-frame-gray',
+        frameVariant: 'gray',
         inputMode: 'decimal',
     },
     showThinBorder: { label: '内边框' },

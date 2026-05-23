@@ -307,6 +307,12 @@ async function handleExport() {
         <aside ref="inspectorSidebarRef" class="inspector-shell">
             <div class="inspector-action-area">
                 <div class="inspector-action-row">
+                    <UndoRedoToolbar
+                        :can-undo="canUndo"
+                        :can-redo="canRedo"
+                        @undo="editor.undo"
+                        @redo="editor.redo"
+                    />
                     <button
                         class="icon-button icon-button-toolbar"
                         type="button"
@@ -354,12 +360,6 @@ async function handleExport() {
                 <TemplatePackageActions
                     @import-template="handleImportTemplate"
                     @export-template="handleExportTemplate"
-                />
-                <UndoRedoToolbar
-                    :can-undo="canUndo"
-                    :can-redo="canRedo"
-                    @undo="editor.undo"
-                    @redo="editor.redo"
                 />
                 <div class="inspector-panel-tabs" role="tablist" aria-label="设置面板">
                     <button
