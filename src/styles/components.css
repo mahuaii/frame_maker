@@ -40,6 +40,9 @@
 }
 
 .btn-small {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
     min-height: 24px;
     padding: 0 8px;
     border: 1px solid var(--color-control-border);
@@ -49,10 +52,17 @@
     font-size: 11px;
     letter-spacing: 0;
     cursor: pointer;
+    transition: background-color var(--control-transition-duration) ease, border-color var(--control-transition-duration) ease, color var(--control-transition-duration) ease;
 }
 
 .btn-small:hover:not(:disabled) {
+    border-color: var(--color-field-border-hover);
     background: var(--color-control-background-hover);
+}
+
+.btn-small:focus-visible {
+    outline: 2px solid var(--color-field-focus-ring);
+    outline-offset: 2px;
 }
 
 .btn-small:disabled {

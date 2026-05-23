@@ -38,8 +38,7 @@
     border-top: 1px solid var(--color-divider);
 }
 
-.text-object-sectioned-fields,
-.text-object-standalone-fields {
+.text-object-sectioned-fields {
     display: flex;
     flex-direction: column;
     gap: 0;

@@ -137,7 +137,7 @@
 }
 
 .field-group .color-row-control {
-    --color-row-swatch-size: 18px;
+    --color-row-swatch-size: 14px;
     --field-frame-background: var(--color-control-background-muted);
     --field-frame-background-hover: var(--color-control-background-hover);
     --field-frame-background-focus: var(--color-control-background-muted);
@@ -147,7 +147,7 @@
     --field-frame-divider: var(--color-white);
     position: relative;
     display: grid;
-    grid-template-columns: 26px minmax(0, 1fr) 38px 16px;
+    grid-template-columns: 22px minmax(0, 1fr) 32px 16px;
     align-items: center;
     width: 100%;
     height: var(--field-height);
@@ -164,9 +164,9 @@
 .field-group .color-row-control::after {
     content: '';
     position: absolute;
-    top: 1px;
-    right: 60px;
-    bottom: 1px;
+    top: 0;
+    right: 54px;
+    bottom: 0;
     width: 1px;
     background: var(--field-frame-divider);
     pointer-events: none;
@@ -288,7 +288,12 @@
 
 .color-row-opacity,
 .color-row-opacity-input {
+    padding-right: 4px;
     text-align: right;
+}
+
+.field-group .color-row-control input.color-row-opacity-input {
+    padding-right: 4px;
 }
 
 .color-row-unit {
@@ -543,18 +548,19 @@
     appearance: none;
     border: 1px solid var(--color-field-border);
     border-radius: var(--field-radius, 5px);
-    background: var(--color-control-background-muted);
+    background: var(--color-field-background);
     cursor: pointer;
     outline: none;
     transition: background-color var(--control-transition-duration) ease, border-color var(--control-transition-duration) ease, box-shadow var(--control-transition-duration) ease;
 }
 
 .checkbox-field input[type="checkbox"]:hover {
-    background: var(--color-control-background-hover);
+    border-color: var(--color-field-border-hover);
+    background: var(--color-field-background-hover);
 }
 
 .checkbox-field input[type="checkbox"]:checked {
-    background: var(--color-control-background-muted);
+    background: var(--color-field-background);
     border-color: var(--color-field-border);
 }
 
@@ -576,5 +582,5 @@
 }
 
 .checkbox-field input[type="checkbox"]:focus {
-    background: var(--color-control-background-muted);
+    background: var(--color-field-background);
 }

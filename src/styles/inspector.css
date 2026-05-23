@@ -190,12 +190,6 @@ body.is-resizing-inspector {
     color: var(--color-text-primary);
 }
 
-.inspector-section-reset-button {
-    flex: 0 0 auto;
-    margin: -3px 0;
-    transition: color var(--control-transition-duration) ease;
-}
-
 .inspector-section-content {
     display: flex;
     flex-direction: column;

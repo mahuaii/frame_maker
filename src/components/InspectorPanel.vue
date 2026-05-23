@@ -158,7 +158,6 @@ function commitDraft(field: InspectorField) {
             <header class="inspector-section-header">
                 <h2 class="inspector-section-title">版式</h2>
                 <ResetIconButton
-                    class="inspector-section-reset-button"
                     ariaLabel="重置版式"
                     title="重置版式"
                     :disabled="layoutFieldsWithDefaults.length === 0"
@@ -207,7 +206,6 @@ function commitDraft(field: InspectorField) {
             <header class="inspector-section-header">
                 <h2 class="inspector-section-title">拍摄信息</h2>
                 <ResetIconButton
-                    class="inspector-section-reset-button"
                     ariaLabel="重置拍摄信息"
                     title="重置拍摄信息"
                     @click="emit('resetExif')"

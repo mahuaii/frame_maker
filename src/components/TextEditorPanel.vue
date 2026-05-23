@@ -124,7 +124,7 @@ const selectedFields = computed(() => {
         }
     );
 });
-const standaloneFields = computed(() => selectedFields.value.filter((field) => TEXT_STANDALONE_FIELD_KEYS.has(field.key)));
+const untitledSectionFields = computed(() => selectedFields.value.filter((field) => TEXT_STANDALONE_FIELD_KEYS.has(field.key)));
 const layoutFields = computed(() => selectedFields.value.filter((field) => TEXT_LAYOUT_FIELD_KEYS.has(field.key)));
 const fontFields = computed(() => selectedFields.value.filter((field) => TEXT_FONT_FIELD_KEYS.has(field.key)));
 const colorFields = computed(() => getTextColorFields(selectedFields.value));
@@ -667,17 +667,19 @@ function visibilityIconPaths(row: FlatTextObject) {
                 </div>
 
                 <template v-else>
-                    <div v-if="standaloneFields.length" class="text-object-standalone-fields">
-                        <FieldControl
-                            v-for="field in standaloneFields"
-                            :key="field.key"
-                            :field="field"
-                            :value="fieldValue(field)"
-                            :id-prefix="`text-${selectedItem.id}`"
-                            @change="updateField"
-                            @input="draftField"
-                        />
-                    </div>
+                    <section v-if="untitledSectionFields.length" class="inspector-section">
+                        <div class="inspector-section-content">
+                            <FieldControl
+                                v-for="field in untitledSectionFields"
+                                :key="field.key"
+                                :field="field"
+                                :value="fieldValue(field)"
+                                :id-prefix="`text-${selectedItem.id}`"
+                                @change="updateField"
+                                @input="draftField"
+                            />
+                        </div>
+                    </section>
 
                     <section v-if="layoutFields.length" class="inspector-section">
                         <div class="inspector-section-header">
