@@ -158,13 +158,63 @@ function handleWindowResize() {
     setInspectorWidth(inspectorWidth.value);
 }
 
+function isEditableKeyboardTarget(target: EventTarget | null) {
+    if (!(target instanceof Element)) {
+        return false;
+    }
+
+    if (target instanceof HTMLElement && target.isContentEditable) {
+        return true;
+    }
+
+    const editableTarget = target.closest('input, textarea, select, [contenteditable]');
+    if (editableTarget instanceof HTMLInputElement) {
+        return !['button', 'checkbox', 'radio', 'range', 'reset', 'submit'].includes(editableTarget.type);
+    }
+
+    return Boolean(editableTarget);
+}
+
+function handleGlobalKeyDown(event: KeyboardEvent) {
+    if (event.isComposing || isEditableKeyboardTarget(event.target) || event.altKey) {
+        return;
+    }
+
+    const usesCommandModifier = event.metaKey || event.ctrlKey;
+    if (!usesCommandModifier) {
+        return;
+    }
+
+    const key = event.key.toLowerCase();
+    if (key === 'z' && !event.shiftKey) {
+        if (!canUndo.value) {
+            return;
+        }
+
+        event.preventDefault();
+        editor.undo();
+        return;
+    }
+
+    if ((key === 'z' && event.shiftKey) || (key === 'y' && event.ctrlKey && !event.metaKey)) {
+        if (!canRedo.value) {
+            return;
+        }
+
+        event.preventDefault();
+        editor.redo();
+    }
+}
+
 onMounted(() => {
     window.addEventListener('resize', handleWindowResize);
+    window.addEventListener('keydown', handleGlobalKeyDown);
     setInspectorWidth(DEFAULT_INSPECTOR_WIDTH);
 });
 
 onBeforeUnmount(() => {
     window.removeEventListener('resize', handleWindowResize);
+    window.removeEventListener('keydown', handleGlobalKeyDown);
     document.body.classList.remove('is-resizing-inspector');
     editor.releaseAllTextObjectUrls();
 });
