@@ -6,7 +6,7 @@ import {
     getTemplates as getSharedTemplates,
     templates,
 } from '../js/templates.ts';
-import { defineDataTemplate, normalizeDataTemplatePackage } from '../js/core/templates/data-template.ts';
+import { defineDataTemplate, defineTemplatePackage, normalizeDataTemplatePackage } from '../js/core/templates/data-template.ts';
 import { buildTemplateResolveInput } from '../js/core/render/input.ts';
 import { createImportedTemplateRegistry } from '../js/core/templates/imported-registry.ts';
 import { exportTemplatePackage, importTemplatePackage } from '../js/core/templates/template-package.ts';
@@ -32,6 +32,10 @@ async function blobToBytes(blob) {
 async function readTemplateJsonFromPackage(blob) {
     const entries = unzipSync(await blobToBytes(blob));
     return JSON.parse(strFromU8(entries['template.json']));
+}
+
+async function readEntriesFromPackage(blob) {
+    return unzipSync(await blobToBytes(blob));
 }
 
 assert.equal(templates.length, 4, 'expected four built-in templates');
@@ -62,11 +66,26 @@ assert.equal(
 );
 
 for (const template of templates) {
+    assert.equal(template.sourceType, 'builtin', `template "${template.id}" should be loaded from its package json`);
+    assert.equal(template.assets?.thumbnail, 'assets/thumbnail.jpg');
+    assert.ok(template.importedAssets?.['assets/thumbnail.jpg'], `template "${template.id}" should expose builtin thumbnail asset`);
+
     const dataTemplate = defineDataTemplate(template);
     assert.equal(dataTemplate.id, template.id);
 
     const zipBlob = await exportTemplatePackage(template, makeAssetMap(template));
+    const zipEntries = await readEntriesFromPackage(zipBlob);
+    assert.ok(zipEntries['template.json'], 'template package should include template.json');
+    assert.ok(zipEntries['assets/thumbnail.jpg'], 'template package should include assets/thumbnail.jpg');
+
     const templateJson = await readTemplateJsonFromPackage(zipBlob);
+    assert.equal(templateJson.template.id, template.id);
+    assert.deepEqual(templateJson.template.assets, template.assets);
+    assert.deepEqual(templateJson.template.textGroups, template.textGroups);
+    assert.deepEqual(templateJson.template.overlays, template.overlays);
+    assert.equal(templateJson.template.importedAssets, undefined);
+    assert.equal(templateJson.template.sourceType, undefined);
+
     templateJson.template.fields.forEach((field) => {
         disallowedFieldUiKeys.forEach((key) => {
             assert.equal(field[key], undefined, `template package field "${field.key}" should not include ${key}`);
@@ -77,9 +96,13 @@ for (const template of templates) {
     });
 
     const imported = await importTemplatePackage(makeFile(await blobToBytes(zipBlob)));
-    const redefined = defineDataTemplate(imported.template);
+    const redefined = defineTemplatePackage(templateJson);
 
     assert.equal(redefined.id, template.id);
+    assert.deepEqual(imported.template.assets, template.assets);
+    assert.deepEqual(imported.template.fields, template.fields);
+    assert.deepEqual(imported.template.textGroups, template.textGroups);
+    assert.deepEqual(imported.template.overlays, template.overlays);
     imported.releaseAssets();
 }
 
@@ -102,6 +125,30 @@ assert.throws(() => {
         },
     });
 }, /asset/);
+
+assert.throws(() => {
+    defineDataTemplate({
+        ...templates[0],
+        fields: [
+            {
+                key: 'unknown',
+                type: 'text',
+                normalizeValueKey: 'missingNormalizer',
+            },
+        ],
+    });
+}, /unknown field capability/);
+
+assert.throws(() => {
+    defineDataTemplate({
+        ...templates[0],
+        overlays: [
+            {
+                type: 'missingOverlay',
+            },
+        ],
+    });
+}, /unknown overlay capability/);
 
 await assert.rejects(async () => {
     const bytes = zipSync({

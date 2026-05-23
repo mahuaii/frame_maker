@@ -1,51 +1,12 @@
-import { getAppearanceColor } from '../templates/appearance.ts';
-import { drawBeveledPhotoBorder, resolvePhotoBorderWidth } from '../../templates/photo-border.ts';
-
-function isOverlayEnabled(overlay, config = {}) {
-    if (!overlay?.enabledConfigKey) {
-        return true;
-    }
-
-    return Boolean(config[overlay.enabledConfigKey]);
-}
-
-function getOverlayColor(overlay, appearance) {
-    return getAppearanceColor(
-        appearance,
-        overlay.colorToken ?? 'textPrimary',
-        overlay.fallbackColor ?? '#000000'
-    );
-}
-
-function renderPhotoBorder(ctx, overlay, args) {
-    if (!isOverlayEnabled(overlay, args.config)) {
-        return;
-    }
-
-    const shape = overlay.shape ?? 'beveled';
-    if (shape !== 'beveled') {
-        return;
-    }
-
-    const rect = args.metrics?.scaledPhotoArea;
-    if (!rect) {
-        return;
-    }
-
-    const widthRatio = Number.isFinite(Number(overlay.widthRatio))
-        ? Number(overlay.widthRatio)
-        : 0.0022;
-    const borderWidth = resolvePhotoBorderWidth(rect, widthRatio);
-
-    drawBeveledPhotoBorder(ctx, rect, borderWidth, getOverlayColor(overlay, args.appearance));
-}
+import { getOverlayRenderer } from '../templates/capabilities/overlays.ts';
 
 export function renderDeclarativeOverlays(ctx: CanvasRenderingContext2D, args: Record<string, any> = {}) {
     const overlays = Array.isArray(args.template?.overlays) ? args.template.overlays : [];
 
     overlays.forEach((overlay) => {
-        if (overlay?.type === 'photoBorder') {
-            renderPhotoBorder(ctx, overlay, args);
+        const renderOverlay = getOverlayRenderer(overlay?.type);
+        if (renderOverlay) {
+            renderOverlay(ctx, overlay, args);
         }
     });
 }

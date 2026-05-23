@@ -1,5 +1,5 @@
 import { unzipSync, zipSync, strFromU8, strToU8 } from 'fflate';
-import { createTemplatePackage, defineDataTemplate, normalizeDataTemplatePackage } from './data-template.ts';
+import { createTemplatePackage, defineTemplatePackage, normalizeDataTemplatePackage } from './data-template.ts';
 import type { FrameTemplate } from '../../../src/types/template';
 
 const TEMPLATE_JSON_PATH = 'template.json';
@@ -108,7 +108,7 @@ export async function importTemplatePackage(file: File | Blob) {
     const releaseAssets = () => {
         releaseUrls.splice(0).forEach((url) => URL.revokeObjectURL(url));
     };
-    const template = defineDataTemplate(normalizedPackage.template, {
+    const template = defineTemplatePackage(normalizedPackage, {
         sourceType: 'imported',
         assets: assetUrls,
         releaseAssets,

@@ -1,30 +1,34 @@
 import { exportTemplatePackage } from '../../js/core/templates/template-package.ts';
 import type { FrameTemplate } from '../types/template';
 
-function getBuiltinThumbnailUrl(template: FrameTemplate) {
-    return new URL(`../../thumbnails/${template.id}_thumbnail.jpg`, import.meta.url).toString();
-}
-
-async function fetchThumbnailAsset(template: FrameTemplate) {
-    const thumbnailPath = template.assets?.thumbnail;
-    if (!thumbnailPath) {
-        return {};
-    }
-
-    const assetUrl = template.importedAssets?.[thumbnailPath] ?? getBuiltinThumbnailUrl(template);
+async function fetchTemplateAsset(path: string, assetUrl: string) {
     const response = await fetch(assetUrl);
 
     if (!response.ok) {
-        return {};
+        throw new Error(`模板资源读取失败：${path}`);
     }
 
-    return {
-        [thumbnailPath]: await response.blob(),
-    };
+    return response.blob();
+}
+
+async function fetchTemplateAssets(template: FrameTemplate) {
+    const assets: Record<string, Blob> = {};
+    const assetPaths = Array.from(new Set(Object.values(template.assets ?? {}).filter(Boolean)));
+
+    for (const path of assetPaths) {
+        const assetUrl = template.importedAssets?.[path];
+        if (!assetUrl) {
+            throw new Error(`模板资源缺失：${path}`);
+        }
+
+        assets[path] = await fetchTemplateAsset(path, assetUrl);
+    }
+
+    return assets;
 }
 
 export async function exportTemplateZip(template: FrameTemplate) {
-    const assets = await fetchThumbnailAsset(template);
+    const assets = await fetchTemplateAssets(template);
     const blob = await exportTemplatePackage(template, assets);
 
     return {

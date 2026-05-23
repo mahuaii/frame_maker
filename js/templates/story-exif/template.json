@@ -1,0 +1,271 @@
+{
+  "format": "frame-maker-template",
+  "formatVersion": 1,
+  "template": {
+    "id": "story-exif",
+    "fields": [
+      {
+        "key": "colorScheme",
+        "type": "select",
+        "defaultValue": "white",
+        "options": [
+          {
+            "value": "white"
+          },
+          {
+            "value": "black"
+          }
+        ]
+      },
+      {
+        "key": "frameAspectRatio",
+        "type": "select",
+        "defaultValue": "free",
+        "normalizeValueKey": "frameAspectRatio",
+        "parseValueKey": "frameAspectRatio",
+        "options": [
+          {
+            "value": "free"
+          },
+          {
+            "value": "original"
+          },
+          {
+            "value": "1:1"
+          },
+          {
+            "value": "5:4"
+          },
+          {
+            "value": "4:3"
+          },
+          {
+            "value": "3:2"
+          },
+          {
+            "value": "16:9"
+          },
+          {
+            "value": "4:5"
+          },
+          {
+            "value": "3:4"
+          },
+          {
+            "value": "2:3"
+          },
+          {
+            "value": "9:16"
+          }
+        ]
+      },
+      {
+        "key": "frameBorderWidth",
+        "type": "number",
+        "min": 0,
+        "max": 100,
+        "step": 0.1,
+        "defaultValue": 10,
+        "normalizeValueKey": "frameBorderWidth"
+      },
+      {
+        "key": "frameTop",
+        "type": "number",
+        "min": 0,
+        "max": 80,
+        "step": 0.1,
+        "defaultValue": 0
+      },
+      {
+        "key": "frameRight",
+        "type": "number",
+        "min": 0,
+        "max": 80,
+        "step": 0.1,
+        "defaultValue": 0
+      },
+      {
+        "key": "frameBottom",
+        "type": "number",
+        "min": 0,
+        "max": 80,
+        "step": 0.1,
+        "defaultValue": 14
+      },
+      {
+        "key": "frameLeft",
+        "type": "number",
+        "min": 0,
+        "max": 80,
+        "step": 0.1,
+        "defaultValue": 0
+      }
+    ],
+    "defaultConfig": {
+      "colorScheme": "white",
+      "frameAspectRatio": "free",
+      "frameBorderWidth": 10,
+      "frameTop": 0,
+      "frameRight": 0,
+      "frameBottom": 14,
+      "frameLeft": 0
+    },
+    "frame": {
+      "sides": {
+        "top": 0,
+        "right": 0,
+        "bottom": 14,
+        "left": 0
+      },
+      "font": {
+        "basis": "height",
+        "size": 2.8,
+        "min": 12
+      }
+    },
+    "backgroundColor": "#121212",
+    "textGroups": [
+      {
+        "id": "story-title-group",
+        "type": "group",
+        "label": "标题组",
+        "region": "bottom",
+        "anchor": "middle-left",
+        "direction": "vertical",
+        "align": "start",
+        "gapScale": 0.2,
+        "offsetXScale": 0,
+        "offsetYScale": 0,
+        "visible": true,
+        "style": {
+          "fontId": "angieSansStd",
+          "fontScale": 1,
+          "fontWeight": 400,
+          "fontStyle": "normal",
+          "colorToken": "title",
+          "color": "#000000E4",
+          "letterSpacingScale": 0
+        },
+        "items": [
+          {
+            "id": "story-title",
+            "type": "text",
+            "label": "标题",
+            "content": "A small headline for the frame",
+            "visible": true,
+            "style": {
+              "fontId": "angieSansStd",
+              "fontScale": 1.28,
+              "fontWeight": 600,
+              "colorToken": "title"
+            }
+          },
+          {
+            "id": "story-subtitle",
+            "type": "text",
+            "label": "副标题",
+            "content": "Description goes here",
+            "visible": true,
+            "style": {
+              "fontId": "angieSansStd",
+              "fontScale": 0.82,
+              "fontWeight": 400,
+              "colorToken": "subtitle"
+            }
+          }
+        ]
+      },
+      {
+        "id": "story-meta-group",
+        "type": "group",
+        "label": "拍摄信息组",
+        "region": "bottom",
+        "anchor": "middle-right",
+        "direction": "vertical",
+        "align": "end",
+        "gapScale": 0.2,
+        "offsetXScale": 0,
+        "offsetYScale": 0,
+        "visible": true,
+        "style": {
+          "fontId": "systemSans",
+          "fontScale": 0.88,
+          "fontWeight": 400,
+          "fontStyle": "normal",
+          "colorToken": "metaPrimary",
+          "color": "#000000D5",
+          "letterSpacingScale": 0
+        },
+        "items": [
+          {
+            "id": "story-meta-primary",
+            "type": "text",
+            "label": "主参数",
+            "content": "{{metaPrimary}}",
+            "fallbackContent": "EXIF unavailable",
+            "visible": true,
+            "style": {
+              "colorToken": "metaPrimary"
+            }
+          },
+          {
+            "id": "story-meta-secondary",
+            "type": "text",
+            "label": "次参数",
+            "content": "{{metaSecondary}}",
+            "hideWhenEmptyToken": true,
+            "visible": true,
+            "style": {
+              "colorToken": "metaSecondary"
+            }
+          }
+        ]
+      }
+    ],
+    "appearanceFieldKey": "colorScheme",
+    "appearanceDefaultKey": "black",
+    "appearanceThemes": {
+      "white": {
+        "label": "白色",
+        "canvasBackground": {
+          "type": "solid",
+          "color": "#FFFFFF"
+        },
+        "colors": {
+          "frame": {
+            "photoBorder": "#000000"
+          },
+          "text": {
+            "title": "#000000E4",
+            "subtitle": "#0000008B",
+            "metaPrimary": "#000000D5",
+            "metaSecondary": "#0000008B"
+          }
+        }
+      },
+      "black": {
+        "label": "黑色",
+        "canvasBackground": {
+          "type": "solid",
+          "color": "#121212"
+        },
+        "colors": {
+          "frame": {
+            "photoBorder": "#FFFFFF"
+          },
+          "text": {
+            "title": "#F8FAFC",
+            "subtitle": "#CBD5E1",
+            "metaPrimary": "#E2E8F0",
+            "metaSecondary": "#94A3B8"
+          }
+        }
+      }
+    },
+    "assets": {
+      "thumbnail": "assets/thumbnail.jpg"
+    },
+    "overlays": [],
+    "handlers": {}
+  }
+}

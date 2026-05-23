@@ -1,0 +1,198 @@
+{
+  "format": "frame-maker-template",
+  "formatVersion": 1,
+  "template": {
+    "id": "simple-mat",
+    "fields": [
+      {
+        "key": "colorScheme",
+        "type": "select",
+        "defaultValue": "white",
+        "options": [
+          {
+            "value": "white"
+          },
+          {
+            "value": "black"
+          },
+          {
+            "value": "edgeBlur"
+          }
+        ]
+      },
+      {
+        "key": "frameAspectRatio",
+        "type": "select",
+        "defaultValue": "free",
+        "normalizeValueKey": "frameAspectRatio",
+        "parseValueKey": "frameAspectRatio",
+        "options": [
+          {
+            "value": "free"
+          },
+          {
+            "value": "original"
+          },
+          {
+            "value": "1:1"
+          },
+          {
+            "value": "5:4"
+          },
+          {
+            "value": "4:3"
+          },
+          {
+            "value": "3:2"
+          },
+          {
+            "value": "16:9"
+          },
+          {
+            "value": "4:5"
+          },
+          {
+            "value": "3:4"
+          },
+          {
+            "value": "2:3"
+          },
+          {
+            "value": "9:16"
+          }
+        ]
+      },
+      {
+        "key": "frameBorderWidth",
+        "type": "number",
+        "min": 0,
+        "max": 100,
+        "step": 0.1,
+        "defaultValue": 10,
+        "normalizeValueKey": "frameBorderWidth"
+      },
+      {
+        "key": "frameTop",
+        "type": "number",
+        "min": 0,
+        "max": 80,
+        "step": 0.1,
+        "defaultValue": 2.5
+      },
+      {
+        "key": "frameRight",
+        "type": "number",
+        "min": 0,
+        "max": 80,
+        "step": 0.1,
+        "defaultValue": 2.5
+      },
+      {
+        "key": "frameBottom",
+        "type": "number",
+        "min": 0,
+        "max": 80,
+        "step": 0.1,
+        "defaultValue": 7.5
+      },
+      {
+        "key": "frameLeft",
+        "type": "number",
+        "min": 0,
+        "max": 80,
+        "step": 0.1,
+        "defaultValue": 2.5
+      },
+      {
+        "key": "showThinBorder",
+        "type": "toggle",
+        "defaultValue": false
+      }
+    ],
+    "defaultConfig": {
+      "colorScheme": "white",
+      "frameAspectRatio": "free",
+      "frameBorderWidth": 10,
+      "frameTop": 2.5,
+      "frameRight": 2.5,
+      "frameBottom": 7.5,
+      "frameLeft": 2.5,
+      "showThinBorder": false
+    },
+    "frame": {
+      "sides": {
+        "top": 2.5,
+        "right": 2.5,
+        "bottom": 7.5,
+        "left": 2.5
+      },
+      "font": {
+        "basis": "height",
+        "size": 2.8,
+        "min": 12
+      }
+    },
+    "backgroundColor": "#FFFFFF",
+    "textGroups": [],
+    "overlays": [
+      {
+        "type": "photoBorder",
+        "enabledConfigKey": "showThinBorder",
+        "colorToken": "photoBorder",
+        "fallbackColor": "#000000",
+        "widthRatio": 0.0022,
+        "shape": "beveled"
+      }
+    ],
+    "appearanceFieldKey": "colorScheme",
+    "appearanceDefaultKey": "black",
+    "appearanceThemes": {
+      "white": {
+        "label": "白色",
+        "canvasBackground": {
+          "type": "solid",
+          "color": "#FFFFFF"
+        },
+        "colors": {
+          "frame": {
+            "photoBorder": "#000000"
+          }
+        }
+      },
+      "black": {
+        "label": "黑色",
+        "canvasBackground": {
+          "type": "solid",
+          "color": "#121212"
+        },
+        "colors": {
+          "frame": {
+            "photoBorder": "#FFFFFF"
+          }
+        }
+      },
+      "edgeBlur": {
+        "label": "深色模糊",
+        "displayValue": "模糊",
+        "canvasBackground": {
+          "type": "edgeExtendBlur",
+          "color": "#2B2F37",
+          "blur": 200,
+          "ambientBlur": 250,
+          "ambientOpacity": 0.62,
+          "extendedOpacity": 0.64,
+          "saturate": 1.02,
+          "brightness": 0.9,
+          "contrast": 1.4,
+          "overlayColor": "#191919",
+          "overlayOpacity": 0.54,
+          "sourceBandRatio": 0.1
+        }
+      }
+    },
+    "assets": {
+      "thumbnail": "assets/thumbnail.jpg"
+    },
+    "handlers": {}
+  }
+}

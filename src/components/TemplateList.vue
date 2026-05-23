@@ -11,12 +11,8 @@ const emit = defineEmits<{
 }>();
 
 function thumbnailUrl(template: FrameTemplate) {
-    const importedPath = template.assets?.thumbnail;
-    if (importedPath && template.importedAssets?.[importedPath]) {
-        return template.importedAssets[importedPath];
-    }
-
-    return new URL(`../../thumbnails/${template.id}_thumbnail.jpg`, import.meta.url).toString();
+    const thumbnailPath = template.assets?.thumbnail;
+    return thumbnailPath ? template.importedAssets?.[thumbnailPath] ?? '' : '';
 }
 </script>
 

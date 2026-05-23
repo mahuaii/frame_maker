@@ -1,11 +1,5 @@
 import type { TemplateField } from '../../../src/types/template';
-import { normalizeFrameAspectRatioValue, normalizeFrameBorderWidth } from './frame-layout.ts';
-
-type FieldValueNormalizer = (
-    value: unknown,
-    fallbackValue: unknown,
-    field: TemplateField
-) => unknown;
+import { getFieldValueNormalizer } from './capabilities/field-values.ts';
 
 function normalizeNumberValue(value: unknown, fallbackValue: unknown): unknown {
     if (value === '' || value === null || value === undefined) {
@@ -133,8 +127,9 @@ export function normalizeFieldValue(field: TemplateField, rawValue: unknown): un
         return field.normalizeValue(rawValue, fallbackValue, field);
     }
 
-    if (field.normalizeValueKey && FIELD_VALUE_NORMALIZERS[field.normalizeValueKey]) {
-        return FIELD_VALUE_NORMALIZERS[field.normalizeValueKey](rawValue, fallbackValue, field);
+    const normalizeValueCapability = getFieldValueNormalizer(field.normalizeValueKey);
+    if (normalizeValueCapability) {
+        return normalizeValueCapability(rawValue, fallbackValue, field);
     }
 
     switch (field.type) {
@@ -162,8 +157,9 @@ export function parseFieldInputValue(
         return field.parseValue(rawValue, currentValue, field);
     }
 
-    if (field.parseValueKey && FIELD_VALUE_NORMALIZERS[field.parseValueKey]) {
-        return FIELD_VALUE_NORMALIZERS[field.parseValueKey](rawValue, currentValue, field);
+    const parseValueCapability = getFieldValueNormalizer(field.parseValueKey);
+    if (parseValueCapability) {
+        return parseValueCapability(rawValue, currentValue, field);
     }
 
     return rawValue;
@@ -185,8 +181,3 @@ export function normalizeTemplateConfig(
         return config;
     }, {});
 }
-
-const FIELD_VALUE_NORMALIZERS: Record<string, FieldValueNormalizer> = Object.freeze({
-    frameAspectRatio: normalizeFrameAspectRatioValue,
-    frameBorderWidth: normalizeFrameBorderWidth,
-});

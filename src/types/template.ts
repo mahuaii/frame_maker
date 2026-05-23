@@ -92,6 +92,11 @@ export type TemplateOverlay = {
 
 export type TemplateResolveData = Record<string, unknown>;
 
+export type TemplateHandlers = {
+    resolveData?: string;
+    renderOverlay?: string;
+};
+
 export type FrameTemplate = {
     id: string;
     label?: string;
@@ -101,6 +106,7 @@ export type FrameTemplate = {
     backgroundColor?: string;
     textGroups?: TextModel;
     overlays?: TemplateOverlay[];
+    handlers?: TemplateHandlers;
     appearanceFieldKey?: string;
     appearanceDefaultKey?: string;
     appearanceThemes?: Record<string, TemplateAppearanceTheme>;

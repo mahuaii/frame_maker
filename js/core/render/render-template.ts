@@ -92,7 +92,7 @@ export async function renderTemplateFrame(canvas: HTMLCanvasElement, image: HTML
 
     renderDeclarativeOverlays(ctx, renderArgs);
 
-    if (!template.overlays?.length && typeof template.renderOverlay === 'function') {
+    if (typeof template.renderOverlay === 'function') {
         template.renderOverlay(ctx, renderArgs);
     }
 

@@ -1,4 +1,7 @@
 import { defineTemplate } from './registry.ts';
+import { assertKnownFieldValueCapabilities } from './capabilities/field-values.ts';
+import { resolveTemplateHandlerCapabilities } from './capabilities/handlers.ts';
+import { assertKnownOverlayCapabilities } from './capabilities/overlays.ts';
 import type { FrameTemplate } from '../../../src/types/template';
 
 const TEMPLATE_FORMAT = 'frame-maker-template';
@@ -11,6 +14,22 @@ type DataTemplateOptions = {
     assets?: Record<string, string>;
     releaseAssets?: () => void;
 };
+
+const TEMPLATE_SCHEMA_KEYS = [
+    'id',
+    'label',
+    'fields',
+    'defaultConfig',
+    'frame',
+    'backgroundColor',
+    'textGroups',
+    'overlays',
+    'appearanceFieldKey',
+    'appearanceDefaultKey',
+    'appearanceThemes',
+    'handlers',
+    'assets',
+];
 
 function isObject(value: unknown): value is Record<string, unknown> {
     return Boolean(value && typeof value === 'object' && !Array.isArray(value));
@@ -58,6 +77,14 @@ function validateTextGroups(textGroups: unknown, templateId: string) {
     assert(Array.isArray(textGroups), `Template "${templateId}" requires textGroups array.`);
 }
 
+function validateHandlers(handlers: unknown = {}, templateId: string) {
+    if (handlers === null || handlers === undefined) {
+        return;
+    }
+
+    assert(isObject(handlers), `Template "${templateId}" handlers must be an object.`);
+}
+
 function validateAssets(assets: unknown = {}, templateId: string) {
     assert(isObject(assets), `Template "${templateId}" assets must be an object.`);
 
@@ -74,17 +101,28 @@ function validateAssets(assets: unknown = {}, templateId: string) {
 function normalizeTemplateSchema(rawTemplate: unknown) {
     assert(isObject(rawTemplate), 'Template package requires template object.');
 
-    const template = cloneData(rawTemplate);
+    const clonedTemplate = cloneData(rawTemplate);
+    const template = TEMPLATE_SCHEMA_KEYS.reduce<Record<string, unknown>>((schema, key) => {
+        if (Object.hasOwn(clonedTemplate, key)) {
+            schema[key] = clonedTemplate[key];
+        }
+        return schema;
+    }, {});
     const templateId = String(template.id);
     validateTemplateId(template.id);
     validateFrame(template.frame, templateId);
     validateFields(template.fields, templateId);
     validateTextGroups(template.textGroups, templateId);
+    validateHandlers(template.handlers ?? {}, templateId);
     validateAssets(template.assets ?? {}, templateId);
+    assertKnownFieldValueCapabilities(template.fields, templateId);
+    assertKnownOverlayCapabilities(template.overlays ?? [], templateId);
+    resolveTemplateHandlerCapabilities(template.handlers ?? {}, templateId);
 
     return {
         ...template,
         overlays: Array.isArray(template.overlays) ? template.overlays : [],
+        handlers: isObject(template.handlers) ? template.handlers : {},
         assets: isObject(template.assets) ? template.assets : {},
     };
 }
@@ -107,16 +145,24 @@ export function normalizeDataTemplatePackage(rawPackage: unknown) {
     return createTemplatePackage(rawPackage.template);
 }
 
-export function defineDataTemplate(schema: unknown, options: DataTemplateOptions = {}): FrameTemplate {
-    const normalizedPackage = createTemplatePackage(schema);
+export function defineTemplatePackage(templatePackage: unknown, options: DataTemplateOptions = {}): FrameTemplate {
+    const normalizedPackage = normalizeDataTemplatePackage(templatePackage);
     const template = normalizedPackage.template;
+    const templateId = String((template as Record<string, unknown>).id);
+    const handlers = resolveTemplateHandlerCapabilities(template.handlers ?? {}, templateId);
 
     return defineTemplate(({
         ...template,
+        ...handlers,
         sourceType: options.sourceType ?? 'data',
         packageFormat: normalizedPackage.format,
         packageFormatVersion: normalizedPackage.formatVersion,
         importedAssets: options.assets ?? {},
         releaseAssets: typeof options.releaseAssets === 'function' ? options.releaseAssets : null,
     } as unknown) as FrameTemplate);
+}
+
+export function defineDataTemplate(schema: unknown, options: DataTemplateOptions = {}): FrameTemplate {
+    const normalizedPackage = createTemplatePackage(schema);
+    return defineTemplatePackage(normalizedPackage, options);
 }
