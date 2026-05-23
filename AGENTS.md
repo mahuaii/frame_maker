@@ -13,7 +13,7 @@ Frame Maker 是一个基于 Vue 3 + Vite 的相框生成工具。应用入口是
 - `src/App.vue`：Vue 根组件，组装模板列表、预览区、右侧 inspector、文本编辑、批量照片和导出流程。
 - `src/components/`：Vue 组件。
 - `src/composables/`：状态、历史记录、照片、模板和预览渲染组合式逻辑。
-- `src/adapters/`：Vue 到共享模板、渲染、EXIF、导出、模板包能力的适配层。
+- `src/adapters/`：Vue 到共享导出、模板包和 inspector 字段显示能力的适配层；渲染和模板状态现在主要直接调用共享 core 模块。
 - `src/types/`：TypeScript 类型定义。
 - `src/utils/`：Vue 文本模型编辑工具。
 - `src/styles/`：Vue 原生 UI 样式入口和模块。
@@ -23,7 +23,7 @@ Frame Maker 是一个基于 Vue 3 + Vite 的相框生成工具。应用入口是
 - `js/templates.ts`：模板注册列表和默认模板。
 - `js/templates/`：模板实现。每个模板通常包含 `schema.ts`、`index.ts`，按需在 `index.ts` 中实现 `resolveData`，或通过 `overlays` 声明照片边框等 overlay。
 - `legacy/`：旧版原生 DOM UI 归档，包含旧 `css/`、`js/app.js`、`js/app/` 和 `js/ui/`；当前 Vue 应用不从该目录加载运行时代码。
-- `assets/fonts/`：字体文件。当前跟踪 MiSans 与 `times.ttf`；`assets/fonts/Angie_Sans_Std.otf` 被 `.gitignore` 排除。
+- `assets/fonts/`：字体文件。当前跟踪 MiSans Light / Regular / Medium 与 `times.ttf`；`assets/fonts/Angie_Sans_Std.otf` 被 `.gitignore` 排除。
 - `thumbnails/`：模板缩略图。当前跟踪 `.jpg` 缩略图。
 - `tests/`：Node/Vite 相关测试。
 - `start.sh`：本地 Vite 开发服务器启动脚本，默认端口 `8001`。
@@ -97,9 +97,10 @@ npm run test:vue-state
 - 优先使用 `const` / `let`，按当前文件风格组织常量、状态和函数。
 - UI 文案当前主要为中文；新增用户可见文案应保持中文表达，除非模板默认内容本身需要英文。
 - 注释可以使用中文，保持简洁，只解释非显而易见的流程。
-- CSS 按 `src/styles/` 现有模块拆分：设计变量和 reset 放 `base.css`，页面骨架放 `layout.css`，通用控件放 `components.css` 和组件细分样式，具体功能区放 `preview.css`、`template-selector.css`、`inspector.css`、`export.css` 等。
+- CSS 按 `src/styles/` 现有模块拆分：设计变量和 reset 放 `base.css`，页面骨架放 `layout.css`，通用按钮等放 `components.css`，字段控件放 `fields.css`、`option-input.css`、`option-buttons.css`、`nine-grid-picker.css`，具体功能区放 `preview.css`、`template-selector.css`、`inspector.css`、`export.css`、`batch-photo.css`、`text-editor.css` 等。
 - 新增 UI 前先复用现有组件类和变量，例如按钮、字段、颜色选项、range、inspector 分区等；不要为单个场景复制一套硬编码样式。
-- 确实需要新组件时，先在 `components.css` 中定义可复用的通用组件样式，再在 `features.css` 中做具体区域的布局和组合。
+- 修改样式时先判断是否应调整控件或元素的公共样式；只有公共样式不适用时，再改具体区域或独立样式。
+- 确实需要新组件时，先复用或补充对应的现有样式模块；当前没有确认到 `features.css`，不要假设该文件存在。
 - 不要引入构建工具、框架、状态库或格式化工具，除非任务明确要求并同步说明项目流程变化。
 
 ## 设计规范
@@ -138,15 +139,15 @@ Vue 应用中的核心运行状态：
 - `hidden: true`：不在右侧面板显示，但仍参与配置归一化。
 - `appearanceVisibility`：可按当前外观主题显示或隐藏字段，支持 `showOn` / `hideOn`。
 
-右侧基础字段分区由 `src/components/InspectorPanel.vue` 的字段 key 判断：
+右侧基础字段分区由 `src/components/InspectorPanel.vue` 的字段 key 判断，并通过 `src/adapters/inspectorFieldAdapter.ts` 转成显示用 `InspectorField`：
 
-- 版式字段：`frameAspectRatio`、`frameBorderWidth`、`frameTop`、`frameRight`、`frameBottom`、`frameLeft`
+- 版式字段：以 `js/core/templates/frame-layout.ts` 的 `FRAME_LAYOUT_FIELD_KEYS` 为准，当前包括 `frameAspectRatio`、`frameBorderWidth`、`frameTop`、`frameRight`、`frameBottom`、`frameLeft`
 - 外观字段：`colorScheme`、`showThinBorder`
 - 其他可见模板字段默认进入文本区
 - EXIF 区不来自模板字段，而来自 `EDITABLE_EXIF_FIELDS`
-- 导出区不来自模板字段，而来自 `EXPORT_FIELDS`
+- 导出区不来自模板字段，当前由 `src/components/ExportPanel.vue` 内的 `sizePreset`、`customWidth`、`customHeight`、`jpegQuality` 控件定义
 
-新增字段时要确认字段 key 是否需要加入 `LAYOUT_FIELD_KEYS` 或 `APPEARANCE_FIELD_KEYS`，否则不会进入基础面板的对应分区；文本模型相关能力在 `TextEditorPanel.vue` 中处理。
+新增字段时要确认字段 key 是否需要加入 `FRAME_LAYOUT_FIELD_KEYS` 或 `InspectorPanel.vue` 内的 `APPEARANCE_FIELD_KEYS`，否则不会进入基础面板的对应分区；文本模型相关能力在 `TextEditorPanel.vue` 和 `src/utils/textModelEditor.ts` 中处理。`FieldControl.vue` 还支持显示适配后的 `option-input`、`theme-radio`、`nine-grid` 等控件形态，不要直接把这些当成模板 schema 的通用字段类型。
 
 ## 模板系统接口
 
@@ -339,6 +340,7 @@ EXIF 解析位于 `js/core/render/input.ts`，当前主要面向 JPEG。可编�
 
 - `angieSansStd`：`Angie Sans Std`，资产路径是 `assets/fonts/Angie_Sans_Std.otf`，该文件被忽略，不应提交。
 - `miSans`：`MiSans`，资产路径是 `assets/fonts/MiSans-Regular.woff2`。
+- `miSans` 同时注册 300 / 400 / 500 字重，分别对应 `MiSans-Light.woff2`、`MiSans-Regular.woff2`、`MiSans-Medium.woff2`。
 - `timesNewRoman`：`Times New Roman`，资产路径是 `assets/fonts/times.ttf`。
 - `systemSans`：系统 sans-serif 字体栈。
 
@@ -397,8 +399,8 @@ EXIF 解析位于 `js/core/render/input.ts`，当前主要面向 JPEG。可编�
 
 ## 提交前检查清单
 
-- 确认页面能通过本地静态服务器打开。
-- 至少手动验证上传、模板切换、右侧字段编辑、EXIF 编辑、预览和导出 JPG。
+- 如任务明确需要或项目约定允许，确认页面能通过本地静态服务器打开；如无特别说明，不做浏览器验证。
+- 涉及交互或渲染时，按任务范围手动验证上传、模板切换、右侧字段编辑、EXIF 编辑、预览和导出 JPG；自动化运行默认以现有 npm 检查命令为主。
 - 确认新增模板已在 `js/templates.ts` 注册，并有匹配的 `thumbnails/<template-id>_thumbnail.(png|jpg)`。
 - 确认没有提交 `.DS_Store`、`.playwright-cli/`、`assets/fonts/Angie_Sans_Std.otf` 或其他本地生成文件。
 - 如后续恢复了布局校验或缩略图脚本，按改动范围运行对应脚本。
