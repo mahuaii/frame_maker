@@ -25,7 +25,7 @@ import {
 } from '../utils/textModelEditor';
 import InspectorFieldRows from './InspectorFieldRows.vue';
 import CheckboxControl from './CheckboxControl.vue';
-import ColorRowControl from './ColorRowControl.vue';
+import FieldControl from './FieldControl.vue';
 import HiddenFileInput from './HiddenFileInput.vue';
 import ResetIconButton from './ResetIconButton.vue';
 import type { InspectorFieldOption } from '../types/inspector';
@@ -478,15 +478,6 @@ function handleImageSelected(files: FileList) {
     }
 }
 
-function colorTokenRows(tokenField: TextEditorField) {
-    return (tokenField.options ?? []).map((option) => ({
-        type: 'token' as const,
-        token: option.value,
-        color: getColorOptionValue(option),
-        selected: selectedColorToken.value === option.value,
-    }));
-}
-
 function colorPaletteRows() {
     return props.palette.map((item) => ({
         type: 'custom' as const,
@@ -502,6 +493,24 @@ function selectTokenColor(tokenField: TextEditorField, colorField: TextEditorFie
     }
 
     emit('selectColor', selectedItem.value.id, tokenField.key, colorField.key, token, color);
+}
+
+function selectColorTokenField(tokenField: TextEditorField, colorField: TextEditorField, value: unknown) {
+    const option = tokenField.options?.find((item) => String(item.value) === String(value));
+    selectTokenColor(
+        tokenField,
+        colorField,
+        String(value ?? ''),
+        option ? getColorOptionValue(option) : getColorOptionValue(null)
+    );
+}
+
+function paletteColorField(colorField: TextEditorField, paletteItem: TextColorPaletteItem): TextEditorField {
+    return {
+        ...colorField,
+        key: `${colorField.key}-${paletteItem.id}`,
+        label: '自定义颜色',
+    };
 }
 
 function addCurrentColor(tokenField: TextEditorField, colorField: TextEditorField) {
@@ -753,49 +762,39 @@ function visibilityIconPaths(row: FlatTextObject) {
                             </button>
                         </div>
                         <div class="inspector-section-content">
-                            <div class="inspector-field-group-panel text-color-panel">
+                            <div class="inspector-field-group-panel">
                                 <div class="text-color-row-list">
-                                    <button
-                                        v-for="row in colorTokenRows(colorFields.tokenField)"
-                                        :key="String(row.token)"
-                                        class="text-color-row"
-                                        type="button"
-                                        @click="selectTokenColor(colorFields.tokenField, colorFields.colorField, String(row.token), row.color)"
-                                    >
-                                        <ColorRowControl
-                                            tag="div"
-                                            role="presentation"
-                                            :color="row.color"
-                                            :label="String(row.token)"
-                                            :selected="row.selected"
-                                            @select="selectTokenColor(colorFields.tokenField, colorFields.colorField, String(row.token), row.color)"
+                                    <div class="inspector-field-row-single">
+                                        <FieldControl
+                                            :field="colorFields.tokenField"
+                                            :value="fieldValue(colorFields.tokenField)"
+                                            :id-prefix="`text-color-${selectedItem.id}`"
+                                            label=""
+                                            @change="(_, value) => selectColorTokenField(colorFields.tokenField, colorFields.colorField, value)"
+                                            @input="(_, value) => selectColorTokenField(colorFields.tokenField, colorFields.colorField, value)"
                                         />
-                                    </button>
+                                    </div>
 
                                     <div
                                         v-for="row in colorPaletteRows()"
                                         :key="row.paletteItem.id"
-                                        class="text-color-row-shell text-color-row-shell-custom"
+                                        class="inspector-field-row-single text-color-row-shell text-color-row-shell-custom"
+                                        @click="selectTokenColor(colorFields.tokenField, colorFields.colorField, '', row.color)"
                                     >
-                                        <ColorRowControl
-                                            class="text-color-row text-color-row-custom"
-                                            tag="div"
-                                            role="button"
-                                            tabindex="0"
-                                            :color="row.color"
-                                            label="自定义颜色"
-                                            :selected="row.selected"
-                                            :editable="row.selected"
-                                            @select="selectTokenColor(colorFields.tokenField, colorFields.colorField, '', row.color)"
-                                            @draft="updatePaletteColor(row.paletteItem, colorFields.tokenField, colorFields.colorField, $event)"
-                                            @change="updatePaletteColor(row.paletteItem, colorFields.tokenField, colorFields.colorField, $event)"
+                                        <FieldControl
+                                            :field="paletteColorField(colorFields.colorField, row.paletteItem)"
+                                            :value="row.color"
+                                            :id-prefix="`text-color-${selectedItem.id}`"
+                                            label=""
+                                            @input="(_, value) => updatePaletteColor(row.paletteItem, colorFields.tokenField, colorFields.colorField, String(value))"
+                                            @change="(_, value) => updatePaletteColor(row.paletteItem, colorFields.tokenField, colorFields.colorField, String(value))"
                                         />
                                         <button
                                             class="icon-button icon-button-sm text-color-row-remove"
                                             type="button"
                                             aria-label="删除自定义颜色"
                                             title="删除自定义颜色"
-                                            @click="removePaletteColor(row.paletteItem, colorFields.tokenField, colorFields.colorField, row.selected)"
+                                            @click.stop="removePaletteColor(row.paletteItem, colorFields.tokenField, colorFields.colorField, row.selected)"
                                         >
                                             −
                                         </button>

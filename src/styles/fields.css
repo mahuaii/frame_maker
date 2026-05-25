@@ -136,15 +136,7 @@
     background: transparent;
 }
 
-.text-color-panel {
-    --field-height: 24px;
-    --field-inline-padding: 8px;
-    --field-font-size: 12px;
-    --field-radius: 5px;
-}
-
-.field-group .color-row-control,
-.text-color-panel .color-row-control {
+.field-group .color-row-control {
     --color-row-swatch-size: 14px;
     --field-frame-background: var(--color-control-background-muted);
     --field-frame-background-hover: var(--color-control-background-hover);
@@ -169,8 +161,7 @@
     transition: border-color var(--control-transition-duration) ease, box-shadow var(--control-transition-duration) ease, background-color var(--control-transition-duration) ease;
 }
 
-.field-group .color-row-control::after,
-.text-color-panel .color-row-control::after {
+.field-group .color-row-control::after {
     content: '';
     position: absolute;
     top: 0;
@@ -182,9 +173,7 @@
 }
 
 .field-group .color-row-control:hover,
-.field-group .color-row-control:focus-visible,
-.text-color-panel .color-row-control:hover,
-.text-color-panel .color-row-control:focus-visible {
+.field-group .color-row-control:focus-visible {
     border-color: var(--field-frame-border-hover);
     background: var(--field-frame-background-hover);
 }
@@ -194,8 +183,7 @@
     background: var(--field-frame-background-focus);
 }
 
-.field-group input.color-row-native-input[type="color"],
-.text-color-panel input.color-row-native-input[type="color"] {
+.field-group input.color-row-native-input[type="color"] {
     position: absolute;
     inset: auto auto 0 0;
     width: 1px;
@@ -241,8 +229,7 @@
     background-color: var(--color-row-swatch-color, #000000ff);
 }
 
-.field-group .color-row-control input.color-row-input,
-.text-color-panel .color-row-control input.color-row-input {
+.field-group .color-row-control input.color-row-input {
     width: 100%;
     min-width: 0;
     height: calc(var(--field-height) - 2px);
@@ -261,9 +248,7 @@
 }
 
 .field-group .color-row-control input.color-row-input:hover,
-.field-group .color-row-control input.color-row-input:focus,
-.text-color-panel .color-row-control input.color-row-input:hover,
-.text-color-panel .color-row-control input.color-row-input:focus {
+.field-group .color-row-control input.color-row-input:focus {
     border: 0;
     background: transparent;
     box-shadow: none;
@@ -316,8 +301,7 @@
     text-align: right;
 }
 
-.field-group .color-row-control input.color-row-opacity-input,
-.text-color-panel .color-row-control input.color-row-opacity-input {
+.field-group .color-row-control input.color-row-opacity-input {
     padding-right: 4px;
 }
 

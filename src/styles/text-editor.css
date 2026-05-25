@@ -312,10 +312,6 @@
     min-height: var(--text-group-anchor-control-height);
 }
 
-.text-color-panel {
-    gap: 4px;
-}
-
 .text-section-checkbox-action {
     display: inline-flex;
     align-items: center;
@@ -340,7 +336,7 @@
 .text-color-row-list {
     display: flex;
     flex-direction: column;
-    gap: var(--field-inline-padding);
+    gap: var(--settings-field-gap);
 }
 
 .text-color-row-shell {
@@ -353,26 +349,6 @@
 
 .text-color-row-shell-custom {
     grid-template-columns: minmax(0, 1fr) 24px;
-}
-
-.text-color-row,
-.text-color-row > .color-row-control {
-    width: 100%;
-}
-
-.text-color-row {
-    padding: 0;
-    border: 0;
-    background: transparent;
-    cursor: pointer;
-}
-
-.text-color-row:focus-visible {
-    outline: none;
-}
-
-.text-color-value {
-    text-align: left;
 }
 
 .image-source-control {
