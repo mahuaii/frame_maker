@@ -29,11 +29,12 @@ import {
     type FlatTextObject,
     type TextEditorField,
 } from '../utils/textModelEditor';
-import FieldControl from './FieldControl.vue';
+import InspectorFieldRows from './InspectorFieldRows.vue';
 import CheckboxControl from './CheckboxControl.vue';
 import HiddenFileInput from './HiddenFileInput.vue';
 import ResetIconButton from './ResetIconButton.vue';
 import type { InspectorFieldOption } from '../types/inspector';
+import type { InspectorFieldRow } from '../types/inspectorRows';
 import type { FrameTemplate } from '../types/template';
 import type {
     TextColorPaletteItem,
@@ -130,6 +131,11 @@ const layoutHeaderActionField = computed(() => layoutFields.value.find((field) =
 const fontHeaderActionField = computed(() => fontFields.value.find((field) => field.key === 'style.fontOverride') ?? null);
 const layoutFieldBlocks = computed(() => buildLayoutFieldBlocks(layoutFields.value));
 const fontFieldBlocks = computed(() => buildFontFieldBlocks(fontFields.value));
+const untitledFieldRows = computed<InspectorFieldRow[]>(() => (
+    untitledSectionFields.value.map((field) => buildSingleFieldRow(field))
+));
+const layoutFieldRows = computed<InspectorFieldRow[]>(() => buildFieldBlockRows(layoutFieldBlocks.value));
+const fontFieldRows = computed<InspectorFieldRow[]>(() => buildFieldBlockRows(fontFieldBlocks.value));
 const selectedColorToken = computed(() => (
     selectedItem.value && colorFields.value
         ? getTextColorTokenValue(selectedItem.value, colorFields.value.tokenField)
@@ -297,6 +303,40 @@ function buildPairedFieldBlock(fields: TextEditorField[], pairKeys: string[]): T
         fields: pairFields,
         title: pairKeys[0] === 'offsetXScale' ? '偏移' : undefined,
     };
+}
+
+function buildSingleFieldRow(field: TextEditorField): InspectorFieldRow {
+    return {
+        id: field.key,
+        type: 'single',
+        fields: [field],
+    };
+}
+
+function buildDoubleFieldRow(fields: TextEditorField[], title?: string): InspectorFieldRow {
+    return {
+        id: fields.map((field) => field.key).join('-'),
+        type: 'double',
+        title,
+        fields,
+    };
+}
+
+function buildFieldBlockRows(blocks: TextFieldBlock[]): InspectorFieldRow[] {
+    return blocks.flatMap((block) => {
+        if (block.type === 'single') {
+            return [buildSingleFieldRow(block.field)];
+        }
+
+        if (block.type === 'double') {
+            return [buildDoubleFieldRow(block.fields, block.title)];
+        }
+
+        return [
+            ...(block.fontIdField ? [buildSingleFieldRow(block.fontIdField)] : []),
+            ...block.variantFields.map((field) => buildSingleFieldRow(field)),
+        ];
+    });
 }
 
 function buildLayoutFieldBlocks(fields: TextEditorField[]): TextFieldBlock[] {
@@ -668,19 +708,13 @@ function visibilityIconPaths(row: FlatTextObject) {
                 <template v-else>
                     <section v-if="untitledSectionFields.length" class="inspector-section">
                         <div class="inspector-section-content">
-                            <div
-                                v-for="field in untitledSectionFields"
-                                :key="field.key"
-                                class="inspector-field-row-single"
-                            >
-                                <FieldControl
-                                    :field="field"
-                                    :value="fieldValue(field)"
-                                    :id-prefix="`text-${selectedItem.id}`"
-                                    @change="updateField"
-                                    @input="draftField"
-                                />
-                            </div>
+                            <InspectorFieldRows
+                                :rows="untitledFieldRows"
+                                :value-for-field="fieldValue"
+                                :id-prefix="`text-${selectedItem.id}`"
+                                @change="updateField"
+                                @input="draftField"
+                            />
                         </div>
                     </section>
 
@@ -699,44 +733,16 @@ function visibilityIconPaths(row: FlatTextObject) {
                             />
                         </div>
                         <div class="inspector-section-content text-object-sectioned-fields">
-                            <template v-for="(block, blockIndex) in layoutFieldBlocks" :key="`${block.type}-${blockIndex}`">
-                                <div
-                                    v-if="block.type === 'single'"
-                                    class="inspector-field-row-single"
-                                >
-                                    <FieldControl
-                                        :field="block.field"
-                                        :value="fieldValue(block.field)"
-                                        :id-prefix="`text-${selectedItem.id}`"
-                                        :compact="shouldRenderCompact(block.field)"
-                                        :compact-title="compactTitle(block.field)"
-                                        :label="compactLabel(block.field)"
-                                        @change="updateField"
-                                        @input="draftField"
-                                    />
-                                </div>
-
-                                <div
-                                    v-else-if="block.type === 'double'"
-                                    class="inspector-field-row-double"
-                                >
-                                    <div v-if="block.title" class="field-group-label inspector-field-row-title">
-                                        {{ block.title }}
-                                    </div>
-                                    <FieldControl
-                                        v-for="field in block.fields"
-                                        :key="field.key"
-                                        :field="field"
-                                        :value="fieldValue(field)"
-                                        :id-prefix="`text-${selectedItem.id}`"
-                                        :compact="shouldRenderCompact(field)"
-                                        :compact-title="compactTitle(field)"
-                                        :label="compactLabel(field)"
-                                        @change="updateField"
-                                        @input="draftField"
-                                    />
-                                </div>
-                            </template>
+                            <InspectorFieldRows
+                                :rows="layoutFieldRows"
+                                :value-for-field="fieldValue"
+                                :id-prefix="`text-${selectedItem.id}`"
+                                :compact-for-field="shouldRenderCompact"
+                                :compact-title-for-field="compactTitle"
+                                :label-for-field="compactLabel"
+                                @change="updateField"
+                                @input="draftField"
+                            />
                         </div>
                     </section>
 
@@ -755,77 +761,16 @@ function visibilityIconPaths(row: FlatTextObject) {
                             />
                         </div>
                         <div class="inspector-section-content text-object-sectioned-fields">
-                            <template v-for="(block, blockIndex) in fontFieldBlocks" :key="`${block.type}-${blockIndex}`">
-                                <div
-                                    v-if="block.type === 'single'"
-                                    class="inspector-field-row-single"
-                                >
-                                    <FieldControl
-                                        :field="block.field"
-                                        :value="fieldValue(block.field)"
-                                        :id-prefix="`text-${selectedItem.id}`"
-                                        :compact="shouldRenderCompact(block.field)"
-                                        :compact-title="compactTitle(block.field)"
-                                        :label="compactLabel(block.field)"
-                                        @change="updateField"
-                                        @input="draftField"
-                                    />
-                                </div>
-
-                                <div
-                                    v-else-if="block.type === 'font-panel'"
-                                    class="inspector-field-row-single"
-                                >
-                                    <div class="text-font-panel field-group field-frame-gray">
-                                        <div
-                                            v-if="block.fontIdField"
-                                            class="inspector-field-row-single"
-                                        >
-                                            <FieldControl
-                                                :field="block.fontIdField"
-                                                :value="fieldValue(block.fontIdField)"
-                                                :id-prefix="`text-${selectedItem.id}`"
-                                                label=""
-                                                @change="updateField"
-                                                @input="draftField"
-                                            />
-                                        </div>
-                                        <div
-                                            v-if="block.variantFields.length"
-                                            class="inspector-field-row-double text-font-variant-grid"
-                                        >
-                                            <FieldControl
-                                                v-for="field in block.variantFields"
-                                                :key="field.key"
-                                                :field="field"
-                                                :value="fieldValue(field)"
-                                                :id-prefix="`text-${selectedItem.id}`"
-                                                label=""
-                                                @change="updateField"
-                                                @input="draftField"
-                                            />
-                                        </div>
-                                    </div>
-                                </div>
-
-                                <div
-                                    v-else-if="block.type === 'double'"
-                                    class="inspector-field-row-double"
-                                >
-                                    <FieldControl
-                                        v-for="field in block.fields"
-                                        :key="field.key"
-                                        :field="field"
-                                        :value="fieldValue(field)"
-                                        :id-prefix="`text-${selectedItem.id}`"
-                                        :compact="shouldRenderCompact(field)"
-                                        :compact-title="compactTitle(field)"
-                                        :label="compactLabel(field)"
-                                        @change="updateField"
-                                        @input="draftField"
-                                    />
-                                </div>
-                            </template>
+                            <InspectorFieldRows
+                                :rows="fontFieldRows"
+                                :value-for-field="fieldValue"
+                                :id-prefix="`text-${selectedItem.id}`"
+                                :compact-for-field="shouldRenderCompact"
+                                :compact-title-for-field="compactTitle"
+                                :label-for-field="compactLabel"
+                                @change="updateField"
+                                @input="draftField"
+                            />
                         </div>
                     </section>
 

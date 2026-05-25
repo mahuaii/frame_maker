@@ -9,10 +9,11 @@ import {
     FRAME_SIDE_FIELD_KEYS,
     FREE_FRAME_ASPECT_RATIO,
 } from '../../js/core/templates/frame-layout.ts';
-import FieldControl from './FieldControl.vue';
+import InspectorFieldRows from './InspectorFieldRows.vue';
 import ResetIconButton from './ResetIconButton.vue';
 import type { FrameTemplate, TemplateField } from '../types/template';
 import type { InspectorField } from '../types/inspector';
+import type { InspectorFieldRow } from '../types/inspectorRows';
 
 type AppearanceColorControl = {
     field: InspectorField;
@@ -66,6 +67,10 @@ const appearanceControlFields = computed(() => (
     appearanceFields.value.map((field) => buildInspectorField(props.template, field))
 ));
 const appearanceColorControls = computed(() => buildAppearanceColorControls());
+const appearanceFieldRows = computed<InspectorFieldRow[]>(() => [
+    ...appearanceControlFields.value.map((field) => buildSingleFieldRow(field)),
+    ...appearanceColorControls.value.map((control) => buildSingleFieldRow(control.field)),
+]);
 const aspectField = computed(() => layoutFields.value.find((field) => field.key === 'frameAspectRatio'));
 const borderField = computed(() => layoutFields.value.find((field) => field.key === 'frameBorderWidth'));
 const sideFields = computed(() => layoutFields.value.filter((field) => FRAME_SIDE_TEMPLATE_FIELD_KEYS.has(field.key)));
@@ -78,6 +83,18 @@ const borderControlField = computed(() => (
 const sideControlFields = computed(() => (
     sideFields.value.map((field) => buildInspectorField(props.template, field))
 ));
+const layoutFieldRows = computed<InspectorFieldRow[]>(() => {
+    const rows: InspectorFieldRow[] = [];
+    if (aspectControlField.value) {
+        rows.push(buildSingleFieldRow(aspectControlField.value));
+    }
+    if (isFreeFrameLayout.value) {
+        rows.push(...sideControlRows.value.map((row) => buildDoubleFieldRow(row)));
+    } else if (borderControlField.value) {
+        rows.push(buildSingleFieldRow(borderControlField.value));
+    }
+    return rows;
+});
 const layoutFieldsWithDefaults = computed(() => (
     layoutFields.value.filter((field) => props.defaultValues[field.key] !== undefined)
 ));
@@ -96,7 +113,11 @@ const exifFieldRows = computed(() => [
     pickFieldsByKey(primaryExifFields.value, ['focalLength', 'fNumber']),
     pickFieldsByKey(primaryExifFields.value, ['exposureTime', 'iso']),
     ...remainingExifFields.value.map((field) => [field]),
-].filter((row) => row.length > 0));
+].filter((row) => row.length > 0).map((row) => ({
+    id: fieldRowKey(row),
+    type: row.length > 1 ? 'double' as const : 'single' as const,
+    fields: row.map((field) => ({ ...field, type: field.type ?? 'input', defaultValue: '' })),
+})));
 
 watch(() => props.values, () => {
     Object.keys(textDrafts).forEach((key) => {
@@ -104,7 +125,7 @@ watch(() => props.values, () => {
     });
 }, { deep: true });
 
-function fieldValue(field: TemplateField) {
+function fieldValue(field: Pick<TemplateField, 'key' | 'defaultValue'>) {
     return textDrafts[field.key] ?? props.values[field.key] ?? field.defaultValue ?? '';
 }
 
@@ -191,6 +212,30 @@ function fieldRowKey(fields: { key: string }[]) {
     return fields.map((field) => field.key).join('-');
 }
 
+function buildSingleFieldRow(field: InspectorField): InspectorFieldRow {
+    return {
+        id: field.key,
+        type: 'single',
+        fields: [field],
+    };
+}
+
+function buildDoubleFieldRow(fields: InspectorField[]): InspectorFieldRow {
+    return {
+        id: fieldRowKey(fields),
+        type: 'double',
+        fields,
+    };
+}
+
+function isCompactLayoutField(field: InspectorField) {
+    return field.key !== 'frameAspectRatio';
+}
+
+function exifFieldValue(field: InspectorField) {
+    return props.exifOverrides[field.key] ?? '';
+}
+
 function commitField(field: InspectorField, value: unknown) {
     emit('updateField', field.key, value);
 }
@@ -209,6 +254,10 @@ function commitDraft(field: InspectorField) {
         delete textDrafts[field.key];
     }
 }
+
+function commitExifField(field: InspectorField, value: unknown) {
+    emit('updateExif', field.key, String(value ?? ''));
+}
 </script>
 
 <template>
@@ -218,30 +267,12 @@ function commitDraft(field: InspectorField) {
                 <h2 class="inspector-section-title">外观</h2>
             </div>
             <div class="inspector-section-content">
-                <div
-                    v-for="field in appearanceControlFields"
-                    :key="field.key"
-                    class="inspector-field-row-single"
-                >
-                    <FieldControl
-                        :field="field"
-                        :value="fieldValue(field)"
-                        @change="commitField"
-                        @input="updateDraft"
-                    />
-                </div>
-                <div
-                    v-for="control in appearanceColorControls"
-                    :key="control.field.key"
-                    class="inspector-field-row-single"
-                >
-                    <FieldControl
-                        :field="control.field"
-                        :value="control.value"
-                        @change="commitField"
-                        @input="updateDraft"
-                    />
-                </div>
+                <InspectorFieldRows
+                    :rows="appearanceFieldRows"
+                    :value-for-field="fieldValue"
+                    @change="commitField"
+                    @input="updateDraft"
+                />
             </div>
         </section>
 
@@ -256,45 +287,14 @@ function commitDraft(field: InspectorField) {
                 />
             </header>
             <div class="inspector-section-content">
-                <div
-                    v-if="aspectControlField"
-                    class="inspector-field-row-single"
-                >
-                    <FieldControl
-                        :field="aspectControlField"
-                        :value="fieldValue(aspectControlField)"
-                        @change="commitField"
-                        @input="updateDraft"
-                    />
-                </div>
-                <div
-                    v-for="row in isFreeFrameLayout ? sideControlRows : []"
-                    :key="fieldRowKey(row)"
-                    class="inspector-field-row-double"
-                >
-                    <FieldControl
-                        v-for="field in row"
-                        :key="field.key"
-                        :field="field"
-                        :value="fieldValue(field)"
-                        :label="compactFieldLabel(field)"
-                        compact
-                        @change="commitField"
-                        @input="updateDraft"
-                    />
-                </div>
-                <div
-                    v-if="!isFreeFrameLayout && borderControlField"
-                    class="inspector-field-row-single"
-                >
-                    <FieldControl
-                        :field="borderControlField"
-                        :value="fieldValue(borderControlField)"
-                        compact
-                        @change="commitField"
-                        @input="updateDraft"
-                    />
-                </div>
+                <InspectorFieldRows
+                    :rows="layoutFieldRows"
+                    :value-for-field="fieldValue"
+                    :label-for-field="compactFieldLabel"
+                    :compact-for-field="isCompactLayoutField"
+                    @change="commitField"
+                    @input="updateDraft"
+                />
             </div>
         </section>
 
@@ -308,26 +308,12 @@ function commitDraft(field: InspectorField) {
                 />
             </header>
             <div class="inspector-section-content exif-editor-content">
-                <template v-for="row in exifFieldRows" :key="fieldRowKey(row)">
-                    <div v-if="row.length > 1" class="inspector-field-row-double">
-                        <FieldControl
-                            v-for="field in row"
-                            :key="field.key"
-                            :field="{ ...field, type: field.type ?? 'input', defaultValue: '' }"
-                            :value="exifOverrides[field.key] ?? ''"
-                            id-prefix="field-exif"
-                            @change="(_, value) => emit('updateExif', field.key, String(value ?? ''))"
-                        />
-                    </div>
-                    <div v-else class="inspector-field-row-single">
-                        <FieldControl
-                            :field="{ ...row[0], type: row[0].type ?? 'input', defaultValue: '' }"
-                            :value="exifOverrides[row[0].key] ?? ''"
-                            id-prefix="field-exif"
-                            @change="(_, value) => emit('updateExif', row[0].key, String(value ?? ''))"
-                        />
-                    </div>
-                </template>
+                <InspectorFieldRows
+                    :rows="exifFieldRows"
+                    :value-for-field="exifFieldValue"
+                    id-prefix="field-exif"
+                    @change="commitExifField"
+                />
             </div>
         </section>
     </aside>

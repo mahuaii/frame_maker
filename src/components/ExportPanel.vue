@@ -1,9 +1,11 @@
 <script setup lang="ts">
-import FieldControl from './FieldControl.vue';
+import { computed } from 'vue';
+import InspectorFieldRows from './InspectorFieldRows.vue';
 import type { ExportSettings } from '../types/editor';
 import type { InspectorField } from '../types/inspector';
+import type { InspectorFieldRow } from '../types/inspectorRows';
 
-defineProps<{
+const props = defineProps<{
     settings: ExportSettings;
     disabled: boolean;
 }>();
@@ -109,6 +111,24 @@ const jpegQualityField: InspectorField = {
     parseValue: parseJpegQualityInput,
     options: buildJpegQualityOptions(),
 };
+const exportFieldRows = computed<InspectorFieldRow[]>(() => [
+    {
+        id: 'export-primary',
+        type: 'double',
+        fields: [sizePresetField, jpegQualityField],
+    },
+]);
+const customSizeFieldRows = computed<InspectorFieldRow[]>(() => [
+    {
+        id: 'export-custom-size-fields',
+        type: 'double',
+        fields: [customWidthField, customHeightField],
+    },
+]);
+
+function exportFieldValue(field: InspectorField) {
+    return props.settings[field.key as keyof ExportSettings];
+}
 
 function handleFieldChange(settings: ExportSettings, field: InspectorField, value: unknown) {
     switch (field.key) {
@@ -130,34 +150,20 @@ function handleFieldChange(settings: ExportSettings, field: InspectorField, valu
 
 <template>
     <div class="export-controls">
-        <div class="inspector-field-row-double">
-            <FieldControl
-                :field="sizePresetField"
-                :value="settings.sizePreset"
-                id-prefix="export"
-                @change="(field, value) => handleFieldChange(settings, field, value)"
-            />
-            <FieldControl
-                :field="jpegQualityField"
-                :value="settings.jpegQuality"
-                id-prefix="export"
-                @change="(field, value) => handleFieldChange(settings, field, value)"
-            />
-        </div>
+        <InspectorFieldRows
+            :rows="exportFieldRows"
+            :value-for-field="exportFieldValue"
+            id-prefix="export"
+            @change="(field, value) => handleFieldChange(settings, field, value)"
+        />
         <div
-            class="export-custom-size inspector-field-row-double"
+            class="export-custom-size"
             :class="{ hidden: settings.sizePreset !== 'custom' }"
             id="export-custom-size"
         >
-            <FieldControl
-                :field="customWidthField"
-                :value="settings.customWidth"
-                id-prefix="export"
-                @change="(field, value) => handleFieldChange(settings, field, value)"
-            />
-            <FieldControl
-                :field="customHeightField"
-                :value="settings.customHeight"
+            <InspectorFieldRows
+                :rows="customSizeFieldRows"
+                :value-for-field="exportFieldValue"
                 id-prefix="export"
                 @change="(field, value) => handleFieldChange(settings, field, value)"
             />
