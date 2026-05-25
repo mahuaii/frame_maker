@@ -373,7 +373,15 @@
     grid-template-columns: minmax(0, 1fr) 24px;
 }
 
+.text-color-row,
+.text-color-row > .color-row-control {
+    width: 100%;
+}
+
 .text-color-row {
+    padding: 0;
+    border: 0;
+    background: transparent;
     cursor: pointer;
 }
 
@@ -381,33 +389,8 @@
     outline: none;
 }
 
-.text-color-row.selected {
-    border-color: var(--field-frame-border);
-    background: var(--field-frame-background);
-}
-
-.text-color-row.selected:hover,
-.text-color-row.selected:focus-visible {
-    border-color: var(--field-frame-border-hover);
-    background: var(--field-frame-background-hover);
-}
-
-.text-color-swatch {
-    background-color: var(--text-color-swatch, #000000ff);
-}
-
 .text-color-value {
     text-align: left;
-}
-
-.text-color-hex-input {
-    text-transform: uppercase;
-}
-
-.text-color-alpha-input::-webkit-outer-spin-button,
-.text-color-alpha-input::-webkit-inner-spin-button {
-    margin: 0;
-    appearance: none;
 }
 
 .image-source-control {

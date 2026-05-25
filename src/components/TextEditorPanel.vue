@@ -1,12 +1,9 @@
 <script setup lang="ts">
 import { computed, ref, watch } from 'vue';
 import {
-    alphaPercentToHex,
     buildTextObjectFieldDefinitions,
     findTextObjectById,
     flattenTextModel,
-    formatColorAlpha,
-    formatColorHex,
     getColorOptionValue,
     getTextColorCustomValue,
     getTextColorDefaultOption,
@@ -20,9 +17,6 @@ import {
     hasAncestorFontOverride,
     isValidTextObjectDrop,
     normalizeColorValue,
-    normalizeHexDraft,
-    parseColorValue,
-    sanitizeHexDraft,
     TEXT_FONT_FIELD_KEYS,
     TEXT_LAYOUT_FIELD_KEYS,
     TEXT_STANDALONE_FIELD_KEYS,
@@ -31,6 +25,7 @@ import {
 } from '../utils/textModelEditor';
 import InspectorFieldRows from './InspectorFieldRows.vue';
 import CheckboxControl from './CheckboxControl.vue';
+import ColorRowControl from './ColorRowControl.vue';
 import HiddenFileInput from './HiddenFileInput.vue';
 import ResetIconButton from './ResetIconButton.vue';
 import type { InspectorFieldOption } from '../types/inspector';
@@ -536,36 +531,6 @@ function updatePaletteColor(
     emit('updateColor', selectedItem.value.id, paletteItem.id, tokenField.key, colorField.key, nextValue);
 }
 
-function updatePaletteHex(
-    paletteItem: TextColorPaletteItem,
-    tokenField: TextEditorField,
-    colorField: TextEditorField,
-    value: string,
-    alpha: string
-) {
-    const hex = sanitizeHexDraft(value);
-    if (hex.length !== 6) {
-        return;
-    }
-
-    updatePaletteColor(paletteItem, tokenField, colorField, `#${hex}${alphaPercentToHex(alpha)}`);
-}
-
-function updatePaletteAlpha(
-    paletteItem: TextColorPaletteItem,
-    tokenField: TextEditorField,
-    colorField: TextEditorField,
-    hex: string,
-    alpha: string
-) {
-    updatePaletteColor(
-        paletteItem,
-        tokenField,
-        colorField,
-        `#${normalizeHexDraft(hex)}${alphaPercentToHex(alpha)}`
-    );
-}
-
 function removePaletteColor(
     paletteItem: TextColorPaletteItem,
     tokenField: TextEditorField,
@@ -793,16 +758,18 @@ function visibilityIconPaths(row: FlatTextObject) {
                                     <button
                                         v-for="row in colorTokenRows(colorFields.tokenField)"
                                         :key="String(row.token)"
-                                        class="text-color-row color-row-control"
-                                        :class="{ selected: row.selected }"
+                                        class="text-color-row"
                                         type="button"
-                                        :style="{ '--text-color-swatch': row.color }"
                                         @click="selectTokenColor(colorFields.tokenField, colorFields.colorField, String(row.token), row.color)"
                                     >
-                                        <span class="text-color-swatch color-row-swatch"></span>
-                                        <span class="text-color-value color-row-value">{{ formatColorHex(row.color) }}</span>
-                                        <span class="text-color-opacity color-row-opacity">{{ formatColorAlpha(row.color) }}</span>
-                                        <span class="text-color-unit color-row-unit">%</span>
+                                        <ColorRowControl
+                                            tag="div"
+                                            role="presentation"
+                                            :color="row.color"
+                                            :label="String(row.token)"
+                                            :selected="row.selected"
+                                            @select="selectTokenColor(colorFields.tokenField, colorFields.colorField, String(row.token), row.color)"
+                                        />
                                     </button>
 
                                     <div
@@ -810,47 +777,19 @@ function visibilityIconPaths(row: FlatTextObject) {
                                         :key="row.paletteItem.id"
                                         class="text-color-row-shell text-color-row-shell-custom"
                                     >
-                                        <div
-                                            class="text-color-row text-color-row-custom color-row-control"
-                                            :class="{ selected: row.selected }"
+                                        <ColorRowControl
+                                            class="text-color-row text-color-row-custom"
+                                            tag="div"
                                             role="button"
                                             tabindex="0"
-                                            :style="{ '--text-color-swatch': row.color }"
-                                            @click="selectTokenColor(colorFields.tokenField, colorFields.colorField, '', row.color)"
-                                            @keydown.enter.prevent="selectTokenColor(colorFields.tokenField, colorFields.colorField, '', row.color)"
-                                            @keydown.space.prevent="selectTokenColor(colorFields.tokenField, colorFields.colorField, '', row.color)"
-                                        >
-                                            <span class="text-color-swatch color-row-swatch"></span>
-                                            <template v-if="row.selected">
-                                                <input
-                                                    class="text-color-value text-color-hex-input color-row-input color-row-value-input"
-                                                    type="text"
-                                                    maxlength="6"
-                                                    :value="parseColorValue(row.color).hex"
-                                                    aria-label="自定义颜色 HEX"
-                                                    @click.stop
-                                                    @input="updatePaletteHex(row.paletteItem, colorFields.tokenField, colorFields.colorField, ($event.target as HTMLInputElement).value, String(parseColorValue(row.color).alpha))"
-                                                    @change="updatePaletteHex(row.paletteItem, colorFields.tokenField, colorFields.colorField, normalizeHexDraft(($event.target as HTMLInputElement).value, parseColorValue(row.color).hex), String(parseColorValue(row.color).alpha))"
-                                                >
-                                                <input
-                                                    class="text-color-opacity text-color-alpha-input color-row-input color-row-opacity-input"
-                                                    type="number"
-                                                    min="0"
-                                                    max="100"
-                                                    step="1"
-                                                    :value="parseColorValue(row.color).alpha"
-                                                    aria-label="自定义颜色不透明度"
-                                                    @click.stop
-                                                    @input="updatePaletteAlpha(row.paletteItem, colorFields.tokenField, colorFields.colorField, parseColorValue(row.color).hex, ($event.target as HTMLInputElement).value)"
-                                                >
-                                                <span class="text-color-unit color-row-unit">%</span>
-                                            </template>
-                                            <template v-else>
-                                                <span class="text-color-value color-row-value">{{ formatColorHex(row.color) }}</span>
-                                                <span class="text-color-opacity color-row-opacity">{{ formatColorAlpha(row.color) }}</span>
-                                                <span class="text-color-unit color-row-unit">%</span>
-                                            </template>
-                                        </div>
+                                            :color="row.color"
+                                            label="自定义颜色"
+                                            :selected="row.selected"
+                                            :editable="row.selected"
+                                            @select="selectTokenColor(colorFields.tokenField, colorFields.colorField, '', row.color)"
+                                            @draft="updatePaletteColor(row.paletteItem, colorFields.tokenField, colorFields.colorField, $event)"
+                                            @change="updatePaletteColor(row.paletteItem, colorFields.tokenField, colorFields.colorField, $event)"
+                                        />
                                         <button
                                             class="icon-button icon-button-sm text-color-row-remove"
                                             type="button"

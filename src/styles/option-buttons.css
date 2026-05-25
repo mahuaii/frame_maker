@@ -208,10 +208,6 @@
     text-align: left;
 }
 
-.color-option-swatch {
-    background-color: var(--option-swatch);
-}
-
 .color-option-opacity {
     padding-left: 4px;
     border-left: 0;

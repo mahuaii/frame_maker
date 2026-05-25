@@ -2,12 +2,11 @@
 import { computed, nextTick, ref, watch } from 'vue';
 import { parseFieldInputValue } from '../../js/core/templates/fields.ts';
 import {
-    normalizeHexDraft,
     parseColorValue,
-    sanitizeHexDraft,
     serializeColorValue,
 } from '../utils/colorValue';
 import CheckboxControl from './CheckboxControl.vue';
+import ColorRowControl from './ColorRowControl.vue';
 import type { InspectorField, InspectorFieldIconPath, InspectorFieldOption } from '../types/inspector';
 
 type TextRadioPathDefinition = {
@@ -40,8 +39,6 @@ const emit = defineEmits<{
 const optionOpen = ref(false);
 const textareaRef = ref<HTMLTextAreaElement | null>(null);
 const prefixedNumberInputRef = ref<HTMLInputElement | null>(null);
-const colorHexDraft = ref('');
-const colorAlphaDraft = ref('');
 let numberDragState: {
     pointerId: number;
     startY: number;
@@ -76,11 +73,6 @@ const inputMode = computed(() => props.field.inputMode as
 );
 
 watch(() => fieldValue.value, () => {
-    if (props.field.type === 'color') {
-        const parsed = parseColorValue(fieldValue.value, props.field.defaultValue as string);
-        colorHexDraft.value = parsed.hex;
-        colorAlphaDraft.value = String(parsed.alpha);
-    }
     void nextTick(syncTextareaHeight);
 }, { immediate: true });
 
@@ -144,12 +136,6 @@ function syncTextareaHeight() {
     if (!textarea) return;
     textarea.style.height = 'auto';
     textarea.style.height = `${textarea.scrollHeight}px`;
-}
-
-function clampNumber(value: unknown, min: number, max: number) {
-    const numericValue = Number(value);
-    if (!Number.isFinite(numericValue)) return min;
-    return Math.min(Math.max(numericValue, min), max);
 }
 
 function getNumberStep() {
@@ -296,19 +282,6 @@ function endNumberDrag(event: PointerEvent) {
     handle.closest('.field-prefix-number-control')?.classList.remove('is-dragging-number');
     commit(valueToCommit);
     event.preventDefault();
-}
-
-function commitColor(hex: unknown, alpha: unknown) {
-    const nextHex = normalizeHexDraft(hex, colorHexDraft.value || '000000');
-    const nextAlpha = Math.round(clampNumber(alpha, 0, 100));
-    colorHexDraft.value = nextHex;
-    colorAlphaDraft.value = String(nextAlpha);
-    commit(serializeColorValue(nextHex, nextAlpha));
-}
-
-function openColorPicker(event: MouseEvent) {
-    const wrapper = (event.currentTarget as HTMLElement).closest('.color-alpha-control');
-    wrapper?.querySelector<HTMLInputElement>('.color-alpha-native-input')?.click();
 }
 
 function optionSwatch(option: InspectorFieldOption) {
@@ -532,55 +505,14 @@ function textRadioPathDefinitions(control: string | undefined, value: unknown): 
 
             <div
                 v-else-if="field.type === 'color'"
-                class="color-alpha-control color-row-control"
-            >
-                <input
-                    class="color-alpha-native-input"
-                    type="color"
-                    tabindex="-1"
-                    aria-hidden="true"
-                    :value="`#${colorHexDraft}`"
-                    @input="draft(serializeColorValue(($event.target as HTMLInputElement).value, colorAlphaDraft))"
-                    @change="commitColor(($event.target as HTMLInputElement).value, colorAlphaDraft)"
-                >
-                <button
-                    class="color-alpha-swatch-button"
-                    type="button"
-                    :aria-label="`${field.label ?? '颜色'}色板`"
-                    @click="openColorPicker"
-                >
-                    <span
-                        class="color-alpha-swatch color-row-swatch"
-                        :style="{ '--color-alpha-swatch-color': serializeColorValue(colorHexDraft, colorAlphaDraft) }"
-                        aria-hidden="true"
-                    ></span>
-                </button>
-                <input
-                    class="color-alpha-hex-input color-row-input color-row-value-input"
-                    type="text"
-                    maxlength="6"
-                    inputmode="text"
-                    autocomplete="off"
-                    :aria-label="`${field.label ?? '颜色'} HEX`"
-                    :value="colorHexDraft"
-                    @input="($event.target as HTMLInputElement).value = sanitizeHexDraft(($event.target as HTMLInputElement).value)"
-                    @change="commitColor(($event.target as HTMLInputElement).value, colorAlphaDraft)"
-                    @keydown.enter="commitColor(($event.target as HTMLInputElement).value, colorAlphaDraft)"
-                >
-                <input
-                    class="color-alpha-opacity-input color-row-input color-row-opacity-input"
-                    type="number"
-                    min="0"
-                    max="100"
-                    step="1"
-                    inputmode="numeric"
-                    :aria-label="`${field.label ?? '颜色'}不透明度`"
-                    :value="colorAlphaDraft"
-                    @input="draft(serializeColorValue(colorHexDraft, ($event.target as HTMLInputElement).value))"
-                    @change="commitColor(colorHexDraft, ($event.target as HTMLInputElement).value)"
-                >
-                <span class="color-alpha-unit color-row-unit">%</span>
-            </div>
+                :color="String(fieldValue)"
+                :label="field.label ?? '颜色'"
+                editable
+                native-picker
+                :draft-hex-on-input="false"
+                @draft="draft"
+                @change="commit"
+            />
 
             <div
                 v-else-if="field.type === 'range'"
@@ -627,20 +559,22 @@ function textRadioPathDefinitions(control: string | undefined, value: unknown): 
                     class="color-option-grid-row"
                 >
                     <button
-                        class="option-button color-option-row color-row-control"
-                        :class="{ selected: isSelected(option) }"
+                        class="option-button color-option-row"
                         type="button"
                         role="radio"
                         :aria-checked="isSelected(option)"
                         :aria-label="option.label"
                         :title="option.label"
-                        :style="{ '--option-swatch': optionSwatch(option) }"
                         @click="commit(option.value)"
                     >
-                        <span class="color-option-swatch color-row-swatch" aria-hidden="true"></span>
-                        <span class="color-option-value color-row-value">{{ parseColorValue(optionSwatch(option)).hex }}</span>
-                        <span class="color-option-opacity color-row-opacity">{{ parseColorValue(optionSwatch(option)).alpha }}</span>
-                        <span class="color-option-unit color-row-unit">%</span>
+                        <ColorRowControl
+                            tag="div"
+                            role="presentation"
+                            :color="optionSwatch(option)"
+                            :label="option.label"
+                            :selected="isSelected(option)"
+                            @select="commit(option.value)"
+                        />
                     </button>
                 </div>
             </div>

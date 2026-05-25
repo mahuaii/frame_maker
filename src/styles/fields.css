@@ -178,12 +178,12 @@
     background: var(--field-frame-background-hover);
 }
 
-.color-alpha-control:focus-within {
+.color-row-control:focus-within {
     border-color: var(--field-frame-border-focus);
     background: var(--field-frame-background-focus);
 }
 
-.field-group input.color-alpha-native-input[type="color"] {
+.field-group input.color-row-native-input[type="color"] {
     position: absolute;
     inset: auto auto 0 0;
     width: 1px;
@@ -196,7 +196,7 @@
     pointer-events: none;
 }
 
-.color-alpha-swatch-button {
+.color-row-swatch-button {
     display: inline-flex;
     align-items: center;
     justify-content: center;
@@ -210,14 +210,23 @@
     cursor: pointer;
 }
 
+.color-row-control.selected {
+    border-color: var(--field-frame-border);
+    background: var(--field-frame-background);
+}
+
+.color-row-control.selected:hover,
+.color-row-control.selected:focus-visible,
+.color-row-control.selected:focus-within {
+    border-color: var(--field-frame-border-hover);
+    background: var(--field-frame-background-hover);
+}
+
 .color-row-swatch {
     width: var(--color-row-swatch-size);
     height: var(--color-row-swatch-size);
     border-radius: calc(var(--field-radius) - 1px);
-}
-
-.color-alpha-swatch {
-    background-color: var(--color-alpha-swatch-color, #000000ff);
+    background-color: var(--color-row-swatch-color, #000000ff);
 }
 
 .field-group .color-row-control input.color-row-input {
@@ -245,7 +254,7 @@
     box-shadow: none;
 }
 
-.color-alpha-hex-input {
+.color-row-value-input {
     text-transform: uppercase;
 }
 
@@ -254,8 +263,8 @@
     text-align: right;
 }
 
-.color-alpha-opacity-input::-webkit-outer-spin-button,
-.color-alpha-opacity-input::-webkit-inner-spin-button {
+.color-row-opacity-input::-webkit-outer-spin-button,
+.color-row-opacity-input::-webkit-inner-spin-button {
     margin: 0;
     appearance: none;
 }
