@@ -72,7 +72,7 @@ function formatDimensions(photo: PhotoEntry) {
                         photo.width,
                         photo.height
                     ]"
-                    class="batch-photo-card"
+                    class="batch-photo-card selectable-surface"
                     :class="{ selected: photo.id === activePhotoId }"
                 >
                     <button

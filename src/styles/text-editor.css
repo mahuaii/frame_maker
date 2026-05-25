@@ -84,6 +84,8 @@
 }
 
 .text-object-row {
+    --selectable-background-selected: var(--color-control-background-muted);
+
     position: relative;
     display: grid;
     grid-template-columns: 20px minmax(0, 1fr);
@@ -92,16 +94,8 @@
     width: 100%;
     min-height: 28px;
     padding: 0 4px 0 calc(4px + var(--text-object-depth, 0) * 14px);
-    border: 1px solid transparent;
-    border-radius: var(--radius-sm);
-    background: transparent;
     color: var(--color-text-primary);
     text-align: left;
-}
-
-.text-object-row:hover {
-    border-color: var(--color-control-background-hover);
-    background: var(--color-control-background-hover);
 }
 
 .text-object-node.is-dragging>.text-object-row {
@@ -126,8 +120,8 @@
 }
 
 .text-object-node.selected>.text-object-row {
-    border-color: var(--color-control-accent);
-    background-color: var(--color-control-background-muted);
+    border-color: var(--selectable-border-selected);
+    background-color: var(--selectable-background-selected);
 }
 
 .text-object-drag-handle {

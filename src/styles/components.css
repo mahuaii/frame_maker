@@ -155,3 +155,24 @@
     color: var(--color-control-foreground);
     --icon-button-icon-size: 14px;
 }
+
+.selectable-surface {
+    border: var(--selectable-border-width, 1px) solid var(--selectable-border-color, transparent);
+    border-radius: var(--selectable-radius, var(--radius-sm));
+    background: var(--selectable-background, transparent);
+    transition: border-color var(--control-transition-duration) ease, background-color var(--control-transition-duration) ease, color var(--control-transition-duration) ease;
+}
+
+.selectable-surface:hover {
+    border-color: var(--selectable-border-hover, var(--color-control-background-hover));
+    background: var(--selectable-background-hover, var(--color-control-background-hover));
+}
+
+.selectable-surface.selected,
+.selectable-surface.is-selected,
+.selectable-surface[aria-selected="true"],
+.selectable-surface[aria-pressed="true"],
+.selectable-surface[aria-checked="true"] {
+    border-color: var(--selectable-border-selected, var(--color-control-accent));
+    background: var(--selectable-background-selected, var(--selectable-background, transparent));
+}

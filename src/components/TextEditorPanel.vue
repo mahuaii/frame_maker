@@ -592,7 +592,7 @@ function visibilityIconPaths(row: FlatTextObject) {
                         :style="{ '--text-object-depth': row.depth }"
                     >
                         <div
-                            class="text-object-row"
+                            class="text-object-row selectable-surface"
                             @dragover="handleDragOver(row, $event)"
                             @drop="handleDrop(row, $event)"
                             @dragleave="dropTarget = null"

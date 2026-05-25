@@ -23,6 +23,9 @@
 }
 
 .batch-photo-card {
+    --selectable-border-width: 2px;
+    --selectable-border-selected: var(--color-accent);
+
     position: relative;
     display: grid;
     grid-template-columns: minmax(0, 1fr) 20px;
@@ -31,21 +34,9 @@
     width: 100%;
     min-height: 58px;
     padding: 4px 8px 4px 4px;
-    border: 2px solid transparent;
-    border-radius: var(--radius-sm);
-    background: transparent;
     color: var(--color-text-primary);
     font: inherit;
     text-align: left;
-}
-
-.batch-photo-card:hover {
-    border-color: var(--color-control-background-hover);
-    background: var(--color-control-background-hover);
-}
-
-.batch-photo-card.selected {
-    border-color: var(--color-accent);
 }
 
 .batch-photo-select-button {
