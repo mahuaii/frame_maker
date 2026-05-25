@@ -39,6 +39,8 @@
 }
 
 .text-object-sectioned-fields {
+    --text-group-anchor-control-height: 74px;
+
     display: flex;
     flex-direction: column;
     gap: 0;
@@ -50,17 +52,6 @@
 
 .text-object-sectioned-fields>.inspector-section:first-child .text-section-checkbox-action {
     align-self: flex-start;
-}
-
-.text-object-offset-fields {
-    display: flex;
-    flex-direction: column;
-    gap: 4px;
-    margin-bottom: var(--settings-field-gap);
-}
-
-.text-editor-panel .text-object-offset-grid .field-group {
-    margin-bottom: 0;
 }
 
 .text-object-tree-header {
@@ -321,31 +312,8 @@
     gap: 6px;
 }
 
-.text-group-anchor-layout {
-    --text-group-anchor-control-height: 74px;
-
-    display: grid;
-    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
-    grid-template-areas: "region anchor";
-    column-gap: 8px;
-    margin-bottom: var(--settings-field-gap);
-}
-
-.text-group-anchor-layout>.field-group {
-    padding-inline: 0;
-    margin-bottom: 0;
-}
-
-.text-group-anchor-layout>.field-group:nth-child(1) {
-    grid-area: region;
-}
-
-.text-group-anchor-layout>.field-group:nth-child(2) {
-    grid-area: anchor;
-}
-
-.text-group-anchor-layout>.field-group .nine-grid-picker,
-.text-group-anchor-layout>.field-group .frame-region-picker {
+.text-object-sectioned-fields > .inspector-field-row-double .nine-grid-picker,
+.text-object-sectioned-fields > .inspector-field-row-double .frame-region-picker {
     height: var(--text-group-anchor-control-height);
     min-height: var(--text-group-anchor-control-height);
 }
@@ -354,7 +322,6 @@
     display: flex;
     flex-direction: column;
     gap: 4px;
-    margin-bottom: var(--settings-field-gap);
 }
 
 .text-font-panel {
@@ -363,9 +330,8 @@
     gap: var(--settings-field-gap);
 }
 
-.text-font-panel>.field-group {
+.text-font-panel > .field-group {
     padding-inline: 0;
-    margin-bottom: 0;
 }
 
 .text-section-checkbox-action {
@@ -382,11 +348,6 @@
     letter-spacing: 0;
     color: var(--color-text-secondary);
     white-space: nowrap;
-}
-
-.text-font-variant-grid .field-group {
-    padding-inline: 0;
-    margin-bottom: 0;
 }
 
 .text-color-add-button,
@@ -453,7 +414,6 @@
     display: flex;
     flex-direction: column;
     gap: 8px;
-    margin-bottom: var(--settings-field-gap);
 }
 
 .image-source-control .btn {

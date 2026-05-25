@@ -11,12 +11,6 @@
     display: none;
 }
 
-.export-primary-fields {
-    display: grid;
-    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
-    column-gap: 8px;
-}
-
 .export-split-button {
     position: relative;
     display: inline-flex;
@@ -124,7 +118,8 @@
     margin-bottom: 0;
 }
 
-.export-settings-menu .export-custom-size {
+.export-settings-menu .inspector-field-row-single,
+.export-settings-menu .inspector-field-row-double {
     padding-inline: 0;
 }
 

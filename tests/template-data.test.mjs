@@ -8,6 +8,7 @@ import {
 } from '../js/templates.ts';
 import { defineDataTemplate, defineTemplatePackage, normalizeDataTemplatePackage } from '../js/core/templates/data-template.ts';
 import { buildTemplateResolveInput } from '../js/core/render/input.ts';
+import { resolveTemplateAppearance } from '../js/core/templates/appearance.ts';
 import { createImportedTemplateRegistry } from '../js/core/templates/imported-registry.ts';
 import { exportTemplatePackage, importTemplatePackage } from '../js/core/templates/template-package.ts';
 
@@ -63,6 +64,21 @@ assert.equal(
     Object.hasOwn(storyResolveInput, 'customText'),
     false,
     'template resolve input should not expose legacy customText config'
+);
+
+const appearanceTemplate = templates.find((template) => template.id === 'gallery-caption-mat');
+assert.ok(appearanceTemplate, 'expected gallery caption template for appearance coverage');
+const customizedAppearance = resolveTemplateAppearance(appearanceTemplate, {
+    colorScheme: 'white',
+    appearanceBackgroundColor: '#112233',
+    appearancePhotoBorderColor: '#44556680',
+});
+assert.equal(customizedAppearance.canvasBackground.color, '#112233FF');
+assert.equal(customizedAppearance.colors.frame.photoBorder, '#44556680');
+assert.equal(
+    customizedAppearance.colors.text.title,
+    appearanceTemplate.appearanceThemes.white.colors.text.title,
+    'appearance color fields should not change text tokens'
 );
 
 for (const template of templates) {

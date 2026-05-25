@@ -13,8 +13,6 @@
 @import url("./text-editor.css");
 
 .vue-native-app {
-    --inspector-width: 276px;
-
     position: relative;
     display: grid;
     grid-template-columns: 178px minmax(0, 1fr) var(--inspector-width);

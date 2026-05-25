@@ -1,4 +1,4 @@
-export const DEFAULT_INSPECTOR_WIDTH = 276;
+export const DEFAULT_INSPECTOR_WIDTH = 300;
 export const MIN_INSPECTOR_WIDTH = 220;
 export const MAX_INSPECTOR_WIDTH = 520;
 export const MIN_WORKSPACE_WIDTH = 320;

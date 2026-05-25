@@ -21,16 +21,15 @@ Frame Maker 是一个基于 Vue 3 + Vite 的相框生成工具。应用入口是
 - `js/core/templates/`：模板注册、字段归一化、外观主题、模板包和导入注册能力，当前为 TypeScript 模块。
 - `js/core/fonts/`：字体注册、字体加载和 Canvas 字体字符串构造，当前为 TypeScript 模块。
 - `js/templates.ts`：模板注册列表和默认模板。
-- `js/templates/`：模板实现。每个模板通常包含 `schema.ts`、`index.ts`，按需在 `index.ts` 中实现 `resolveData`，或通过 `overlays` 声明照片边框等 overlay。
+- `js/templates/`：内置模板包。每个模板通常包含 `template.json`、`index.ts` 和 `assets/thumbnail.jpg`；`index.ts` 负责把 JSON 包和本地资产交给 `defineTemplatePackage()`。
 - `legacy/`：旧版原生 DOM UI 归档，包含旧 `css/`、`js/app.js`、`js/app/` 和 `js/ui/`；当前 Vue 应用不从该目录加载运行时代码。
 - `assets/fonts/`：字体文件。当前跟踪 MiSans Light / Regular / Medium 与 `times.ttf`；`assets/fonts/Angie_Sans_Std.otf` 被 `.gitignore` 排除。
-- `thumbnails/`：模板缩略图。当前跟踪 `.jpg` 缩略图。
 - `tests/`：Node/Vite 相关测试。
 - `start.sh`：本地 Vite 开发服务器启动脚本，默认端口 `8001`。
 - `.playwright-cli/`：本地 Playwright CLI 输出目录，被 `.gitignore` 排除。
-- `.qoder/`：本地工具目录。用途待确认。
+- `.claude/`、`.qoder/`：本地工具目录，被 `.gitignore` 排除；不要假设其中配置参与项目运行。
 
-当前工作树未发现 `scripts/` 和 `reference-ui/` 目录；不要假设它们存在。
+当前工作树未发现 `scripts/`、`reference-ui/` 和顶层 `thumbnails/` 目录；不要假设它们存在。
 
 ## 本地开发命令
 
@@ -126,6 +125,8 @@ Vue 应用中的核心运行状态：
 
 资源缓存由 Vite 构建产物 hash 处理；当前入口不再维护旧版手写 `assetVersion`。
 
+全局撤销/重做快捷键在 `src/App.vue` 中处理：非输入焦点下支持 `Cmd/Ctrl+Z` 撤销、`Cmd/Ctrl+Shift+Z` 重做，Windows/Linux 也支持 `Ctrl+Y` 重做。
+
 ## 字段和右侧面板约定
 
 模板字段对象由 `js/core/templates/fields.ts` 归一化，常用属性包括：
@@ -151,7 +152,7 @@ Vue 应用中的核心运行状态：
 
 ## 模板系统接口
 
-模板必须通过 `defineTemplate()` 注册。模板对象至少需要：
+模板必须通过 `defineTemplatePackage()` 或底层 `defineTemplate()` 注册。当前内置模板使用 `template.json` 数据包，再由各模板目录的 `index.ts` 调用 `defineTemplatePackage()` 注册本地资产。模板对象至少需要：
 
 - `id`：稳定唯一 id。
 - `defaultConfig`：对象，通常用 `buildDefaultConfig(fields)` 生成。
@@ -167,6 +168,11 @@ Vue 应用中的核心运行状态：
 - `appearanceThemes`：外观主题对象。存在时必须有对应的外观字段。
 - `resolveData(input)`：把 `photo`、`exif`、`config`、`global` 转成模板渲染数据。
 - `renderOverlay(ctx, args)`：绘制声明式背景、照片、文字之外的 overlay，例如细框、信息栏、分隔线。
+- `overlays`：数据化 overlay 声明；当前已知能力在 `js/core/templates/capabilities/overlays.ts` 中校验和渲染，例如 `photoBorder`。
+- `handlers`：数据包中的处理器能力声明；当前 handler 注册表为空。需要新增自定义 `resolveData` 或 `renderOverlay` 时，先在 `js/core/templates/capabilities/handlers.ts` 注册能力，不要在 JSON 中臆造 handler key。
+- `assets`：模板包资产声明，路径必须位于 `assets/` 下；内置缩略图当前使用 `assets/thumbnail.jpg`。
+
+模板包导入/导出由 `js/core/templates/template-package.ts` 处理，包内必须包含 `template.json`，导出测试会确认 `template.json` 和 `assets/thumbnail.jpg` 同时存在。
 
 模板注册在 `js/templates.ts`。当前顺序为：
 
@@ -359,12 +365,12 @@ EXIF 解析位于 `js/core/render/input.ts`，当前主要面向 JPEG。可编�
 ## 新增或修改模板流程
 
 1. 在 `js/templates/<template-id>/` 中创建或修改模板。
-2. 在 `schema.ts` 定义 `id`、`appearanceThemes`、`frame`、`textGroups`、`fields`、`defaultConfig`。
-3. 如需把输入数据转为渲染数据，在 `index.ts` 中传入 `resolveData`，或按模板目录现有方式拆分后再导入。
-4. 如需绘制照片、背景和声明式文字之外的图形，在 `index.ts` 中传入 `renderOverlay`；照片边框等通用图形优先使用 `overlays` 声明。
-5. 通过 `defineTemplate()` 导出模板。
+2. 在 `template.json` 定义 `format`、`formatVersion`、`template.id`、`appearanceThemes`、`frame`、`textGroups`、`fields`、`defaultConfig`、`overlays`、`assets` 和 `handlers`。
+3. 在 `index.ts` 中导入 `template.json`，调用 `defineTemplatePackage(templatePackage, { sourceType: 'builtin', assets })`，并把 `assets/thumbnail.jpg` 映射到 `new URL('./assets/thumbnail.jpg', import.meta.url).toString()`。
+4. 如需绘制照片、背景和声明式文字之外的通用图形，优先使用模板 `overlays` 声明；新增 overlay 类型需要先补充 `js/core/templates/capabilities/overlays.ts`。
+5. 如确实需要自定义 `resolveData` 或 `renderOverlay` handler，先补充 `js/core/templates/capabilities/handlers.ts` 的注册表和测试，再在 `template.json` 的 `handlers` 中引用。
 6. 在 `js/templates.ts` 注册模板，并确认默认模板是否需要调整。
-7. 准备匹配的缩略图 `thumbnails/<template-id>_thumbnail.jpg` 或 `.png`。
+7. 准备匹配的缩略图 `js/templates/<template-id>/assets/thumbnail.jpg`，并在 `template.json` 的 `template.assets.thumbnail` 中声明为 `assets/thumbnail.jpg`。
 8. 检查新增字段是否会被右侧面板正确分区。
 9. 本地验证上传、模板切换、字段编辑、预览和导出。
 
@@ -385,15 +391,17 @@ EXIF 解析位于 `js/core/render/input.ts`，当前主要面向 JPEG。可编�
 - 字体加载同时影响 UI 和 Canvas 导出。字体相关改动要检查本地服务和导出结果。
 - 当前未发现运行中的模板配置持久化模块；如需持久化用户配置，需要先确认预期存储策略。
 - `renderOverlay()` 只处理声明式文字、背景、照片之外的 overlay。不要把可声明的普通文字布局硬写到 overlay。
-- 优先复用 `js/templates/shared.ts` 的工具函数，例如 `buildFrameLayoutFields()`、`buildThinBorderToggleField()`、`buildExifMetaPrimary()`、`buildExifMetaSecondary()`。
+- 旧的 `js/templates/shared.ts` 已不存在。模板字段能力优先复用 `js/core/templates/frame-layout.ts`、`js/core/templates/appearance.ts` 和 `js/core/templates/capabilities/` 中现有能力；缺能力时先补能力和测试，不要在单个模板里复制隐式规则。
 
 ## 不应该改动的文件或目录
 
 - `.git/`：Git 内部目录。
 - `.DS_Store`：本地系统文件，已在 `.gitignore` 中忽略。
 - `.playwright-cli/`：本地 Playwright CLI 输出目录，已在 `.gitignore` 中忽略。
+- `.claude/`、`.qoder/`：本地工具目录，已在 `.gitignore` 中忽略。
+- `dist/`：本地生产构建输出，已在 `.gitignore` 中忽略；不要手动维护构建产物。
 - `assets/fonts/Angie_Sans_Std.otf`：本地私有字体文件，已在 `.gitignore` 中忽略。
-- `thumbnails/`：除非正在新增模板、更新模板默认视觉或明确重建缩略图，否则不要改动。
+- `js/templates/*/assets/thumbnail.jpg`：除非正在新增模板、更新模板默认视觉或明确重建缩略图，否则不要改动。
 - `assets/fonts/` 中已跟踪字体文件：除非任务明确涉及字体授权、字体替换或渲染一致性，否则不要改动。
 - `LICENSE`：除非任务明确涉及许可证，否则不要改动。
 
@@ -401,7 +409,7 @@ EXIF 解析位于 `js/core/render/input.ts`，当前主要面向 JPEG。可编�
 
 - 如任务明确需要或项目约定允许，确认页面能通过本地静态服务器打开；如无特别说明，不做浏览器验证。
 - 涉及交互或渲染时，按任务范围手动验证上传、模板切换、右侧字段编辑、EXIF 编辑、预览和导出 JPG；自动化运行默认以现有 npm 检查命令为主。
-- 确认新增模板已在 `js/templates.ts` 注册，并有匹配的 `thumbnails/<template-id>_thumbnail.(png|jpg)`。
-- 确认没有提交 `.DS_Store`、`.playwright-cli/`、`assets/fonts/Angie_Sans_Std.otf` 或其他本地生成文件。
+- 确认新增模板已在 `js/templates.ts` 注册，并有匹配的 `js/templates/<template-id>/assets/thumbnail.jpg` 和 `template.assets.thumbnail` 声明。
+- 确认没有提交 `.DS_Store`、`.playwright-cli/`、`.claude/`、`.qoder/`、`dist/`、`assets/fonts/Angie_Sans_Std.otf` 或其他本地生成文件。
 - 如后续恢复了布局校验或缩略图脚本，按改动范围运行对应脚本。
 - lint、format、发布检查：当前仍待确认。

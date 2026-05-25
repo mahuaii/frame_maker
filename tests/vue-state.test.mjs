@@ -68,6 +68,24 @@ try {
         false,
         'layout reset should not touch appearance-only fields'
     );
+    draftEditor.updateField(defaultTemplate, 'appearancePhotoBorderColor', '#44556680');
+    assert.equal(
+        draftEditor.activePhotoState.value.fieldValuesByTemplateId[defaultTemplate.id].appearancePhotoBorderColor,
+        '#44556680',
+        'appearance color fields should be stored in template field values'
+    );
+    draftEditor.updateField(defaultTemplate, 'colorScheme', 'black');
+    assert.equal(
+        draftEditor.activePhotoState.value.fieldValuesByTemplateId[defaultTemplate.id].appearancePhotoBorderColor,
+        '#44556680',
+        'changing theme should preserve appearance color fields like other fields'
+    );
+    draftEditor.undo();
+    assert.equal(
+        draftEditor.activePhotoState.value.fieldValuesByTemplateId[defaultTemplate.id].appearancePhotoBorderColor,
+        '#44556680',
+        'undo should keep appearance color fields from the previous committed edit'
+    );
 
     const textFieldDraftEditor = useEditorState(defaultTemplate, getInitialTemplateValues(defaultTemplate));
     textFieldDraftEditor.addPhoto('text-field-draft-photo', {});

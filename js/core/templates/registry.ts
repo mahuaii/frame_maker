@@ -1,5 +1,11 @@
 import { normalizeTemplateConfig } from './fields.ts';
-import { buildColorTokenField, createAppearanceThemes, getAppearanceColor, resolveTemplateAppearance } from './appearance.ts';
+import {
+    buildColorTokenField,
+    createAppearanceThemes,
+    getAppearanceColor,
+    normalizeAppearanceColorConfig,
+    resolveTemplateAppearance,
+} from './appearance.ts';
 import type { FrameTemplate, TemplateResolveData } from '../../../src/types/template';
 import type { TemplateRenderArgs } from '../../../src/types/render';
 
@@ -60,10 +66,18 @@ export function defineTemplate(template: FrameTemplate): FrameTemplate {
 }
 
 export function resolveTemplateConfig(template: FrameTemplate, rawConfig: Record<string, unknown> = {}) {
-    return normalizeTemplateConfig(template.fields, {
+    const config = normalizeTemplateConfig(template.fields, {
         ...template.defaultConfig,
         ...rawConfig,
     });
+    const appearanceColorConfig = normalizeAppearanceColorConfig(rawConfig);
+
+    return Object.keys(appearanceColorConfig).length > 0
+        ? {
+            ...config,
+            ...appearanceColorConfig,
+        }
+        : config;
 }
 
 export { buildColorTokenField, createAppearanceThemes, getAppearanceColor, resolveTemplateAppearance };

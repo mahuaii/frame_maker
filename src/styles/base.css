@@ -53,8 +53,6 @@
     --radius-pill: var(--radius-sm);
     --control-transition-duration: 0.15s;
     --toolbar-control-height: 34px;
-    --inspector-default-width: 360px;
-
     /* 间距 */
     --spacing-1: 4px;
     --spacing-2: 8px;

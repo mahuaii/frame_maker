@@ -11,6 +11,13 @@ type ColorTokenFieldOptions = {
     group?: string;
 };
 
+export const APPEARANCE_COLOR_CONFIGS = Object.freeze([
+    { key: 'appearanceBackgroundColor', section: 'canvasBackground', token: 'color' },
+    { key: 'appearanceBackgroundOverlayColor', section: 'canvasBackground', token: 'overlayColor' },
+    { key: 'appearancePhotoBorderColor', group: 'frame', token: 'photoBorder' },
+    { key: 'appearanceBarBackgroundColor', group: 'surface', token: 'barBackground' },
+]);
+
 export function buildAppearanceField(
     themes: AppearanceThemeMap,
     {
@@ -33,6 +40,70 @@ export function buildAppearanceField(
 
 function isPlainObject(value: unknown): value is Record<string, unknown> {
     return Boolean(value && typeof value === 'object' && !Array.isArray(value));
+}
+
+function normalizeAppearanceColor(value: unknown): string | null {
+    if (typeof value !== 'string') {
+        return null;
+    }
+
+    const trimmedValue = value.trim();
+    const hexMatch = trimmedValue.match(/^#?([0-9a-f]{3}|[0-9a-f]{6}|[0-9a-f]{8})$/i);
+    if (hexMatch) {
+        const rawHex = hexMatch[1].toUpperCase();
+        const expandedHex = rawHex.length === 3
+            ? rawHex.split('').map((character) => character + character).join('')
+            : rawHex;
+        const rgbHex = expandedHex.slice(0, 6);
+        const alphaHex = expandedHex.length === 8 ? expandedHex.slice(6, 8) : 'FF';
+
+        return `#${rgbHex}${alphaHex}`;
+    }
+
+    return null;
+}
+
+export function normalizeAppearanceColorConfig(rawConfig: Record<string, unknown> = {}) {
+    return APPEARANCE_COLOR_CONFIGS.reduce<Record<string, string>>((config, colorConfig) => {
+        const color = normalizeAppearanceColor(rawConfig[colorConfig.key]);
+        if (color) {
+            config[colorConfig.key] = color;
+        }
+
+        return config;
+    }, {});
+}
+
+function buildAppearanceColorOverrides(config: Record<string, unknown>) {
+    const colorConfig = normalizeAppearanceColorConfig(config);
+
+    return APPEARANCE_COLOR_CONFIGS.reduce<TemplateAppearanceTheme>((overrides, appearanceColorConfig) => {
+        const color = colorConfig[appearanceColorConfig.key];
+        if (!color) {
+            return overrides;
+        }
+
+        if ('section' in appearanceColorConfig) {
+            return {
+                ...overrides,
+                canvasBackground: {
+                    ...(overrides.canvasBackground ?? {}),
+                    [appearanceColorConfig.token]: color,
+                },
+            };
+        }
+
+        return {
+            ...overrides,
+            colors: {
+                ...(overrides.colors ?? {}),
+                [appearanceColorConfig.group]: {
+                    ...(overrides.colors?.[appearanceColorConfig.group] ?? {}),
+                    [appearanceColorConfig.token]: color,
+                },
+            },
+        };
+    }, {});
 }
 
 function mergeColorGroups(baseColors: unknown = {}, overrideColors: unknown = {}) {
@@ -138,10 +209,14 @@ export function resolveTemplateAppearance(
         ? requestedKey
         : fallbackKey;
     const appearance = themes[appearanceKey] ?? {};
+    const colorOverrides = buildAppearanceColorOverrides(config);
+    const resolvedAppearance = (Object.keys(colorOverrides).length > 0
+        ? mergeAppearanceTheme(appearance, colorOverrides)
+        : appearance) as TemplateAppearanceTheme;
 
     return {
         key: appearanceKey,
-        ...appearance,
+        ...resolvedAppearance,
     };
 }
 

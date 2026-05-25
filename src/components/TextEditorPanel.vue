@@ -60,9 +60,7 @@ const TRASH_ICON_PATHS = [
 ];
 type TextFieldBlock =
     | { type: 'single'; field: TextEditorField }
-    | { type: 'grid'; fields: TextEditorField[] }
-    | { type: 'anchor'; fields: TextEditorField[] }
-    | { type: 'offset'; fields: TextEditorField[] }
+    | { type: 'double'; fields: TextEditorField[]; title?: string }
     | { type: 'font-panel'; fontIdField: TextEditorField | null; variantFields: TextEditorField[] };
 
 const props = defineProps<{
@@ -128,10 +126,9 @@ const untitledSectionFields = computed(() => selectedFields.value.filter((field)
 const layoutFields = computed(() => selectedFields.value.filter((field) => TEXT_LAYOUT_FIELD_KEYS.has(field.key)));
 const fontFields = computed(() => selectedFields.value.filter((field) => TEXT_FONT_FIELD_KEYS.has(field.key)));
 const colorFields = computed(() => getTextColorFields(selectedFields.value));
-const rootGroupSelected = computed(() => selectedItem.value?.type === 'group' && selectedLocation.value?.depth === 0);
 const layoutHeaderActionField = computed(() => layoutFields.value.find((field) => field.key === 'forceVisible') ?? null);
 const fontHeaderActionField = computed(() => fontFields.value.find((field) => field.key === 'style.fontOverride') ?? null);
-const layoutFieldBlocks = computed(() => buildLayoutFieldBlocks(layoutFields.value, rootGroupSelected.value));
+const layoutFieldBlocks = computed(() => buildLayoutFieldBlocks(layoutFields.value));
 const fontFieldBlocks = computed(() => buildFontFieldBlocks(fontFields.value));
 const selectedColorToken = computed(() => (
     selectedItem.value && colorFields.value
@@ -295,12 +292,14 @@ function buildPairedFieldBlock(fields: TextEditorField[], pairKeys: string[]): T
         return null;
     }
 
-    return pairKeys[0] === 'offsetXScale'
-        ? { type: 'offset', fields: pairFields }
-        : { type: 'grid', fields: pairFields };
+    return {
+        type: 'double',
+        fields: pairFields,
+        title: pairKeys[0] === 'offsetXScale' ? '偏移' : undefined,
+    };
 }
 
-function buildLayoutFieldBlocks(fields: TextEditorField[], rootGroup: boolean): TextFieldBlock[] {
+function buildLayoutFieldBlocks(fields: TextEditorField[]): TextFieldBlock[] {
     const blocks: TextFieldBlock[] = [];
     const anchorLayoutFieldKeys = new Set(['region', 'anchor']);
     const headerActionFieldKeys = new Set(['forceVisible']);
@@ -313,16 +312,16 @@ function buildLayoutFieldBlocks(fields: TextEditorField[], rootGroup: boolean): 
     const pairedFieldKeys = new Set(pairedFieldKeyGroups.flat());
 
     fields.forEach((field) => {
-        if (rootGroup && field.key === 'region') {
+        if (field.key === 'region') {
             const anchorFields = [getFieldByKey(fields, 'region'), getFieldByKey(fields, 'anchor')]
                 .filter(Boolean) as TextEditorField[];
             if (anchorFields.length > 0) {
-                blocks.push({ type: 'anchor', fields: anchorFields });
+                blocks.push({ type: 'double', fields: anchorFields });
             }
             return;
         }
 
-        if ((rootGroup && anchorLayoutFieldKeys.has(field.key)) || headerActionFieldKeys.has(field.key)) {
+        if (anchorLayoutFieldKeys.has(field.key) || headerActionFieldKeys.has(field.key)) {
             return;
         }
 
@@ -669,15 +668,19 @@ function visibilityIconPaths(row: FlatTextObject) {
                 <template v-else>
                     <section v-if="untitledSectionFields.length" class="inspector-section">
                         <div class="inspector-section-content">
-                            <FieldControl
+                            <div
                                 v-for="field in untitledSectionFields"
                                 :key="field.key"
-                                :field="field"
-                                :value="fieldValue(field)"
-                                :id-prefix="`text-${selectedItem.id}`"
-                                @change="updateField"
-                                @input="draftField"
-                            />
+                                class="inspector-field-row-single"
+                            >
+                                <FieldControl
+                                    :field="field"
+                                    :value="fieldValue(field)"
+                                    :id-prefix="`text-${selectedItem.id}`"
+                                    @change="updateField"
+                                    @input="draftField"
+                                />
+                            </div>
                         </div>
                     </section>
 
@@ -697,57 +700,29 @@ function visibilityIconPaths(row: FlatTextObject) {
                         </div>
                         <div class="inspector-section-content text-object-sectioned-fields">
                             <template v-for="(block, blockIndex) in layoutFieldBlocks" :key="`${block.type}-${blockIndex}`">
-                                <FieldControl
-                                    v-if="block.type === 'single'"
-                                    :field="block.field"
-                                    :value="fieldValue(block.field)"
-                                    :id-prefix="`text-${selectedItem.id}`"
-                                    :compact="shouldRenderCompact(block.field)"
-                                    :compact-title="compactTitle(block.field)"
-                                    :label="compactLabel(block.field)"
-                                    @change="updateField"
-                                    @input="draftField"
-                                />
-
                                 <div
-                                    v-else-if="block.type === 'anchor'"
-                                    class="text-group-anchor-layout inspector-field-contained"
+                                    v-if="block.type === 'single'"
+                                    class="inspector-field-row-single"
                                 >
                                     <FieldControl
-                                        v-for="field in block.fields"
-                                        :key="field.key"
-                                        :field="field"
-                                        :value="fieldValue(field)"
+                                        :field="block.field"
+                                        :value="fieldValue(block.field)"
                                         :id-prefix="`text-${selectedItem.id}`"
+                                        :compact="shouldRenderCompact(block.field)"
+                                        :compact-title="compactTitle(block.field)"
+                                        :label="compactLabel(block.field)"
                                         @change="updateField"
                                         @input="draftField"
                                     />
                                 </div>
 
                                 <div
-                                    v-else-if="block.type === 'offset'"
-                                    class="text-object-offset-fields inspector-field-contained"
+                                    v-else-if="block.type === 'double'"
+                                    class="inspector-field-row-double"
                                 >
-                                    <div class="field-group-label">偏移</div>
-                                    <div class="inspector-field-grid text-object-offset-grid">
-                                        <FieldControl
-                                            v-for="field in block.fields"
-                                            :key="field.key"
-                                            :field="field"
-                                            :value="fieldValue(field)"
-                                            :id-prefix="`text-${selectedItem.id}`"
-                                            compact
-                                            :label="compactLabel(field)"
-                                            @change="updateField"
-                                            @input="draftField"
-                                        />
+                                    <div v-if="block.title" class="field-group-label inspector-field-row-title">
+                                        {{ block.title }}
                                     </div>
-                                </div>
-
-                                <div
-                                    v-else-if="block.type === 'grid'"
-                                    class="inspector-field-grid inspector-field-contained"
-                                >
                                     <FieldControl
                                         v-for="field in block.fields"
                                         :key="field.key"
@@ -781,51 +756,61 @@ function visibilityIconPaths(row: FlatTextObject) {
                         </div>
                         <div class="inspector-section-content text-object-sectioned-fields">
                             <template v-for="(block, blockIndex) in fontFieldBlocks" :key="`${block.type}-${blockIndex}`">
-                                <FieldControl
-                                    v-if="block.type === 'single'"
-                                    :field="block.field"
-                                    :value="fieldValue(block.field)"
-                                    :id-prefix="`text-${selectedItem.id}`"
-                                    :compact="shouldRenderCompact(block.field)"
-                                    :compact-title="compactTitle(block.field)"
-                                    :label="compactLabel(block.field)"
-                                    @change="updateField"
-                                    @input="draftField"
-                                />
-
                                 <div
-                                    v-else-if="block.type === 'font-panel'"
-                                    class="text-font-panel field-group field-frame-gray"
+                                    v-if="block.type === 'single'"
+                                    class="inspector-field-row-single"
                                 >
                                     <FieldControl
-                                        v-if="block.fontIdField"
-                                        :field="block.fontIdField"
-                                        :value="fieldValue(block.fontIdField)"
+                                        :field="block.field"
+                                        :value="fieldValue(block.field)"
                                         :id-prefix="`text-${selectedItem.id}`"
-                                        label=""
+                                        :compact="shouldRenderCompact(block.field)"
+                                        :compact-title="compactTitle(block.field)"
+                                        :label="compactLabel(block.field)"
                                         @change="updateField"
                                         @input="draftField"
                                     />
-                                    <div
-                                        v-if="block.variantFields.length"
-                                        class="inspector-field-grid text-font-variant-grid"
-                                    >
-                                        <FieldControl
-                                            v-for="field in block.variantFields"
-                                            :key="field.key"
-                                            :field="field"
-                                            :value="fieldValue(field)"
-                                            :id-prefix="`text-${selectedItem.id}`"
-                                            label=""
-                                            @change="updateField"
-                                            @input="draftField"
-                                        />
+                                </div>
+
+                                <div
+                                    v-else-if="block.type === 'font-panel'"
+                                    class="inspector-field-row-single"
+                                >
+                                    <div class="text-font-panel field-group field-frame-gray">
+                                        <div
+                                            v-if="block.fontIdField"
+                                            class="inspector-field-row-single"
+                                        >
+                                            <FieldControl
+                                                :field="block.fontIdField"
+                                                :value="fieldValue(block.fontIdField)"
+                                                :id-prefix="`text-${selectedItem.id}`"
+                                                label=""
+                                                @change="updateField"
+                                                @input="draftField"
+                                            />
+                                        </div>
+                                        <div
+                                            v-if="block.variantFields.length"
+                                            class="inspector-field-row-double text-font-variant-grid"
+                                        >
+                                            <FieldControl
+                                                v-for="field in block.variantFields"
+                                                :key="field.key"
+                                                :field="field"
+                                                :value="fieldValue(field)"
+                                                :id-prefix="`text-${selectedItem.id}`"
+                                                label=""
+                                                @change="updateField"
+                                                @input="draftField"
+                                            />
+                                        </div>
                                     </div>
                                 </div>
 
                                 <div
-                                    v-else-if="block.type === 'grid'"
-                                    class="inspector-field-grid inspector-field-contained"
+                                    v-else-if="block.type === 'double'"
+                                    class="inspector-field-row-double"
                                 >
                                     <FieldControl
                                         v-for="field in block.fields"

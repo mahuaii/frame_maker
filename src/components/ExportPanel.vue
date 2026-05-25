@@ -130,7 +130,7 @@ function handleFieldChange(settings: ExportSettings, field: InspectorField, valu
 
 <template>
     <div class="export-controls">
-        <div class="export-primary-fields">
+        <div class="inspector-field-row-double">
             <FieldControl
                 :field="sizePresetField"
                 :value="settings.sizePreset"
@@ -145,7 +145,7 @@ function handleFieldChange(settings: ExportSettings, field: InspectorField, valu
             />
         </div>
         <div
-            class="export-custom-size inspector-field-grid inspector-field-contained"
+            class="export-custom-size inspector-field-row-double"
             :class="{ hidden: settings.sizePreset !== 'custom' }"
             id="export-custom-size"
         >
