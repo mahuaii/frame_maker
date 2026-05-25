@@ -23,7 +23,7 @@ function pickFile(files: FileList) {
 
 <template>
     <div class="template-package-actions">
-        <button class="btn inspector-template-package-button" type="button" @click="openFilePicker">
+        <button class="btn btn-inspector" type="button" @click="openFilePicker">
             导入模板
         </button>
         <HiddenFileInput
@@ -31,7 +31,7 @@ function pickFile(files: FileList) {
             accept=".zip,.frame-template.zip,application/zip"
             @change="pickFile"
         />
-        <button class="btn inspector-template-package-button" type="button" @click="emit('exportTemplate')">
+        <button class="btn btn-inspector" type="button" @click="emit('exportTemplate')">
             导出模板
         </button>
     </div>

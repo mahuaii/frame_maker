@@ -386,13 +386,3 @@
     flex-direction: column;
     gap: 8px;
 }
-
-.image-source-control .btn {
-    justify-content: center;
-    width: 100%;
-    min-height: 28px;
-    padding: 0 12px;
-    gap: 6px;
-    border-radius: var(--radius-sm);
-    font-size: 12px;
-}

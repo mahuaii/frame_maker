@@ -808,10 +808,10 @@ function visibilityIconPaths(row: FlatTextObject) {
                     <div v-if="selectedItem.type === 'image'" class="image-source-control inspector-content-contained">
                         <div class="field-group-label">{{ objectImageName(selectedItem) }}</div>
                         <HiddenFileInput ref="imageInputRef" accept="image/*" @change="handleImageSelected" />
-                        <button class="btn btn-secondary image-source-button" type="button" @click="chooseImage">
+                        <button class="btn btn-secondary btn-inspector btn-inspector-full" type="button" @click="chooseImage">
                             {{ selectedItem.source ? '替换图片' : '选择图片' }}
                         </button>
-                        <button class="btn btn-secondary image-source-button" type="button" :disabled="!selectedItem.source" @click="clearImage">
+                        <button class="btn btn-secondary btn-inspector btn-inspector-full" type="button" :disabled="!selectedItem.source" @click="clearImage">
                             清除图片
                         </button>
                     </div>

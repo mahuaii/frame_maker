@@ -124,11 +124,5 @@
 }
 
 .export-settings-menu .vue-export-menu-action {
-    justify-content: center;
-    width: 100%;
-    min-height: 30px;
     margin-top: 10px;
-    padding: 0 12px;
-    border-radius: var(--radius-sm);
-    font-size: 12px;
 }

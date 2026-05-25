@@ -44,13 +44,6 @@
     display: none;
 }
 
-.inspector-template-package-button {
-    justify-content: center;
-    min-height: 30px;
-    padding: 0 8px;
-    font-size: 12px;
-}
-
 .inspector-panel-tab {
     flex: 0 0 auto;
     height: 24px;

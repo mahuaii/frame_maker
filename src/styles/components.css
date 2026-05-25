@@ -39,6 +39,26 @@
     border-color: var(--color-divider);
 }
 
+.btn-inspector {
+    justify-content: center;
+    min-height: 30px;
+    padding: 0 12px;
+    border-radius: var(--radius-sm);
+    font-size: 12px;
+}
+
+.btn-inspector-full {
+    width: 100%;
+    min-width: 0;
+}
+
+.btn-inspector-grid {
+    justify-content: center;
+    width: 100%;
+    min-width: 0;
+    padding-inline: 4px;
+}
+
 .btn-small {
     display: inline-flex;
     align-items: center;

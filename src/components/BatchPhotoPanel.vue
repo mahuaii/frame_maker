@@ -35,11 +35,11 @@ function formatDimensions(photo: PhotoEntry) {
         </div>
         <div class="inspector-section-content">
             <div class="batch-actions inspector-content-contained">
-                <button class="btn-small batch-action-button" type="button" :disabled="!activePhotoId" @click="emit('copySettings')">
+                <button class="btn-small btn-inspector-grid" type="button" :disabled="!activePhotoId" @click="emit('copySettings')">
                 复制设置
                 </button>
                 <button
-                    class="btn-small batch-action-button"
+                    class="btn-small btn-inspector-grid"
                     type="button"
                     :disabled="!activePhotoId || !copiedSettingsAvailable"
                     @click="emit('pasteSettings')"
@@ -47,7 +47,7 @@ function formatDimensions(photo: PhotoEntry) {
                 粘贴设置
                 </button>
                 <button
-                    class="btn-small batch-action-button"
+                    class="btn-small btn-inspector-grid"
                     type="button"
                     :disabled="!activePhotoId || photos.length === 0"
                     @click="emit('applySettingsToAll')"
