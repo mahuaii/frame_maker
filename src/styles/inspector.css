@@ -220,6 +220,13 @@ body.is-resizing-inspector {
     padding-inline: var(--inspector-inline-padding, 16px);
 }
 
+.inspector-field-group-panel {
+    display: flex;
+    flex-direction: column;
+    gap: var(--settings-field-gap);
+    margin: 0;
+}
+
 .inspector-field-row-single > .field-group,
 .inspector-field-row-double > .field-group {
     padding-inline: 0;

@@ -319,19 +319,7 @@
 }
 
 .text-color-panel {
-    display: flex;
-    flex-direction: column;
     gap: 4px;
-}
-
-.text-font-panel {
-    display: flex;
-    flex-direction: column;
-    gap: var(--settings-field-gap);
-}
-
-.text-font-panel > .field-group {
-    padding-inline: 0;
 }
 
 .text-section-checkbox-action {

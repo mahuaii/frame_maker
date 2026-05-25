@@ -753,7 +753,7 @@ function visibilityIconPaths(row: FlatTextObject) {
                             </button>
                         </div>
                         <div class="inspector-section-content">
-                            <div class="text-color-panel field-group field-frame-gray">
+                            <div class="inspector-field-group-panel text-color-panel">
                                 <div class="text-color-row-list">
                                     <button
                                         v-for="row in colorTokenRows(colorFields.tokenField)"
