@@ -503,7 +503,7 @@ function textRadioPathDefinitions(control: string | undefined, value: unknown): 
                 </div>
             </div>
 
-            <div
+            <ColorRowControl
                 v-else-if="field.type === 'color'"
                 :color="String(fieldValue)"
                 :label="field.label ?? '颜色'"
