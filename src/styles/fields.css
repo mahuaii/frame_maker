@@ -136,6 +136,13 @@
     background: transparent;
 }
 
+.text-color-panel {
+    --field-height: 24px;
+    --field-inline-padding: 8px;
+    --field-font-size: 12px;
+    --field-radius: 5px;
+}
+
 .field-group .color-row-control,
 .text-color-panel .color-row-control {
     --color-row-swatch-size: 14px;
