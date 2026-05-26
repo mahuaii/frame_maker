@@ -22,7 +22,7 @@ function pickFile(files: FileList) {
 </script>
 
 <template>
-    <div class="template-package-actions">
+    <div class="inspector-action-grid">
         <button class="btn btn-inspector" type="button" @click="openFilePicker">
             导入模板
         </button>

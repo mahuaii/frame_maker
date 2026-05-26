@@ -24,10 +24,11 @@ import {
     type TextEditorField,
 } from '../utils/textModelEditor';
 import InspectorFieldRows from './InspectorFieldRows.vue';
+import InspectorSection from './InspectorSection.vue';
 import CheckboxControl from './CheckboxControl.vue';
 import FieldControl from './FieldControl.vue';
-import HiddenFileInput from './HiddenFileInput.vue';
 import ResetIconButton from './ResetIconButton.vue';
+import TextImageSourceControl from './TextImageSourceControl.vue';
 import type { InspectorFieldOption } from '../types/inspector';
 import type { InspectorFieldRow } from '../types/inspectorRows';
 import type { FrameTemplate } from '../types/template';
@@ -96,7 +97,6 @@ const emit = defineEmits<{
 const pendingDeleteObjectId = ref<string | null>(null);
 const draggingObjectId = ref<string | null>(null);
 const dropTarget = ref<{ targetId: string; position: TextObjectDropPosition } | null>(null);
-const imageInputRef = ref<InstanceType<typeof HiddenFileInput> | null>(null);
 
 const rows = computed(() => flattenTextModel(props.textModel));
 const selectedLocation = computed(() => (
@@ -467,12 +467,7 @@ function isSelectedOption(field: TextEditorField, option: InspectorFieldOption) 
     return String(fieldValue(field)) === String(option.value);
 }
 
-function chooseImage() {
-    imageInputRef.value?.open();
-}
-
-function handleImageSelected(files: FileList) {
-    const file = files[0];
+function replaceImage(file: File) {
     if (file && selectedItem.value?.type === 'image') {
         emit('replaceImage', selectedItem.value.id, file);
     }
@@ -592,7 +587,7 @@ function visibilityIconPaths(row: FlatTextObject) {
                     </div>
                 </div>
 
-                <div v-if="rows.length" class="text-object-tree-list">
+                <div v-if="rows.length" class="text-object-tree-list inspector-stack">
                     <article
                         v-for="row in rows"
                         :key="row.item.id"
@@ -607,7 +602,7 @@ function visibilityIconPaths(row: FlatTextObject) {
                             @dragleave="dropTarget = null"
                         >
                             <button
-                                class="text-object-drag-handle"
+                                class="text-object-drag-handle button-reset"
                                 type="button"
                                 draggable="true"
                                 title="拖拽排序"
@@ -619,7 +614,7 @@ function visibilityIconPaths(row: FlatTextObject) {
                                 <span></span>
                                 <span></span>
                             </button>
-                            <button class="text-object-select-button" type="button" @click="selectObject(row.item.id)">
+                            <button class="text-object-select-button button-reset" type="button" @click="selectObject(row.item.id)">
                                 <span class="text-object-type">{{ getTextObjectTypeLabel(row.item) }}</span>
                                 <span class="text-object-label">{{ getTextObjectDisplayLabel(row.item, row.depth) }}</span>
                             </button>
@@ -651,9 +646,9 @@ function visibilityIconPaths(row: FlatTextObject) {
                     </article>
                 </div>
 
-                <p v-else class="text-object-empty">暂无文本组</p>
+                <p v-else class="inspector-empty-state">暂无文本组</p>
 
-                <div v-if="selectedItem?.type === 'group'" class="text-object-action-bar">
+                <div v-if="selectedItem?.type === 'group'" class="text-object-action-bar inspector-action-wrap">
                     <button class="btn-small text-object-action" type="button" @click="emit('addTextObject', selectedItem.id, 'text')">
                         +文字
                     </button>
@@ -675,26 +670,27 @@ function visibilityIconPaths(row: FlatTextObject) {
             </div>
 
             <div class="text-object-properties">
-                <div v-if="!selectedItem" class="text-object-empty inspector-content-contained">
+                <div v-if="!selectedItem" class="inspector-content-contained inspector-empty-state">
                     选择或新增文本组
                 </div>
 
                 <template v-else>
-                    <section v-if="untitledSectionFields.length" class="inspector-section">
-                        <div class="inspector-section-content">
-                            <InspectorFieldRows
-                                :rows="untitledFieldRows"
-                                :value-for-field="fieldValue"
-                                :id-prefix="`text-${selectedItem.id}`"
-                                @change="updateField"
-                                @input="draftField"
-                            />
-                        </div>
-                    </section>
+                    <InspectorSection v-if="untitledSectionFields.length">
+                        <InspectorFieldRows
+                            :rows="untitledFieldRows"
+                            :value-for-field="fieldValue"
+                            :id-prefix="`text-${selectedItem.id}`"
+                            @change="updateField"
+                            @input="draftField"
+                        />
+                    </InspectorSection>
 
-                    <section v-if="layoutFields.length" class="inspector-section">
-                        <div class="inspector-section-header">
-                            <h2 class="inspector-section-title">{{ selectedItem.type === 'separator' ? '分隔线' : '布局' }}</h2>
+                    <InspectorSection
+                        v-if="layoutFields.length"
+                        :title="selectedItem.type === 'separator' ? '分隔线' : '布局'"
+                        content-class="text-object-sectioned-fields"
+                    >
+                        <template #actions>
                             <CheckboxControl
                                 v-if="layoutHeaderActionField"
                                 class-name="text-section-checkbox-action"
@@ -705,24 +701,25 @@ function visibilityIconPaths(row: FlatTextObject) {
                                 :checked="Boolean(fieldValue(layoutHeaderActionField))"
                                 @change="updateToggleAction(layoutHeaderActionField, $event)"
                             />
-                        </div>
-                        <div class="inspector-section-content text-object-sectioned-fields">
-                            <InspectorFieldRows
-                                :rows="layoutFieldRows"
-                                :value-for-field="fieldValue"
-                                :id-prefix="`text-${selectedItem.id}`"
-                                :compact-for-field="shouldRenderCompact"
-                                :compact-title-for-field="compactTitle"
-                                :label-for-field="compactLabel"
-                                @change="updateField"
-                                @input="draftField"
-                            />
-                        </div>
-                    </section>
+                        </template>
+                        <InspectorFieldRows
+                            :rows="layoutFieldRows"
+                            :value-for-field="fieldValue"
+                            :id-prefix="`text-${selectedItem.id}`"
+                            :compact-for-field="shouldRenderCompact"
+                            :compact-title-for-field="compactTitle"
+                            :label-for-field="compactLabel"
+                            @change="updateField"
+                            @input="draftField"
+                        />
+                    </InspectorSection>
 
-                    <section v-if="fontFields.length" class="inspector-section">
-                        <div class="inspector-section-header">
-                            <h2 class="inspector-section-title">字体</h2>
+                    <InspectorSection
+                        v-if="fontFields.length"
+                        title="字体"
+                        content-class="text-object-sectioned-fields"
+                    >
+                        <template #actions>
                             <CheckboxControl
                                 v-if="fontHeaderActionField"
                                 class-name="text-section-checkbox-action"
@@ -733,24 +730,21 @@ function visibilityIconPaths(row: FlatTextObject) {
                                 :checked="Boolean(fieldValue(fontHeaderActionField))"
                                 @change="updateToggleAction(fontHeaderActionField, $event)"
                             />
-                        </div>
-                        <div class="inspector-section-content text-object-sectioned-fields">
-                            <InspectorFieldRows
-                                :rows="fontFieldRows"
-                                :value-for-field="fieldValue"
-                                :id-prefix="`text-${selectedItem.id}`"
-                                :compact-for-field="shouldRenderCompact"
-                                :compact-title-for-field="compactTitle"
-                                :label-for-field="compactLabel"
-                                @change="updateField"
-                                @input="draftField"
-                            />
-                        </div>
-                    </section>
+                        </template>
+                        <InspectorFieldRows
+                            :rows="fontFieldRows"
+                            :value-for-field="fieldValue"
+                            :id-prefix="`text-${selectedItem.id}`"
+                            :compact-for-field="shouldRenderCompact"
+                            :compact-title-for-field="compactTitle"
+                            :label-for-field="compactLabel"
+                            @change="updateField"
+                            @input="draftField"
+                        />
+                    </InspectorSection>
 
-                    <section v-if="colorFields" class="inspector-section">
-                        <div class="inspector-section-header">
-                            <h2 class="inspector-section-title">颜色</h2>
+                    <InspectorSection v-if="colorFields" title="颜色">
+                        <template #actions>
                             <button
                                 class="icon-button icon-button-sm text-color-add-button"
                                 type="button"
@@ -760,60 +754,55 @@ function visibilityIconPaths(row: FlatTextObject) {
                             >
                                 +
                             </button>
-                        </div>
-                        <div class="inspector-section-content">
-                            <div class="inspector-field-group-panel">
-                                <div class="text-color-row-list">
-                                    <div class="inspector-field-row-single">
-                                        <FieldControl
-                                            :field="colorFields.tokenField"
-                                            :value="fieldValue(colorFields.tokenField)"
-                                            :id-prefix="`text-color-${selectedItem.id}`"
-                                            label=""
-                                            @change="(_, value) => selectColorTokenField(colorFields.tokenField, colorFields.colorField, value)"
-                                            @input="(_, value) => selectColorTokenField(colorFields.tokenField, colorFields.colorField, value)"
-                                        />
-                                    </div>
+                        </template>
+                        <div class="inspector-field-group-panel">
+                            <div class="text-color-row-list">
+                                <div class="inspector-field-row-single">
+                                    <FieldControl
+                                        :field="colorFields.tokenField"
+                                        :value="fieldValue(colorFields.tokenField)"
+                                        :id-prefix="`text-color-${selectedItem.id}`"
+                                        label=""
+                                        @change="(_, value) => selectColorTokenField(colorFields.tokenField, colorFields.colorField, value)"
+                                        @input="(_, value) => selectColorTokenField(colorFields.tokenField, colorFields.colorField, value)"
+                                    />
+                                </div>
 
-                                    <div
-                                        v-for="row in colorPaletteRows()"
-                                        :key="row.paletteItem.id"
-                                        class="inspector-field-row-single text-color-row-shell text-color-row-shell-custom"
-                                        @click="selectTokenColor(colorFields.tokenField, colorFields.colorField, '', row.color)"
+                                <div
+                                    v-for="row in colorPaletteRows()"
+                                    :key="row.paletteItem.id"
+                                    class="inspector-field-row-single text-color-row-shell text-color-row-shell-custom"
+                                    @click="selectTokenColor(colorFields.tokenField, colorFields.colorField, '', row.color)"
+                                >
+                                    <FieldControl
+                                        :field="paletteColorField(colorFields.colorField, row.paletteItem)"
+                                        :value="row.color"
+                                        :id-prefix="`text-color-${selectedItem.id}`"
+                                        label=""
+                                        @input="(_, value) => updatePaletteColor(row.paletteItem, colorFields.tokenField, colorFields.colorField, String(value))"
+                                        @change="(_, value) => updatePaletteColor(row.paletteItem, colorFields.tokenField, colorFields.colorField, String(value))"
+                                    />
+                                    <button
+                                        class="icon-button icon-button-sm text-color-row-remove"
+                                        type="button"
+                                        aria-label="删除自定义颜色"
+                                        title="删除自定义颜色"
+                                        @click.stop="removePaletteColor(row.paletteItem, colorFields.tokenField, colorFields.colorField, row.selected)"
                                     >
-                                        <FieldControl
-                                            :field="paletteColorField(colorFields.colorField, row.paletteItem)"
-                                            :value="row.color"
-                                            :id-prefix="`text-color-${selectedItem.id}`"
-                                            label=""
-                                            @input="(_, value) => updatePaletteColor(row.paletteItem, colorFields.tokenField, colorFields.colorField, String(value))"
-                                            @change="(_, value) => updatePaletteColor(row.paletteItem, colorFields.tokenField, colorFields.colorField, String(value))"
-                                        />
-                                        <button
-                                            class="icon-button icon-button-sm text-color-row-remove"
-                                            type="button"
-                                            aria-label="删除自定义颜色"
-                                            title="删除自定义颜色"
-                                            @click.stop="removePaletteColor(row.paletteItem, colorFields.tokenField, colorFields.colorField, row.selected)"
-                                        >
-                                            −
-                                        </button>
-                                    </div>
+                                        −
+                                    </button>
                                 </div>
                             </div>
                         </div>
-                    </section>
+                    </InspectorSection>
 
-                    <div v-if="selectedItem.type === 'image'" class="image-source-control inspector-content-contained">
-                        <div class="field-group-label">{{ objectImageName(selectedItem) }}</div>
-                        <HiddenFileInput ref="imageInputRef" accept="image/*" @change="handleImageSelected" />
-                        <button class="btn btn-secondary btn-inspector btn-inspector-full" type="button" @click="chooseImage">
-                            {{ selectedItem.source ? '替换图片' : '选择图片' }}
-                        </button>
-                        <button class="btn btn-secondary btn-inspector btn-inspector-full" type="button" :disabled="!selectedItem.source" @click="clearImage">
-                            清除图片
-                        </button>
-                    </div>
+                    <TextImageSourceControl
+                        v-if="selectedItem.type === 'image'"
+                        :image-name="objectImageName(selectedItem)"
+                        :has-source="Boolean(selectedItem.source)"
+                        @change="replaceImage"
+                        @clear="clearImage"
+                    />
                 </template>
             </div>
         </div>

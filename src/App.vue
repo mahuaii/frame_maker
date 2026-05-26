@@ -377,7 +377,7 @@ async function handleExport() {
                     </button>
                     <div class="export-split-button" :class="{ 'is-open': exportMenuOpen }">
                         <button
-                            class="export-split-action"
+                            class="export-split-action button-reset"
                             type="button"
                             :disabled="!activePhoto || uiState.isExporting"
                             @click="handleExport"
@@ -385,7 +385,7 @@ async function handleExport() {
                             <span>导出</span>
                         </button>
                         <button
-                            class="export-menu-toggle"
+                            class="export-menu-toggle button-reset"
                             type="button"
                             aria-label="展开导出设置"
                             aria-controls="vue-export-settings-menu"

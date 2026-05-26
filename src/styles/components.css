@@ -156,6 +156,21 @@
     --icon-button-icon-size: 14px;
 }
 
+.button-reset {
+    min-width: 0;
+    padding: 0;
+    border: 0;
+    background: transparent;
+    color: inherit;
+    font: inherit;
+    text-align: inherit;
+    cursor: pointer;
+}
+
+.button-reset:disabled {
+    cursor: default;
+}
+
 .selectable-surface {
     border: var(--selectable-border-width, 1px) solid var(--selectable-border-color, transparent);
     border-radius: var(--selectable-radius, var(--radius-sm));

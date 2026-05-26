@@ -10,6 +10,7 @@ import {
     FREE_FRAME_ASPECT_RATIO,
 } from '../../js/core/templates/frame-layout.ts';
 import InspectorFieldRows from './InspectorFieldRows.vue';
+import InspectorSection from './InspectorSection.vue';
 import ResetIconButton from './ResetIconButton.vue';
 import type { FrameTemplate, TemplateField } from '../types/template';
 import type { InspectorField } from '../types/inspector';
@@ -262,59 +263,48 @@ function commitExifField(field: InspectorField, value: unknown) {
 
 <template>
     <aside class="inspector-panel">
-        <section class="inspector-section">
-            <div class="inspector-section-header">
-                <h2 class="inspector-section-title">外观</h2>
-            </div>
-            <div class="inspector-section-content">
-                <InspectorFieldRows
-                    :rows="appearanceFieldRows"
-                    :value-for-field="fieldValue"
-                    @change="commitField"
-                    @input="updateDraft"
-                />
-            </div>
-        </section>
+        <InspectorSection title="外观">
+            <InspectorFieldRows
+                :rows="appearanceFieldRows"
+                :value-for-field="fieldValue"
+                @change="commitField"
+                @input="updateDraft"
+            />
+        </InspectorSection>
 
-        <section class="inspector-section">
-            <header class="inspector-section-header">
-                <h2 class="inspector-section-title">版式</h2>
+        <InspectorSection title="版式">
+            <template #actions>
                 <ResetIconButton
                     ariaLabel="重置版式"
                     title="重置版式"
                     :disabled="layoutFieldsWithDefaults.length === 0"
                     @click="emit('resetLayout')"
                 />
-            </header>
-            <div class="inspector-section-content">
-                <InspectorFieldRows
-                    :rows="layoutFieldRows"
-                    :value-for-field="fieldValue"
-                    :label-for-field="compactFieldLabel"
-                    :compact-for-field="isCompactLayoutField"
-                    @change="commitField"
-                    @input="updateDraft"
-                />
-            </div>
-        </section>
+            </template>
+            <InspectorFieldRows
+                :rows="layoutFieldRows"
+                :value-for-field="fieldValue"
+                :label-for-field="compactFieldLabel"
+                :compact-for-field="isCompactLayoutField"
+                @change="commitField"
+                @input="updateDraft"
+            />
+        </InspectorSection>
 
-        <section class="inspector-section">
-            <header class="inspector-section-header">
-                <h2 class="inspector-section-title">拍摄信息</h2>
+        <InspectorSection title="拍摄信息" content-class="exif-editor-content">
+            <template #actions>
                 <ResetIconButton
                     ariaLabel="重置拍摄信息"
                     title="重置拍摄信息"
                     @click="emit('resetExif')"
                 />
-            </header>
-            <div class="inspector-section-content exif-editor-content">
-                <InspectorFieldRows
-                    :rows="exifFieldRows"
-                    :value-for-field="exifFieldValue"
-                    id-prefix="field-exif"
-                    @change="commitExifField"
-                />
-            </div>
-        </section>
+            </template>
+            <InspectorFieldRows
+                :rows="exifFieldRows"
+                :value-for-field="exifFieldValue"
+                id-prefix="field-exif"
+                @change="commitExifField"
+            />
+        </InspectorSection>
     </aside>
 </template>
