@@ -136,6 +136,29 @@
     background: transparent;
 }
 
+.field-composite-control {
+    align-items: center;
+    width: 100%;
+    height: var(--field-height);
+    min-height: var(--field-height);
+    border: 1px solid var(--field-frame-border);
+    border-radius: var(--field-radius);
+    color: var(--color-text-primary);
+    background: var(--field-frame-background);
+    transition: border-color var(--control-transition-duration) ease, box-shadow var(--control-transition-duration) ease, background-color var(--control-transition-duration) ease, color var(--control-transition-duration) ease;
+}
+
+.field-composite-control:hover {
+    border-color: var(--field-frame-border-hover);
+    background: var(--field-frame-background-hover);
+}
+
+.field-composite-control:focus-within {
+    border-color: var(--field-frame-border-focus);
+    box-shadow: none;
+    background: var(--field-frame-background-focus);
+}
+
 .field-group .color-row-control {
     --color-row-swatch-size: 14px;
     --field-frame-background: var(--color-control-background-muted);
@@ -145,20 +168,12 @@
     --field-frame-border-hover: var(--color-field-border-hover);
     --field-frame-border-focus: var(--color-field-border-focus);
     --field-frame-divider: var(--color-white);
+
     position: relative;
     display: grid;
     grid-template-columns: 22px minmax(0, 1fr) 32px 16px;
-    align-items: center;
-    width: 100%;
-    height: var(--field-height);
-    min-height: var(--field-height);
     padding: 0 6px 0 var(--field-inline-padding);
-    border: 1px solid var(--field-frame-border);
-    border-radius: var(--field-radius);
-    background: var(--field-frame-background);
-    color: var(--color-text-primary);
     overflow: hidden;
-    transition: border-color var(--control-transition-duration) ease, box-shadow var(--control-transition-duration) ease, background-color var(--control-transition-duration) ease;
 }
 
 .field-group .color-row-control::after {
@@ -172,15 +187,9 @@
     pointer-events: none;
 }
 
-.field-group .color-row-control:hover,
 .field-group .color-row-control:focus-visible {
     border-color: var(--field-frame-border-hover);
     background: var(--field-frame-background-hover);
-}
-
-.color-row-control:focus-within {
-    border-color: var(--field-frame-border-focus);
-    background: var(--field-frame-background-focus);
 }
 
 .field-group input.color-row-native-input[type="color"] {
@@ -432,28 +441,8 @@
 .field-prefix-control {
     display: grid;
     grid-template-columns: auto minmax(0, 1fr);
-    align-items: center;
     column-gap: 8px;
-    width: 100%;
-    height: var(--field-height);
-    min-height: var(--field-height);
     padding: 0 var(--field-inline-padding);
-    border: 1px solid var(--field-frame-border);
-    border-radius: var(--field-radius);
-    color: var(--color-text-primary);
-    background-color: var(--field-frame-background);
-    transition: border-color var(--control-transition-duration) ease, box-shadow var(--control-transition-duration) ease, background-color var(--control-transition-duration) ease, color var(--control-transition-duration) ease;
-}
-
-.field-prefix-control:hover {
-    border-color: var(--field-frame-border-hover);
-    background-color: var(--field-frame-background-hover);
-}
-
-.field-prefix-control:focus-within {
-    border-color: var(--field-frame-border-focus);
-    box-shadow: none;
-    background-color: var(--field-frame-background-focus);
 }
 
 .field-prefix-control-label {

@@ -88,7 +88,7 @@ function openColorPicker(event: MouseEvent) {
 <template>
     <component
         :is="tag"
-        class="color-row-control"
+        class="color-row-control field-composite-control"
         :class="{ selected, 'is-editable': editable, 'has-native-picker': nativePicker }"
         :type="tag === 'button' ? 'button' : undefined"
         :role="role"

@@ -367,7 +367,7 @@ function textRadioPathDefinitions(control: string | undefined, value: unknown): 
             </label>
             <label
                 v-if="compact && displayLabel"
-                class="field-prefix-control"
+                class="field-prefix-control field-composite-control"
                 :class="{ 'field-prefix-number-control': field.type === 'number' }"
             >
                 <span class="field-prefix-control-label" aria-hidden="true">

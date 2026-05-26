@@ -1,8 +1,8 @@
 /* === Batch Photo Panel === */
 .batch-actions {
-    display: grid;
-    grid-template-columns: repeat(3, minmax(0, 1fr));
-    gap: 6px;
+    --inspector-action-columns: 3;
+    --inspector-action-gap: 6px;
+
     width: 100%;
     max-width: 100%;
     margin-bottom: 10px;
@@ -10,9 +10,6 @@
 
 .batch-summary {
     margin-bottom: 10px;
-    color: var(--color-text-secondary);
-    font-size: 12px;
-    line-height: 1.4;
 }
 
 .batch-photo-list {
@@ -44,16 +41,8 @@
     grid-template-columns: 48px minmax(0, 1fr);
     gap: 10px;
     align-items: center;
-    min-width: 0;
     min-height: 48px;
-    padding: 0;
-    border: 0;
     border-radius: var(--radius-sm);
-    background: transparent;
-    color: inherit;
-    font: inherit;
-    text-align: left;
-    cursor: pointer;
 }
 
 .batch-photo-select-button:focus-visible {
